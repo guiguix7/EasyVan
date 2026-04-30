@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Gerenciamento de Van/1.0.0": {
+        "runtime": {
+          "Gerenciamento de Van.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Gerenciamento de Van/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
