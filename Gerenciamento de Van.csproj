@@ -7,4 +7,10 @@
     <RootNamespace>Gerenciamento_de_Van</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Content Update="wwwroot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
