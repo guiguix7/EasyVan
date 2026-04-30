@@ -1,9 +1,9 @@
 # EasyVan
 
 ## Equipe
-- Victor Volpi
 - Guilherme Pereira
 - Davi Gato
+- Victor Volpi
 - Caio Regio
 - Pedro Ailton
 
