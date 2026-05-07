@@ -40,7 +40,7 @@ Organizar o transporte de vans de forma eficiente para facilitar a administraç�
 2. Execute `dotnet restore` para restaurar dependências.
 3. Execute `dotnet build` para compilar o projeto.
 4. Execute `dotnet run` para iniciar a aplicação.
-5. Abra o navegador em `https://localhost:5001` ou `http://localhost:5000`.
+5. Abra o navegador em `http://localhost:5256` ou `http://localhost:5000`.
 
 ## Observações
 O projeto usa o template ASP.NET Core MVC e serve arquivos estáticos a partir da pasta `wwwroot`. Para evitar avisos ao executar diretamente o `.exe`, execute o projeto a partir da raiz do projeto ou publique corretamente.
