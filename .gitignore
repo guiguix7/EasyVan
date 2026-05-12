@@ -9,6 +9,12 @@
 bin/
 obj/
 
+node_modules/
+.node_modules/
+dist/
+package-lock.json
+package.json
+
 # Logs
 *.log
 
@@ -24,3 +30,28 @@ obj/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Local configuration / secrets
+.env
+.env.*
+!.env.example
+.envrc
+.npmrc
+.pypirc
+.yarnrc
+.yarnrc.yml
+appsettings.*.json
+!appsettings.json
+secrets.json
+user-secrets.json
+
+# Certificates / keys
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+*.cer
+*.jks
+*.keystore
+*.kdbx
