@@ -1,0 +1,19 @@
+@model EasyVan.Models.Usuarios
+
+@{
+    ViewData["Title"] = "Detalhes do Usuário";
+}
+
+<h1>Detalhes do Usuário</h1>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">@Model.Nome</h5>
+        <p class="card-text"><strong>Email:</strong> @Model.Email</p>
+        <p class="card-text"><strong>Perfil:</strong> @Model.RoleManager</p>
+        <p class="card-text"><strong>Id:</strong> @Model.Id</p>
+    </div>
+</div>
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Editar</a>
+<a asp-action="Index" class="btn btn-secondary">Voltar</a>

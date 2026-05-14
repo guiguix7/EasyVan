@@ -35,3 +35,50 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+.home-login-page {
+  min-height: calc(100vh - 120px);
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, rgba(13, 110, 253, 0.95), rgba(102, 16, 242, 0.92));
+}
+
+.login-card {
+  width: min(460px, 100%);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(13, 110, 253, 0.18);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.13);
+}
+
+.login-card h1 {
+  color: #0d6efd;
+}
+
+.login-card .form-label {
+  font-weight: 600;
+}
+
+.login-card .form-control {
+  border-radius: 1rem;
+  padding: 1rem 1rem;
+  border: 1px solid #d7e3ff;
+}
+
+.login-card .btn-primary {
+  border-radius: 1rem;
+  padding: 0.95rem 1.2rem;
+  font-size: 1rem;
+  background: linear-gradient(90deg, #0d6efd, #6610f2);
+  border: none;
+}
+
+.login-card .form-check-label {
+  font-size: 0.95rem;
+}
+
+.login-card .text-muted {
+  color: #6c757d !important;
+}
+
+.login-card p {
+  margin-bottom: 0.5rem;
+}

@@ -1,0 +1,37 @@
+@model EasyVan.Models.Usuarios
+
+@{
+    ViewData["Title"] = "Editar Usuário";
+}
+
+<h1>Editar Usuário</h1>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
+    <div class="mb-3">
+        <label asp-for="Nome" class="form-label"></label>
+        <input asp-for="Nome" class="form-control" />
+        <span asp-validation-for="Nome" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" type="email" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="RoleManager" class="form-label"></label>
+        <input asp-for="RoleManager" class="form-control" />
+        <span asp-validation-for="RoleManager" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="PasswordHasher" class="form-label">Senha</label>
+        <input asp-for="PasswordHasher" class="form-control" type="password" />
+        <span asp-validation-for="PasswordHasher" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
