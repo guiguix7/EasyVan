@@ -6,6 +6,7 @@
 - Victor Hugo Volpi Pereira
 - Caio Regio Candiani
 - Pedro Ailton dos Santos Cavalieri
+- Enzo Miguel Bertoluci Ovido
 
 ## Sobre o projeto
 EasyVan é um sistema web ASP.NET Core MVC para gerenciar o transporte de vans. O objetivo é centralizar rotas, horários, passageiros e motoristas em uma interface web simples e responsiva.
