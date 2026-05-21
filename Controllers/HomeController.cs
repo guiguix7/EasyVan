@@ -30,6 +30,11 @@ public class HomeController : Controller
         return View();
     }
 
+    public IActionResult Detalhes()
+    {
+        return View();
+    }
+
     public IActionResult Pages(string id)
     {
         if (string.IsNullOrWhiteSpace(id))

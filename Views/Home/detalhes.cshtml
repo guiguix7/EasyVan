@@ -1,0 +1,133 @@
+@{
+	ViewData["Title"] = "Detalhes do Projeto";
+}
+
+<section class="details-page py-4 py-md-5">
+	<div class="details-hero p-4 p-md-5 mb-4 rounded-4 text-white">
+		<div class="row align-items-center g-4">
+			<div class="col-lg-8">
+				<span class="details-kicker text-uppercase fw-semibold">EasyVan</span>
+				<h1 class="display-5 fw-bold mt-2 mb-3">Gestão centralizada de vans em uma interface simples e responsiva.</h1>
+				<p class="lead mb-4">
+					O EasyVan é um sistema web ASP.NET Core MVC criado para organizar rotas, horários,
+					passageiros e motoristas em um único lugar, facilitando o controle diário do transporte.
+				</p>
+				<div class="d-flex flex-wrap gap-2">
+					<a asp-controller="Home" asp-action="Index" class="btn btn-light btn-lg">Ir para o login</a>
+					<a asp-controller="Home" asp-action="Pages" asp-route-id="cadastro" class="btn btn-outline-light btn-lg">Criar cadastro</a>
+				</div>
+			</div>
+			<div class="col-lg-4">
+				<div class="details-stat-card rounded-4 p-4 bg-white text-dark shadow-sm">
+					<p class="text-uppercase text-primary fw-semibold mb-2">Status atual</p>
+					<h2 class="h4 fw-bold mb-3">Aplicação MVC em funcionamento</h2>
+					<ul class="list-unstyled mb-0 details-mini-list">
+						<li>Login visual criado</li>
+						<li>Cadastro de usuários disponível</li>
+						<li>CRUD básico em memória</li>
+						<li>Layout responsivo com Bootstrap</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="row g-4">
+		<div class="col-lg-6">
+			<div class="details-card h-100 rounded-4 p-4 shadow-sm bg-white">
+				<h2 class="h4 fw-bold mb-3">Sobre o projeto</h2>
+				<p class="mb-0">
+					O EasyVan foi pensado para centralizar a operação de transporte escolar ou corporativo,
+					reunindo em uma interface única os dados mais importantes para gestão e acompanhamento.
+				</p>
+			</div>
+		</div>
+		<div class="col-lg-6">
+			<div class="details-card h-100 rounded-4 p-4 shadow-sm bg-white">
+				<h2 class="h4 fw-bold mb-3">Tecnologias</h2>
+				<div class="d-flex flex-wrap gap-2">
+					<span class="badge rounded-pill text-bg-primary">ASP.NET Core MVC</span>
+					<span class="badge rounded-pill text-bg-secondary">.NET 10</span>
+					<span class="badge rounded-pill text-bg-dark">Razor Views</span>
+					<span class="badge rounded-pill text-bg-success">Bootstrap</span>
+					<span class="badge rounded-pill text-bg-info">jQuery</span>
+					<span class="badge rounded-pill text-bg-warning">CSS customizado</span>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-6">
+			<div class="details-card h-100 rounded-4 p-4 shadow-sm bg-white">
+				<h2 class="h4 fw-bold mb-3">Funcionalidades implementadas</h2>
+				<ul class="mb-0 ps-3">
+					<li>Login visual com usuário, email e senha</li>
+					<li>Link de acesso para cadastro de novo usuário</li>
+					<li>Cadastro com validação por data annotations</li>
+					<li>CRUD básico de usuários em memória</li>
+					<li>Views de lista, criação, edição, detalhes e exclusão</li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6">
+			<div class="details-card h-100 rounded-4 p-4 shadow-sm bg-white">
+				<h2 class="h4 fw-bold mb-3">Funcionalidades planejadas</h2>
+				<ul class="mb-0 ps-3">
+					<li>Autenticação real com Identity ou banco de dados</li>
+					<li>Persistência de dados em SQL</li>
+					<li>Gerenciamento de rotas e itinerários</li>
+					<li>Cadastro de motoristas e passageiros</li>
+					<li>Painel administrativo com permissões por perfil</li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-7">
+			<div class="details-card h-100 rounded-4 p-4 shadow-sm bg-white">
+				<h2 class="h4 fw-bold mb-3">Como executar</h2>
+				<ol class="mb-0 ps-3">
+					<li>Abra o terminal na pasta do projeto.</li>
+					<li>Execute <span class="fw-semibold">dotnet restore</span>.</li>
+					<li>Execute <span class="fw-semibold">dotnet build</span>.</li>
+					<li>Execute <span class="fw-semibold">dotnet run</span>.</li>
+					<li>Acesse <span class="fw-semibold">https://localhost:7291</span> ou <span class="fw-semibold">http://localhost:5000</span>.</li>
+				</ol>
+			</div>
+		</div>
+		<div class="col-lg-5">
+			<div class="details-card h-100 rounded-4 p-4 shadow-sm bg-white">
+				<h2 class="h4 fw-bold mb-3">Tipos de usuário</h2>
+				<ul class="mb-0 ps-3">
+					<li><strong>user</strong> - aluno</li>
+					<li><strong>admin</strong> - gerenciador</li>
+					<li><strong>driver</strong> - motorista</li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-12">
+			<div class="details-card rounded-4 p-4 shadow-sm bg-white">
+				<h2 class="h4 fw-bold mb-3">Estrutura do projeto</h2>
+				<div class="row g-3">
+					<div class="col-md-4">
+						<div class="details-structure h-100 p-3 rounded-3">
+							<h3 class="h6 fw-bold mb-2">Controllers</h3>
+							<p class="mb-0 small">Controladores MVC responsáveis pelas ações e rotas da aplicação.</p>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="details-structure h-100 p-3 rounded-3">
+							<h3 class="h6 fw-bold mb-2">Views</h3>
+							<p class="mb-0 small">Telas Razor do login, cadastro, usuários e páginas institucionais.</p>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="details-structure h-100 p-3 rounded-3">
+							<h3 class="h6 fw-bold mb-2">wwwroot</h3>
+							<p class="mb-0 small">Arquivos estáticos com CSS, JavaScript e bibliotecas de apoio.</p>
+						</div>
+					</div>
+				</div>
+				<p class="text-muted small mt-3 mb-0">
+					O projeto ainda usa simulação em memória para usuários; a persistência em banco não está implementada.
+				</p>
+			</div>
+		</div>
+	</div>
+</section>
