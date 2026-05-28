@@ -54,10 +54,11 @@ DataBase/           Estrutura placeholder de banco de dados
 
 ## Como executar
 1. Abra o terminal na pasta do projeto.
+2. Execute `npm i` (instala dependencias)
 2. Execute `dotnet restore`.
 3. Execute `dotnet build`.
 4. Execute `dotnet run`.
-5. Acesse `https://localhost:7291` ou `http://localhost:5000`.
+5. Acesse `http://localhost:5256`.
 
 ## Observações
 - O projeto ainda usa simulação em memória para usuários; persistência em banco não está implementada.
