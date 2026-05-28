@@ -14,7 +14,11 @@ html {
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
@@ -25,32 +29,69 @@ html {
 
 body {
   margin-bottom: 60px;
+  background: radial-gradient(1200px 600px at 10% 10%, #e8f4ff 0%, #f7fbff 45%, #ffffff 100%);
+  color: #0f172a;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+.form-floating>.form-control-plaintext::placeholder,
+.form-floating>.form-control::placeholder {
   color: var(--bs-secondary-color);
   text-align: end;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+.form-floating>.form-control-plaintext:focus::placeholder,
+.form-floating>.form-control:focus::placeholder {
   text-align: start;
+}
+
+.display-5.fw-bold.mt-2.mb-3 {
+  font-family: "PT Serif", "Times New Roman", serif;
+  color: #0f2b6d;
+}
+
+.details-kicker .text-uppercase.fw-semibold {
+  font-size: 0.95rem;
+  color: #0d6efd;
 }
 
 .home-login-page {
   min-height: calc(100vh - 120px);
-  padding: 2rem 1rem;
-  background: linear-gradient(135deg, rgba(13, 110, 253, 0.95), rgba(102, 16, 242, 0.92));
+  padding: 2.5rem 1.25rem;
+  display: grid;
+  grid-template-columns: minmax(220px, 360px) minmax(320px, 480px);
+  gap: 2rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.img-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  background: linear-gradient(145deg, rgba(13, 110, 253, 0.08), rgba(255, 138, 0, 0.12));
+  border: 1px solid rgba(13, 110, 253, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+}
+
+.logo-img {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
 }
 
 .login-card {
-  width: min(460px, 100%);
-  background: rgba(255, 255, 255, 0.96);
+  font-family: "PT Serif", "Times New Roman", serif;
+  width: min(480px, 100%);
+  background: rgba(255, 255, 255, 0.98);
   border: 1px solid rgba(13, 110, 253, 0.18);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.13);
+  border-radius: 24px;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.16);
 }
 
 .login-card h1 {
-  color: #0d6efd;
+  color: #0f2b6d;
 }
 
 .login-card .form-label {
@@ -59,16 +100,28 @@ body {
 
 .login-card .form-control {
   border-radius: 1rem;
-  padding: 1rem 1rem;
+  padding: 0.95rem 1rem;
   border: 1px solid #d7e3ff;
+  background: #f9fbff;
 }
 
 .login-card .btn-primary {
   border-radius: 1rem;
   padding: 0.95rem 1.2rem;
   font-size: 1rem;
-  background: linear-gradient(90deg, #0d6efd, #6610f2);
+  background: linear-gradient(90deg, #0d6efd, #ff8a00);
   border: none;
+}
+
+@media (max-width: 991px) {
+  .home-login-page {
+    grid-template-columns: 1fr;
+    padding: 2rem 1rem;
+  }
+
+  .logo-img {
+    max-width: 260px;
+  }
 }
 
 .login-card .form-check-label {
