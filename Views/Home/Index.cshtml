@@ -20,11 +20,6 @@
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
             <div class="mb-3">
-                <label asp-for="Username" class="form-label"></label>
-                <input asp-for="Username" class="form-control" placeholder="Digite seu usuário" />
-                <span asp-validation-for="Username" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
                 <label asp-for="Email" class="form-label"></label>
                 <input asp-for="Email" class="form-control" placeholder="Digite seu email" />
                 <span asp-validation-for="Email" class="text-danger"></span>
@@ -37,9 +32,6 @@
             <div class="mb-3 form-check">
                 <input asp-for="RememberMe" class="form-check-input" />
                 <label asp-for="RememberMe" class="form-check-label"></label>
-            </div>
-            <div class="mb-3 text-end">
-                <a asp-controller="Home" asp-action="Pages" asp-route-id="cadastro" class="link-primary">Não tenho conta?</a>
             </div>
             <button type="submit" class="btn btn-primary w-100">Entrar</button>
         </form>

@@ -4,7 +4,7 @@
 - Guilherme Pereira Andraz
 - Davi Gato Grijó da Silva
 - Victor Hugo Volpi Pereira
-- Caio Regio Candiani
+- Caio Candiani Regio 
 - Pedro Ailton dos Santos Cavalieri
 - Enzo Miguel Bertoluci Ovido
 
