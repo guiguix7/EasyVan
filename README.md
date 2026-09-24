@@ -4,7 +4,7 @@
 - Guilherme Pereira Andraz
 - Davi Gato Grijó da Silva
 - Victor Hugo Volpi Pereira
-- Caio Candiani Regio 
+- Caio Candiani Regio
 - Pedro Ailton dos Santos Cavalieri
 - Enzo Miguel Bertoluci Ovido
 
@@ -13,26 +13,24 @@ EasyVan é um sistema web ASP.NET Core MVC para gerenciar o transporte de vans. 
 
 ## Status atual
 - Aplicação ASP.NET Core MVC funcionando
-- Página de login criada em `Home/Index`
-- Página de cadastro criada em `Home/Pages/cadastro`
-- Validação de formulário com `LoginViewModel` e `Usuarios` usando data annotations
-- Controle de usuários com `UsuariosController` e views CRUD em `Views/Usuarios`
-- Layout estilizado com Bootstrap e CSS customizado em `wwwroot/css/site.css`
+- Login e cadastro integrados com banco SQLite via EF Core
+- `ApplicationDbContext` implementado em `Data/ApplicationDbContext.cs`
+- `UsuariosController` atualizado para persistir dados no banco
+- `Vans` e `Usuarios` modelos preparados para persistência
+- Banco é criado automaticamente em tempo de execução com `EnsureCreated()` (desenvolvimento)
 
 ## Funcionalidades implementadas
-- Login visual com campos de usuário, email e senha
-- Link para cadastro de novo usuário
-- Cadastro de usuário via formulário conectado ao modelo `Usuarios`
+- Login visual com campos de email e senha (view `Home/Index`)
+- Cadastro de usuário via formulário (`Home/Pages/cadastro`) persistido em SQLite
 - Validação de campos obrigatórios e formato de email
-- CRUD básico de usuários em memória (`UsuariosController`)
-- Views: `Index`, `Create`, `Edit`, `Details`, `Delete` para usuários
+- CRUD de usuários via `UsuariosController` usando EF Core
+- Model `Van` com CRUD básico em memória (pode ser migrado para EF Core)
 
 ## Funcionalidades planejadas
-- Autenticação real com Identity ou banco de dados
-- Persistência de dados em banco SQL
-- Gerenciamento de rotas e itinerários
-- Cadastro de motoristas e passageiros
-- Painel administrativo com permissões por perfil
+- Migrar todas as listas em memória para EF Core (Vans)
+- Adicionar autenticação com ASP.NET Identity (hash de senhas)
+- Implementar níveis de acesso (Admin / User / Driver)
+- Criar interfaces administrativas para gerenciar vans e rotas
 
 ## Tecnologias
 - ASP.NET Core MVC (.NET 10)
@@ -52,21 +50,49 @@ Backend/JS/         Estrutura placeholder de servidor Node.js
 DataBase/           Estrutura placeholder de banco de dados
 ```
 
-## Como executar
+## Como executar (desenvolvimento)
 1. Abra o terminal na pasta do projeto.
-2. Execute `npm i` (instala dependencias)
-2. Execute `dotnet restore`.
-3. Execute `dotnet build`.
-4. Execute `dotnet run`.
+2. (Opcional) Instale pacotes front-end se houver (não obrigatório):
+
+```powershell
+npm install
+```
+
+3. Restaure pacotes .NET e compile:
+
+```powershell
+dotnet restore
+dotnet build
+```
+
+4. Execute a aplicação:
+
+```powershell
+dotnet run
+```
+
 5. Acesse `http://localhost:5256`.
 
+Notas:
+- O projeto agora usa SQLite via EF Core. O arquivo do banco será criado em `easyvan.db` na raiz do projeto.
+- Em desenvolvimento o banco é criado automaticamente com `EnsureCreated()`; para produção, use migrações EF Core.
+
 ## Observações
-- O projeto ainda usa simulação em memória para usuários; persistência em banco não está implementada.
-- O login atual valida campos via data annotations, mas não realiza autenticação de produção.
-- Para evitar avisos no `dotnet run`, execute o projeto a partir da raiz do diretório do projeto.
+- Senhas atualmente são armazenadas em texto simples (não criptografadas). Para produção, implemente hashing (ASP.NET Identity ou BCrypt).
+- Se preferir controlar o esquema do banco, remova `EnsureCreated()` e use migrações EF Core:
+
+```powershell
+dotnet ef migrations add Initial
+dotnet ef database update
+```
 
 ## Tipos de usuário
-- `user` - aluno
-- `admin` - gerenciador
-- `driver` - motorista
+- `Aluno` (padrão)
+- `Admin` (gerenciador)
+- `Driver` (motorista)
+
+## Próximos passos que recomendo
+- Criar view e controller para cadastrar `Van` persistente via EF Core.
+- Implementar hashing de senhas e autenticação com Identity.
+- Gerar arquivo `.docx` com prompts de IA usados durante o desenvolvimento (conforme solicitado pelo professor).
  
