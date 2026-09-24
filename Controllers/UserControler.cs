@@ -1,63 +1,45 @@
 // Controlador para gerenciar os usuários (Controller)
 using Microsoft.AspNetCore.Mvc;
 using EasyVan.Models;
+using EasyVan.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace EasyVan.Controllers
 {
     public class UsuariosController : Controller
     {
-        private static readonly List<Usuarios> usuarios = new()
-        {
-            new Usuarios
-            {
-                Id = 1,
-                Nome = "João",
-                Email = "joao@example.com",
-                RoleManager = "Admin",
-                PasswordHasher = "123456"
-            }
-        };
+        private readonly ApplicationDbContext _db;
 
-        private static int proximoId = 2;
-
-        public IActionResult Index()
+        public UsuariosController(ApplicationDbContext db)
         {
+            _db = db;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var usuarios = await _db.Usuarios.ToListAsync();
             return View(usuarios);
         }
 
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            var usuario = usuarios.FirstOrDefault(u => u.Id == id);
-            if (usuario == null)
-            {
-                return NotFound();
-            }
-
+            var usuario = await _db.Usuarios.FindAsync(id);
+            if (usuario == null) return NotFound();
             return View(usuario);
         }
 
         public IActionResult Create()
         {
-            if (!ModelState.IsValid)
-            {
-               return View("~/Views/Home/Index.cshtml");
-            }
-/*
-            if (string.IsNullOrWhiteSpace(ModelState["RoleManager"]?.AttemptedValue))
-            {
-                ModelState["RoleManager"].AttemptedValue = "Aluno";
-            }
-*/
             return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Usuarios usuario)
+        public async Task<IActionResult> Create(Usuarios usuario)
         {
             if (!ModelState.IsValid)
             {
-                return View("~/Views/Home/Pages/cadastro.cshtml", usuario);
+                return View(usuario);
             }
 
             if (string.IsNullOrWhiteSpace(usuario.RoleManager))
@@ -65,67 +47,80 @@ namespace EasyVan.Controllers
                 usuario.RoleManager = "Aluno";
             }
 
-            usuario.Id = proximoId++;
-            usuarios.Add(usuario);
+            _db.Usuarios.Add(usuario);
+            await _db.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var usuario = usuarios.FirstOrDefault(u => u.Id == id);
-            if (usuario == null)
-            {
-                return NotFound();
-            }
-
+            var usuario = await _db.Usuarios.FindAsync(id);
+            if (usuario == null) return NotFound();
             return View(usuario);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(Usuarios usuario)
+        public async Task<IActionResult> Edit(Usuarios usuario)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(usuario);
-            }
+            if (!ModelState.IsValid) return View(usuario);
 
-            var existente = usuarios.FirstOrDefault(u => u.Id == usuario.Id);
-            if (existente == null)
-            {
-                return NotFound();
-            }
+            var existente = await _db.Usuarios.FindAsync(usuario.Id);
+            if (existente == null) return NotFound();
 
             existente.Nome = usuario.Nome;
             existente.Email = usuario.Email;
             existente.RoleManager = usuario.RoleManager;
             existente.PasswordHasher = usuario.PasswordHasher;
 
+            await _db.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var usuario = usuarios.FirstOrDefault(u => u.Id == id);
-            if (usuario == null)
-            {
-                return NotFound();
-            }
-
+            var usuario = await _db.Usuarios.FindAsync(id);
+            if (usuario == null) return NotFound();
             return View(usuario);
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var usuario = usuarios.FirstOrDefault(u => u.Id == id);
+            var usuario = await _db.Usuarios.FindAsync(id);
             if (usuario != null)
             {
-                usuarios.Remove(usuario);
+                _db.Usuarios.Remove(usuario);
+                await _db.SaveChangesAsync();
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        // Simple login action
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View("~/Views/Home/Index.cshtml", model);
+            }
+
+            var user = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email == model.Email && u.PasswordHasher == model.Password);
+            if (user == null)
+            {
+                ModelState.AddModelError(string.Empty, "Credenciais inválidas.");
+                return View("~/Views/Home/Index.cshtml", model);
+            }
+
+            if (user.RoleManager == "Admin")
+            {
+                return RedirectToAction("Index", "Vans");
+            }
+
+            return RedirectToAction("Index", "Vans");
         }
     }
 }

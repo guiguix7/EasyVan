@@ -13,15 +13,13 @@ namespace EasyVan.Models
 
         [Required(ErrorMessage = "O email é obrigatório.")]
         [EmailAddress(ErrorMessage = "Informe um email válido.")]
-        public string Email { get; set; } = "Aluno";
+        public string Email { get; set; } = string.Empty;
 
         public string RoleManager { get; set; } = "Aluno";
 
         [Required(ErrorMessage = "A senha é obrigatória.")]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "A senha deve ter ao menos 6 caracteres.")]
         [DataType(DataType.Password)]
-        
-        [Description("Usuario Cadastrado com Sucesso!")]
         public string PasswordHasher { get; set; } = string.Empty;
     }
 }
