@@ -11,6 +11,13 @@ builder.Services.AddDbContext<EasyVan.Data.ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
+// Ensure database is created (simple approach to avoid manual migrations)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<EasyVan.Data.ApplicationDbContext>();
+    db.Database.EnsureCreated();
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
