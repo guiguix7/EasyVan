@@ -45,6 +45,21 @@ public class HomeController : Controller
         return View($"Pages/{id}");
     }
 
+    public IActionResult Aluno()
+    {
+        return View();
+    }
+
+    public IActionResult Motorista()
+    {
+        return View();
+    }
+
+    public IActionResult Administrador()
+    {
+        return View();
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {

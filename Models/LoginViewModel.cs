@@ -4,7 +4,6 @@ namespace EasyVan.Models
 {
     public class LoginViewModel
     {
-        [Required(ErrorMessage = "O usuário é obrigatório.")]
         public string Username { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "O email é obrigatório.")]

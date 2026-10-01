@@ -24,10 +24,9 @@
         <label asp-for="RoleManager" class="form-label">Perfil</label>
         @{ 
             var roles = new[] {
-                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "", Text = "Selecione um perfil" },
-                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "Admin", Text = "Admin", Selected = Model?.RoleManager == "Admin" },
-                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "Driver", Text = "Motorista", Selected = Model?.RoleManager == "Driver" },
-                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "User", Text = "Aluno", Selected = Model?.RoleManager == "User" }
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "Aluno", Text = "Aluno", Selected = Model?.RoleManager == "Aluno" },
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "Motorista", Text = "Motorista", Selected = Model?.RoleManager == "Motorista" },
+                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "Administrador", Text = "Administrador", Selected = Model?.RoleManager == "Administrador" }
             };
         }
         @Html.DropDownListFor(m => m.RoleManager, roles, new { @class = "form-select" })

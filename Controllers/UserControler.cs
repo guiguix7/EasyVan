@@ -33,6 +33,18 @@ namespace EasyVan.Controllers
             return View();
         }
 
+        private static string ObterRotaPorPerfil(string? role)
+        {
+            var perfil = Usuarios.NormalizeRole(role);
+
+            return perfil switch
+            {
+                "Administrador" => "Administrador",
+                "Motorista" => "Motorista",
+                _ => "Aluno"
+            };
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Usuarios usuario)
@@ -42,10 +54,7 @@ namespace EasyVan.Controllers
                 return View(usuario);
             }
 
-            if (string.IsNullOrWhiteSpace(usuario.RoleManager))
-            {
-                usuario.RoleManager = "Aluno";
-            }
+            usuario.RoleManager = Usuarios.NormalizeRole(usuario.RoleManager);
 
             _db.Usuarios.Add(usuario);
             await _db.SaveChangesAsync();
@@ -115,12 +124,10 @@ namespace EasyVan.Controllers
                 return View("~/Views/Home/Index.cshtml", model);
             }
 
-            if (user.RoleManager == "Admin")
-            {
-                return RedirectToAction("Index", "Vans");
-            }
+            user.RoleManager = Usuarios.NormalizeRole(user.RoleManager);
+            var perfil = ObterRotaPorPerfil(user.RoleManager);
 
-            return RedirectToAction("Index", "Vans");
+            return RedirectToAction(perfil, "Home");
         }
     }
 }
