@@ -1,4 +1,4 @@
-@model IEnumerable<EasyVan.Models.Van>
+@model EasyVan.Models.VanIndexViewModel
 
 @{
     ViewData["Title"] = "Listagem de Vans";
@@ -7,8 +7,60 @@
 <section class="py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="h3">Vans</h1>
-        <a asp-controller="Vans" asp-action="Index" class="btn btn-secondary">Atualizar</a>
+        <a href="@Url.Action("Index", "Vans", new { busca = Model.Filtro.Busca, status = Model.Filtro.Status, capacidadeMin = Model.Filtro.CapacidadeMin, capacidadeMax = Model.Filtro.CapacidadeMax })" class="btn btn-secondary">Atualizar</a>
     </div>
+
+    <form method="get" asp-controller="Vans" asp-action="Index" class="card card-body shadow-sm mb-3" role="search">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-3">
+                <label for="busca" class="form-label">Buscar</label>
+                <input type="search" id="busca" name="busca" value="@Model.Filtro.Busca" maxlength="100" class="form-control" placeholder="Placa, motorista, rota ou descrição" />
+            </div>
+            <div class="col-6 col-md-2">
+                <label for="status" class="form-label">Status</label>
+                <select id="status" name="status" class="form-select">
+                    <option value="">Todos</option>
+                    @foreach (var status in Model.StatusDisponiveis)
+                    {
+                        if (string.Equals(status, Model.Filtro.Status?.Trim(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            <option value="@status" selected>@status</option>
+                        }
+                        else
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label for="capacidadeMin" class="form-label">Capacidade mín.</label>
+                <input type="number" id="capacidadeMin" name="capacidadeMin" value="@Model.Filtro.CapacidadeMin" min="0" max="1000" step="1" class="form-control" />
+            </div>
+            <div class="col-6 col-md-2">
+                <label for="capacidadeMax" class="form-label">Capacidade máx.</label>
+                <input type="number" id="capacidadeMax" name="capacidadeMax" value="@Model.Filtro.CapacidadeMax" min="0" max="1000" step="1" class="form-control" />
+            </div>
+            <div class="col-12 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-fill">Filtrar</button>
+                <a asp-controller="Vans" asp-action="Index" class="btn btn-outline-secondary flex-fill">Limpar filtros</a>
+            </div>
+        </div>
+    </form>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-warning" role="alert">
+            <ul class="mb-0">
+                @foreach (var erro in ViewData.ModelState.Values.SelectMany(e => e.Errors))
+                {
+                    <li>@erro.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <p class="text-muted mb-2">Exibindo <strong>@Model.Vans.Count</strong> de <strong>@Model.TotalGeral</strong> vans.</p>
 
     <div class="table-responsive">
         <table class="table table-hover align-middle">
@@ -24,7 +76,19 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var van in Model)
+                @if (!Model.Vans.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            @(Model.Filtro.TemFiltroAtivo ? "Nenhuma van encontrada para os filtros informados." : "Nenhuma van encontrada.")
+                            @if (Model.Filtro.TemFiltroAtivo)
+                            {
+                                <a asp-controller="Vans" asp-action="Index">Limpar filtros</a>
+                            }
+                        </td>
+                    </tr>
+                }
+                @foreach (var van in Model.Vans)
                 {
                     <tr>
                         <td>@van.Plate</td>

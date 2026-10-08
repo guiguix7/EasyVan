@@ -25,6 +25,7 @@ EasyVan é um sistema web ASP.NET Core MVC para gerenciar o transporte de vans. 
 - Validação de campos obrigatórios e formato de email
 - CRUD de usuários via `UsuariosController` usando EF Core
 - Model `Van` com CRUD básico em memória (pode ser migrado para EF Core)
+- **Busca e filtros na listagem de vans** (`/Vans`): busca por placa, motorista, rota e descrição (sem diferenciar maiúsculas/acentos) e filtros por status e capacidade mínima/máxima, combináveis entre si (ver `spec/filtros-e-busca.md`)
 
 ## Funcionalidades planejadas
 - Migrar todas as listas em memória para EF Core (Vans)
@@ -47,6 +48,8 @@ Models/             Modelos e ViewModels
 wwwroot/            CSS, JS e bibliotecas
 API/                Arquivos placeholder para API
 Backend/JS/         Estrutura placeholder de servidor Node.js
+plan/               Planejamento da feature Filtros e Busca (gerado com IA)
+spec/               Especificação da feature Filtros e Busca
 DataBase/           Estrutura placeholder de banco de dados
 ```
 
