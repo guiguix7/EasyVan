@@ -1,27 +1,32 @@
+@model dynamic
+
 @{
-    ViewData["Title"] = "Home do Aluno";
+    ViewData["Title"] = "Minha Conta - Aluno";
 }
 
-<div class="container py-5">
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-4">
-            <h1 class="mb-3">Bem-vindo, aluno!</h1>
-            <p class="text-muted mb-4">Área com acesso limitado para consultar informações e acompanhar seu transporte.</p>
-
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="border rounded p-3 h-100">
-                        <h5>Minhas informações</h5>
-                        <p class="mb-0 text-muted">Visualize dados básicos e sua rota de transporte.</p>
-                    </div>
+<section class="py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-petroleo text-white">
+                    <h5 class="mb-0">Bem-vindo, aluno!</h5>
                 </div>
-                <div class="col-md-6">
-                    <div class="border rounded p-3 h-100">
-                        <h5>Horários</h5>
-                        <p class="mb-0 text-muted">Consulte as viagens e os horários disponíveis.</p>
+                <div class="card-body">
+                    <p class="text-muted">Acesse suas informações de transporte abaixo.</p>
+
+                    <div class="d-grid gap-3 mt-4">
+                        <a asp-controller="Home" asp-action="Detalhes" class="btn btn-primary btn-lg">
+                            <span class="me-2">🚌</span> Minha Van
+                        </a>
+                    </div>
+
+                    <div class="alert alert-info mt-4">
+                        <p class="mb-0 small">
+                            Aqui você consulta sua van, horário, ponto de embarque e dados do motorista.
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>

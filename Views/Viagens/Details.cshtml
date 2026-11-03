@@ -1,0 +1,167 @@
+@model EasyVan.Models.Viagem
+@using EasyVan.Models
+
+@{
+    ViewData["Title"] = "Detalhes da Viagem";
+    var alunos = ViewData["AlunosDaViagem"] as IEnumerable<EasyVan.Models.PresencaViagem> ?? Enumerable.Empty<EasyVan.Models.PresencaViagem>();
+    var papel = ViewData["Papel"] as string ?? string.Empty;
+}
+
+<section class="py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3">Viagem #@Model.Id</h1>
+        <a asp-action="Index" class="btn btn-outline-secondary">Voltar à listagem</a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small">Van</h6>
+                    <p class="mb-1"><strong>@Model.Van?.Plate</strong></p>
+                    <p class="mb-0 text-muted">#@Model.Van?.Id · @Model.Van?.Capacity alunos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small">Motorista</h6>
+                    <p class="mb-1"><strong>@Model.Motorista?.Nome</strong></p>
+                    <p class="mb-0 text-muted">@Model.Motorista?.Email</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small">Rota</h6>
+                    <p class="mb-1"><strong>@Model.Rota?.Nome</strong></p>
+                    <p class="mb-0 text-muted">@Model.Rota?.Origem → @Model.Rota?.Destino</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-uppercase small">Data</h6>
+                    <p class="mb-1"><strong>@Model.Data.ToShortDateString()</strong></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-uppercase small">Início</h6>
+                    <p class="mb-1"><strong>@(Model.HoraInicio.HasValue ? Model.HoraInicio.Value.ToString(@"hh\:mm") : "—")</strong></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted text-uppercase small">Término</h6>
+                    <p class="mb-1"><strong>@(Model.HoraFim.HasValue ? Model.HoraFim.Value.ToString(@"hh\:mm") : "—")</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-petroleo text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Status e ações</h5>
+            <span class="badge @(Model.Status == "Finalizada" ? "badge-status-operacional" : Model.Status == "EmAndamento" ? "badge bg-info text-dark" : "badge bg-secondary")">
+                @Model.Status
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-end">
+                @if (Model.Status == "Agendada")
+                {
+                    <form asp-action="Start" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-success btn-lg">Iniciar Viagem</button>
+                    </form>
+                }
+                else if (Model.Status == "EmAndamento")
+                {
+                    <form asp-action="Finish" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger btn-lg">Finalizar Viagem</button>
+                    </form>
+                    <form asp-action="InicializarPresenca" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-outline-primary">Inicializar lista de presença</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Observacao))
+    {
+        <div class="alert alert-light mb-4">
+            <p class="mb-0"><strong>Observação:</strong> @Model.Observacao</p>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Lista de presença dos alunos</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Status != "EmAndamento")
+            {
+                <div class="alert alert-info">
+                    <p class="mb-0">Inicie a viagem para marcar a presença dos alunos.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Email</th>
+                                <th>Presente</th>
+                                <th>Observação</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in alunos)
+                            {
+                                <tr>
+                                    <td>@a.Aluno?.Nome</td>
+                                    <td>@a.Aluno?.Email</td>
+                                    <td>
+                                        @(a.Presente ? "<span class=\"badge badge-status-operacional\">Sim</span>" : "<span class=\"badge bg-secondary\">Não</span>")
+                                    </td>
+                                    <td>@a.Observacao</td>
+                                    <td>
+                                        <form asp-action="MarcarPresenca" method="post" class="d-inline">
+                                            <input type="hidden" name="viagemId" value="@Model.Id" />
+                                            <input type="hidden" name="alunoId" value="@a.AlunoId" />
+                                            <input type="hidden" name="presente" value="@(a.Presente ? "false" : "true")" />
+                                            <input type="hidden" name="observacao" value="@a.Observacao" />
+                                            <button type="submit" class="btn btn-sm @(a.Presente ? "btn-outline-success" : "btn-success")">
+                                                @(a.Presente ? "Marcar como não presente" : "Marcar como presente")
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                            @if (!alunos.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">Clique em "Inicializar lista de presença" para carregar os alunos.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</section>

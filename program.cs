@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using EasyVan.Data;
+using EasyVan.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,23 +9,41 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 // Configure EF Core with SQLite
-builder.Services.AddDbContext<EasyVan.Data.ApplicationDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=easyvan.db"));
+
+// Serviço de hash de senhas (PBKDF2) - evita senhas em texto simples.
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+
+// Autenticação por cookie (sessão) com níveis de acesso.
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Usuarios/Login";
+        options.LogoutPath = "/Usuarios/Logout";
+        options.AccessDeniedPath = "/Home/AcessoRestrito";
+        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // localhost não usa HTTPS
+        options.Cookie.SameSite = SameSiteMode.Lax; // permite o cookie em requisições same-site no navegador
+    });
 
 var app = builder.Build();
 
-// Ensure database is created (simple approach to avoid manual migrations)
+// Garante o banco e aplica migrações, e popula dados iniciais (vans de referência) quando a tabela estiver vazia.
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<EasyVan.Data.ApplicationDbContext>();
-    db.Database.EnsureCreated();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var senha = scope.ServiceProvider.GetRequiredService<IPasswordService>();
+    db.Database.Migrate();
+    DbInitializer.Initialize(db, senha);
 }
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -30,6 +51,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

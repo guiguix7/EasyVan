@@ -1,0 +1,68 @@
+@model EasyVan.Models.Viagem
+@using EasyVan.Models
+
+@{
+    ViewData["Title"] = "Nova Viagem";
+}
+
+<section class="py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3">Nova Viagem</h1>
+        <a asp-action="Index" class="btn btn-outline-secondary">Voltar à listagem</a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="VanId" class="form-label">Van</label>
+                            <select asp-for="VanId" asp-items="@(new Microsoft.AspNetCore.Mvc.Rendering.SelectList((IEnumerable<Van>)ViewData["Vans"], "Id", "Plate"))" class="form-select">
+                                <option value="">Selecione a van</option>
+                            </select>
+                            <span asp-validation-for="VanId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="MotoristaId" class="form-label">Motorista</label>
+                            <select asp-for="MotoristaId" asp-items="@(new Microsoft.AspNetCore.Mvc.Rendering.SelectList((IEnumerable<Motorista>)ViewData["Motoristas"], "Id", "Nome"))" class="form-select">
+                                <option value="">Selecione o motorista</option>
+                            </select>
+                            <span asp-validation-for="MotoristaId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="RotaId" class="form-label">Rota</label>
+                            <select asp-for="RotaId" asp-items="@(new Microsoft.AspNetCore.Mvc.Rendering.SelectList((IEnumerable<Rota>)ViewData["Rotas"], "Id", "Nome"))" class="form-select">
+                                <option value="">Selecione a rota</option>
+                            </select>
+                            <span asp-validation-for="RotaId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Data" class="form-label">Data</label>
+                            <input asp-for="Data" class="form-control" type="date" />
+                            <span asp-validation-for="Data" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Observacao" class="form-label">Observação</label>
+                            <textarea asp-for="Observacao" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="Observacao" class="text-danger"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Cadastrar Viagem</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

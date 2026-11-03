@@ -2,28 +2,33 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using EasyVan.Data;
 using EasyVan.Models;
 
 namespace Gerenciamento_de_Van.Controllers
 {
     public class VansController : Controller
     {
-        private static readonly List<Van> _vans = new List<Van>
+        private readonly ApplicationDbContext _db;
+
+        public VansController(ApplicationDbContext db)
         {
-            new Van { Id = 1, Plate = "ABC-1234", Driver = "João Silva", Capacity = 12, Route = "Centro - Universidade", Schedule = "07:00 / 17:30", Status = "Operacional", Description = "Van para transporte de alunos da universidade." },
-            new Van { Id = 2, Plate = "DEF-5678", Driver = "Maria Oliveira", Capacity = 10, Route = "Zona Leste - Centro", Schedule = "06:30 / 18:00", Status = "Manutenção", Description = "Van em manutenção preventiva. Retorno previsto em 3 dias." },
-            new Van { Id = 3, Plate = "TUF-6769", Driver = "Aurudo da Silva", Capacity = 15, Route = "Centro - Distrito Industrial", Schedule = "08:00 / 19:00", Status = "Operacional", Description = "Van de maior capacidade para trajetos longos." }
-        };
+            _db = db;
+        }
 
         // GET /Vans?busca=&status=&capacidadeMin=&capacidadeMax=
-        public IActionResult Index([FromQuery] VanFiltro filtro)
+        [Authorize]
+        public async Task<IActionResult> Index([FromQuery] VanFiltro filtro)
         {
-            var statusDisponiveis = _vans
+            var statusDisponiveis = await _db.Vans
                 .Select(v => v.Status)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+                .Distinct()
+                .OrderBy(s => s)
+                .ToListAsync();
 
             ValidarFiltro(filtro, statusDisponiveis);
 
@@ -40,22 +45,95 @@ namespace Gerenciamento_de_Van.Controllers
                 capacidadeMax = null;
             }
 
-            var vans = AplicarFiltros(_vans, busca, status, capacidadeMin, capacidadeMax);
+            var vans = await _db.Vans.ToListAsync();
+            var resultado = AplicarFiltros(vans, busca, status, capacidadeMin, capacidadeMax);
 
             return View(new VanIndexViewModel
             {
                 Filtro = filtro,
-                Vans = vans,
-                TotalGeral = _vans.Count,
+                Vans = resultado,
+                TotalGeral = vans.Count,
                 StatusDisponiveis = statusDisponiveis
             });
         }
 
-        public IActionResult Details(int id)
+        [Authorize]
+        public async Task<IActionResult> Details(int id)
         {
-            var van = _vans.FirstOrDefault(v => v.Id == id);
+            var van = await _db.Vans.FirstOrDefaultAsync(v => v.Id == id);
             if (van == null) return NotFound();
             return View(van);
+        }
+
+        [Authorize(Roles = "Administrador")]
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(Van van)
+        {
+            if (!ModelState.IsValid) return View(van);
+
+            _db.Vans.Add(van);
+            await _db.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var van = await _db.Vans.FindAsync(id);
+            if (van == null) return NotFound();
+            return View(van);
+        }
+
+        [Authorize(Roles = "Administrador")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, Van van)
+        {
+            if (id != van.Id) return NotFound();
+            if (!ModelState.IsValid) return View(van);
+
+            var existente = await _db.Vans.FindAsync(id);
+            if (existente == null) return NotFound();
+
+            existente.Plate = van.Plate;
+            existente.Driver = van.Driver;
+            existente.Capacity = van.Capacity;
+            existente.Route = van.Route;
+            existente.Schedule = van.Schedule;
+            existente.Status = van.Status;
+            existente.Description = van.Description;
+
+            await _db.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var van = await _db.Vans.FindAsync(id);
+            if (van == null) return NotFound();
+            return View(van);
+        }
+
+        [Authorize(Roles = "Administrador")]
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var van = await _db.Vans.FindAsync(id);
+            if (van != null)
+            {
+                _db.Vans.Remove(van);
+                await _db.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
         private void ValidarFiltro(VanFiltro filtro, IReadOnlyCollection<string> statusDisponiveis)
@@ -66,12 +144,11 @@ namespace Gerenciamento_de_Van.Controllers
             }
 
             var status = filtro.Status?.Trim();
-            if (!string.IsNullOrEmpty(status) && !statusDisponiveis.Contains(status, StringComparer.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(status) && !statusDisponiveis.Contains(status))
             {
                 ModelState.AddModelError(nameof(VanFiltro.Status), "Status inválido.");
             }
 
-            // Falhas de binding (ex.: "abc" ou número gigante) vêm com mensagem padrão em inglês; troca pela nossa.
             SubstituirMensagemDeErro(nameof(VanFiltro.CapacidadeMin), "A capacidade mínima deve ser um número inteiro entre 0 e 1000.");
             SubstituirMensagemDeErro(nameof(VanFiltro.CapacidadeMax), "A capacidade máxima deve ser um número inteiro entre 0 e 1000.");
         }
@@ -91,9 +168,9 @@ namespace Gerenciamento_de_Van.Controllers
         }
 
         // Todos os critérios informados são combinados com E lógico. Critério vazio não filtra.
-        private static List<Van> AplicarFiltros(IEnumerable<Van> vans, string? busca, string? status, int? capacidadeMin, int? capacidadeMax)
+        private static List<Van> AplicarFiltros(List<Van> vans, string? busca, string? status, int? capacidadeMin, int? capacidadeMax)
         {
-            var consulta = vans;
+            IEnumerable<Van> consulta = vans;
 
             var termos = NormalizarTexto(busca).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
             if (termos.Length > 0)

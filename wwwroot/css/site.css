@@ -135,3 +135,105 @@ body {
 .login-card p {
   margin-bottom: 0.5rem;
 }
+
+/* --- Identidade visual EasyVan --- */
+:root {
+  --ev-petroleo: #0F4C5C;
+  --ev-petroleo-escuro: #0b3744;
+  --ev-ambar: #F5A524;
+  --ev-fundo: #F6F7F9;
+  --ev-texto: #1F2933;
+  --ev-verde: #1B873F;
+  --ev-vermelho: #C0392B;
+}
+
+.bg-petroleo {
+  background-color: var(--ev-petroleo) !important;
+}
+
+.navbar-dark .navbar-brand {
+  color: #fff !important;
+  font-size: 1.25rem;
+  letter-spacing: -0.5px;
+}
+
+.navbar-dark .nav-link {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.navbar-dark .nav-link.active,
+.navbar-dark .nav-link:hover {
+  color: #fff !important;
+}
+
+.navbar-dark .btn-outline-light {
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #fff;
+}
+
+.navbar-dark .btn-outline-light:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.nav-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: contain;
+  display: block;
+}
+
+.footer {
+  font-size: 0.875rem;
+}
+
+.text-petroleo {
+  color: var(--ev-petroleo) !important;
+}
+
+.badge-petroleo {
+  background-color: var(--ev-petroleo);
+  color: #fff;
+}
+
+/* Tabela de vans: badge de status por cor sem usar só a cor */
+.badge-status-operacional {
+  background-color: var(--ev-verde);
+  color: #fff;
+}
+
+.badge-status-manutencao {
+  background-color: var(--ev-ambar);
+  color: var(--ev-texto);
+}
+
+.badge-status-outro {
+  background-color: var(--ev-vermelho);
+  color: #fff;
+}
+
+/* Card de vans na listagem */
+.card-van {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card-van:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 76, 92, 0.12);
+}
+
+/* Estados vazios */
+.estado-vazio {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6b7280;
+}
+
+/* Links de ação na tabela */
+.tabela-acoes .btn {
+  font-size: 0.875rem;
+  padding: 0.4rem 0.75rem;
+}

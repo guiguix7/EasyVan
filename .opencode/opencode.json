@@ -1,0 +1,72 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md", "spec/*.md", "plan/*.md"],
+  "autoupdate": true,
+  "permission": {
+    "edit": "ask",
+    "webfetch": "ask",
+    "bash": {
+      "*": "ask",
+      "dotnet restore*": "allow",
+      "dotnet build*": "allow",
+      "dotnet test*": "allow",
+      "dotnet format*": "allow",
+      "dotnet ef migrations list*": "allow",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "ls*": "allow",
+      "git push*": "deny",
+      "git reset --hard*": "deny",
+      "rm -rf*": "deny",
+      "dotnet ef database drop*": "deny"
+    }
+  },
+  "agent": {
+    "build": {
+      "description": "Desenvolvimento do EasyVan (ASP.NET Core MVC, EF Core, SQLite)",
+      "prompt": "Siga o AGENTS.md. Faça mudanças pequenas e verificáveis, rode 'dotnet build' após editar código C# ou Razor e explique em português o que mudou."
+    },
+    "reviewer": {
+      "description": "Revisa código sem alterar arquivos: bugs, legibilidade e aderência às convenções",
+      "mode": "subagent",
+      "prompt": "Você é revisor de código do EasyVan. Aponte problemas por ordem de gravidade, com arquivo e linha, e sugira a correção. Não edite arquivos. Responda em português.",
+      "tools": { "write": false, "edit": false, "bash": false }
+    },
+    "security": {
+      "description": "Auditoria de segurança e LGPD (senhas, CSRF, autorização, dados pessoais)",
+      "mode": "subagent",
+      "prompt": "Você audita a segurança do EasyVan. Priorize: senhas em texto simples, CSRF, controle de acesso por papel (Admin, Driver, Aluno), validação no servidor, segredos no repositório e minimização de dados pessoais (LGPD). Não edite arquivos; entregue achados com gravidade, local e correção recomendada. Responda em português.",
+      "tools": { "write": false, "edit": false, "bash": false }
+    },
+    "docs": {
+      "description": "Mantém README, specs e o registro de prompts de IA atualizados",
+      "mode": "subagent",
+      "prompt": "Você mantém a documentação do EasyVan em português claro e objetivo. Só edite arquivos .md e o que estiver em spec/ e plan/. Não altere código.",
+      "tools": { "bash": false }
+    }
+  },
+  "command": {
+    "novo-crud": {
+      "description": "Cria um CRUD completo com EF Core para uma entidade",
+      "template": "Crie um CRUD completo (model, DbSet no ApplicationDbContext, controller com ações assíncronas, views Razor e ViewModel quando preciso) para a entidade: $ARGUMENTS. Siga as convenções do AGENTS.md, valide no servidor, use [ValidateAntiForgeryToken] nos POSTs e rode 'dotnet build' ao final."
+    },
+    "seguranca": {
+      "description": "Roda uma auditoria de segurança no projeto",
+      "agent": "security",
+      "subtask": true,
+      "template": "Audite o projeto inteiro e liste os achados por gravidade. Foco extra em: $ARGUMENTS"
+    },
+    "revisar": {
+      "description": "Revisa as mudanças não commitadas",
+      "agent": "reviewer",
+      "subtask": true,
+      "template": "Revise as mudanças atuais do repositório (use git diff) e liste problemas por gravidade."
+    },
+    "registrar-prompts": {
+      "description": "Atualiza o registro de prompts de IA exigido pelo professor",
+      "agent": "docs",
+      "template": "Atualize docs/prompts-ia.md com um resumo dos prompts de IA usados nesta sessão (data, objetivo, resultado). Depois lembre a equipe de converter o arquivo para .docx."
+    }
+  }
+}

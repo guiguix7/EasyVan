@@ -1,27 +1,137 @@
+@model dynamic
+
 @{
-    ViewData["Title"] = "Página do Motorista";
+    ViewData["Title"] = "Painel do Motorista";
+    var alunos = Model?.Alunos as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var rotas = Model?.Rotas as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
 }
 
-<div class="container py-5">
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-4">
-            <h1 class="mb-3">Painel do motorista</h1>
-            <p class="text-muted mb-4">Acesso parcial para acompanhar passageiros, rotas e checklist da viagem.</p>
-
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="border rounded p-3 h-100">
-                        <h5>Rotas</h5>
-                        <p class="mb-0 text-muted">Consulte as rotas atribuídas e a situação de cada viagem.</p>
-                    </div>
+<section class="py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-petroleo text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Painel do Motorista</h5>
+                    <span class="badge bg-light text-petroleo">Motorista</span>
                 </div>
-                <div class="col-md-6">
-                    <div class="border rounded p-3 h-100">
-                        <h5>Passageiros</h5>
-                        <p class="mb-0 text-muted">Acompanhe a presença e os dados dos alunos transportados.</p>
-                    </div>
+                <div class="card-body">
+                    @if (Model.Van != null)
+                    {
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-body text-center">
+                                        <h6 class="text-muted">Van</h6>
+                                        <h4 class="mb-1">#@Model.Van.Id</h4>
+                                        <p class="mb-1"><strong>@Model.Van.Plate</strong></p>
+                                        <span class="badge badge-status-operacional">@Model.Van.Status</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-body text-center">
+                                        <h6 class="text-muted">Capacidade</h6>
+                                        <h4 class="mb-1">@Model.Van.Capacity alunos</h4>
+                                        <p class="mb-0 text-muted">@Model.Van.Route</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-body text-center">
+                                        <h6 class="text-muted">Horários</h6>
+                                        <h4 class="mb-1">@Model.Van.Schedule</h4>
+                                        <p class="mb-0 text-muted">Motorista: @Model.Van.Driver</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <h6 class="text-uppercase fw-semibold mb-3">Alunos transportados</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Email</th>
+                                                <th>Telefone</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var aluno in alunos)
+                                            {
+                                                <tr>
+                                                    <td>@aluno.Nome</td>
+                                                    <td>@aluno.Email</td>
+                                                    <td>@aluno.Telefone</td>
+                                                    <td>
+                                                        <span class="badge @(aluno.Ativo ? "badge-status-operacional" : "badge-status-outro")">
+                                                            @(aluno.Ativo ? "Ativo" : "Inativo")
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            @if (!alunos.Any())
+                                            {
+                                                <tr>
+                                                    <td colspan="4" class="text-center text-muted py-3">Nenhum aluno cadastrado.</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-4">
+                            <div class="col-12">
+                                <h6 class="text-uppercase fw-semibold mb-3">Rotas disponíveis</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Origem → Destino</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var rota in rotas)
+                                            {
+                                                <tr>
+                                                    <td>@rota.Nome</td>
+                                                    <td>@rota.Origem → @rota.Destino</td>
+                                                    <td>
+                                                        <span class="badge @(rota.Ativo ? "badge-status-operacional" : "badge-status-outro")">
+                                                            @(rota.Ativo ? "Ativo" : "Inativo")
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            @if (!rotas.Any())
+                                            {
+                                                <tr>
+                                                    <td colspan="3" class="text-center text-muted py-3">Nenhuma rota cadastrada.</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning text-center">
+                            Nenhuma van cadastrada no sistema.
+                        </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>

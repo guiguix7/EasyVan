@@ -1,33 +1,101 @@
+@model dynamic
+
 @{
     ViewData["Title"] = "Painel do Administrador";
+    var alertas = Model?.Alertas as IEnumerable<string> ?? Enumerable.Empty<string>();
 }
 
-<div class="container py-5">
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-4">
-            <h1 class="mb-3">Painel de administrador</h1>
-            <p class="text-muted mb-4">Acesso total para gerenciar usuários, rotas e vans.</p>
+<section class="py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-petroleo text-white">
+                    <h5 class="mb-0">Resumo do Administrador</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 text-center mb-4">
+                        <div class="col-md-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="text-muted text-uppercase small">Total de vans</h6>
+                                    <h3 class="mb-0">@Model.TotalVans</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="text-muted text-uppercase small">Vans operacionais</h6>
+                                    <h3 class="mb-0 text-success">@Model.VansOperacionais</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="text-muted text-uppercase small">Em manutenção</h6>
+                                    <h3 class="mb-0 text-danger">@Model.VansManutencao</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="text-muted text-uppercase small">Motoristas</h6>
+                                    <h3 class="mb-0">@Model.TotalMotoristas</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="text-muted text-uppercase small">Alunos</h6>
+                                    <h3 class="mb-0">@Model.TotalAlunos</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="text-muted text-uppercase small">Rotas</h6>
+                                    <h3 class="mb-0">@Model.TotalRotas</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="border rounded p-3 h-100">
-                        <h5>Usuários</h5>
-                        <p class="mb-0 text-muted">Gerencie alunos, motoristas e administradores.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="border rounded p-3 h-100">
-                        <h5>Vans</h5>
-                        <p class="mb-0 text-muted">Controle a frota, horários e disponibilidade dos veículos.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="border rounded p-3 h-100">
-                        <h5>Relatórios</h5>
-                        <p class="mb-0 text-muted">Acompanhe métricas, movimentações e status geral do sistema.</p>
+                    @if (alertas.Any())
+                    {
+                        <div class="alert alert-warning">
+                            <h6 class="text-warning">Alertas</h6>
+                            <ul class="mb-0">
+                                @foreach (var alerta in alertas)
+                                {
+                                    <li>@alerta</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <div class="d-grid gap-2 mt-4">
+                        <a asp-controller="Vans" asp-action="Index" class="btn btn-primary btn-lg">
+                            <span class="me-2">🚌</span> Gerenciar Vans
+                        </a>
+                        <a asp-controller="Motoristas" asp-action="Index" class="btn btn-outline-primary">
+                            Motoristas
+                        </a>
+                        <a asp-controller="Alunos" asp-action="Index" class="btn btn-outline-primary">
+                            Alunos
+                        </a>
+                        <a asp-controller="Rotas" asp-action="Index" class="btn btn-outline-primary">
+                            Rotas
+                        </a>
+                        <a asp-controller="Usuarios" asp-action="Index" class="btn btn-outline-primary">
+                            Usuários
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>

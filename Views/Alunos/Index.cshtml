@@ -1,0 +1,56 @@
+@model IEnumerable<EasyVan.Models.Aluno>
+
+@{
+    ViewData["Title"] = "Alunos";
+}
+
+<section class="py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3">Alunos</h1>
+        <a asp-action="Create" class="btn btn-primary">Novo Aluno</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Telefone</th>
+                    <th>Endereço</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td>@p.Nome</td>
+                        <td>@p.Email</td>
+                        <td>@p.Telefone</td>
+                        <td>@p.Endereco</td>
+                        <td>
+                            <span class="badge @(p.Ativo ? "badge-status-operacional" : "badge-status-outro")">
+                                @(p.Ativo ? "Ativo" : "Inativo")
+                            </span>
+                        </td>
+                        <td class="text-end tabela-acoes">
+                            <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-info">Detalhes</a>
+                            <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-warning">Editar</a>
+                            <a asp-action="Delete" asp-route-id="@p.Id" class="btn btn-sm btn-danger">Excluir</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="estado-vazio mt-4">
+            <p>Nenhum aluno cadastrado.</p>
+            <a asp-action="Create" class="btn btn-primary">Cadastrar aluno</a>
+        </div>
+    }
+</section>

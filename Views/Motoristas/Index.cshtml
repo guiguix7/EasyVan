@@ -1,0 +1,56 @@
+@model IEnumerable<EasyVan.Models.Motorista>
+
+@{
+    ViewData["Title"] = "Motoristas";
+}
+
+<section class="py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3">Motoristas</h1>
+        <a asp-action="Create" class="btn btn-primary">Novo Motorista</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Telefone</th>
+                    <th>CNH</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in Model)
+                {
+                    <tr>
+                        <td>@m.Nome</td>
+                        <td>@m.Email</td>
+                        <td>@m.Telefone</td>
+                        <td>@m.CNH</td>
+                        <td>
+                            <span class="badge @(m.Ativo ? "badge-status-operacional" : "badge-status-outro")">
+                                @(m.Ativo ? "Ativo" : "Inativo")
+                            </span>
+                        </td>
+                        <td class="text-end tabela-acoes">
+                            <a asp-action="Details" asp-route-id="@m.Id" class="btn btn-sm btn-info">Detalhes</a>
+                            <a asp-action="Edit" asp-route-id="@m.Id" class="btn btn-sm btn-warning">Editar</a>
+                            <a asp-action="Delete" asp-route-id="@m.Id" class="btn btn-sm btn-danger">Excluir</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="estado-vazio mt-4">
+            <p>Nenhum motorista cadastrado.</p>
+            <a asp-action="Create" class="btn btn-primary">Cadastrar motorista</a>
+        </div>
+    }
+</section>

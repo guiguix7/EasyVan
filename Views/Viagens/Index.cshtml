@@ -1,0 +1,79 @@
+@model IEnumerable<EasyVan.Models.Viagem>
+@using EasyVan.Models
+
+@{
+    ViewData["Title"] = "Viagens";
+    var papel = ViewData["Papel"] as string ?? string.Empty;
+}
+
+<section class="py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3">Viagens</h1>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary">Nova Viagem</a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Data</th>
+                    <th>Van</th>
+                    <th>Motorista</th>
+                    <th>Rota</th>
+                    <th>Status</th>
+                    <th>Horário</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var v in Model)
+                {
+                    <tr>
+                        <td><strong>#@v.Id</strong></td>
+                        <td>@v.Data.ToShortDateString()</td>
+                        <td>@v.Van?.Plate</td>
+                        <td>@v.Motorista?.Nome</td>
+                        <td>@v.Rota?.Nome</td>
+                        <td>
+                            <span class="badge @(v.Status == "Finalizada" ? "badge-status-operacional" : v.Status == "EmAndamento" ? "badge bg-info text-dark" : "badge bg-secondary")">
+                                @v.Status
+                            </span>
+                        </td>
+                        <td>
+                            @(v.HoraInicio.HasValue ? v.HoraInicio.Value.ToString(@"hh\:mm") : "—") /
+                            @(v.HoraFim.HasValue ? v.HoraFim.Value.ToString(@"hh\:mm") : "—")
+                        </td>
+                        <td class="text-end tabela-acoes">
+                            <a asp-action="Details" asp-route-id="@v.Id" class="btn btn-sm btn-info">Detalhes</a>
+                            @if (papel == "Motorista" || User.IsInRole("Administrador"))
+                            {
+                                if (v.Status == "Agendada")
+                                {
+                                    <form asp-action="Start" asp-route-id="@v.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-success">Iniciar</button>
+                                    </form>
+                                }
+                                else if (v.Status == "EmAndamento")
+                                {
+                                    <form asp-action="Finish" asp-route-id="@v.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-danger">Finalizar</button>
+                                    </form>
+                                    <a asp-action="Details" asp-route-id="@v.Id" class="btn btn-sm btn-outline-primary">Presença</a>
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">Nenhuma viagem cadastrada.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
