@@ -5,6 +5,15 @@ using EasyVan.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Persist ASP.NET Core Data Protection keys on the Railway volume so auth
+// cookies remain valid across container restarts and redeployments.
+if (builder.Environment.IsProduction())
+{
+    Directory.CreateDirectory("/data/keys");
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo("/data/keys"));
+}
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
