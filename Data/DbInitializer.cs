@@ -83,7 +83,7 @@ namespace EasyVan.Data
                         Nome = "Aluno Demo",
                         Email = "aluno@easyvan.com",
                         RoleManager = "Aluno",
-                        PasswordHasher = hash
+                        PasswordHasher = demoHash
                     }
                 );
             }
