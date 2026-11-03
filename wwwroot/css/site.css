@@ -1144,3 +1144,23 @@ textarea:focus-visible {
     padding: 0;
   }
 }
+
+
+.ev-skip-link {
+  position: fixed;
+  z-index: 1100;
+  top: 0.75rem;
+  left: 0.75rem;
+  transform: translateY(-160%);
+  padding: 0.65rem 0.9rem;
+  border: 2px solid var(--ev-ambar);
+  border-radius: var(--ev-raio-controle);
+  background: #FFFFFF;
+  color: var(--ev-petroleo-escuro);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ev-skip-link:focus {
+  transform: translateY(0);
+}
