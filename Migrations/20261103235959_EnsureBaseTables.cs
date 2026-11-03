@@ -1,3 +1,5 @@
+using EasyVan.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -5,6 +7,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Gerenciamento_de_Van.Migrations
 {
     /// <inheritdoc />
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20261103235959_EnsureBaseTables")]
     public partial class EnsureBaseTables : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
