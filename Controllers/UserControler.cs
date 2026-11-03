@@ -25,7 +25,7 @@ namespace EasyVan.Controllers
 
         // Lista de usuários: só administradores. Se ainda não houver nenhum usuário cadastrado,
         // redireciona para o cadastro (primeiro cadastro é livre, para criar o primeiro Admin).
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Index()
         {
             var temUsuario = await _db.Usuarios.AnyAsync();
@@ -38,7 +38,7 @@ namespace EasyVan.Controllers
             return View(usuarios);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Details(int id)
         {
             var usuario = await _db.Usuarios.FindAsync(id);
@@ -81,7 +81,7 @@ namespace EasyVan.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Edit(int id)
         {
             var usuario = await _db.Usuarios.FindAsync(id);
@@ -89,7 +89,7 @@ namespace EasyVan.Controllers
             return View(usuario);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Administrador")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Usuarios usuario)
@@ -111,7 +111,7 @@ namespace EasyVan.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             var usuario = await _db.Usuarios.FindAsync(id);
@@ -119,7 +119,7 @@ namespace EasyVan.Controllers
             return View(usuario);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Administrador")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
