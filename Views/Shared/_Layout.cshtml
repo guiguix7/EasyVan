@@ -1,99 +1,121 @@
-﻿<!DOCTYPE html>
+@{
+    var autenticado = User.Identity?.IsAuthenticated == true;
+    var controllerAtual = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var actionAtual = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var nomeUsuario = User.Identity?.Name ?? "Usuário";
+    var papelUsuario = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Conta";
+    var inicialUsuario = string.IsNullOrWhiteSpace(nomeUsuario) ? "E" : nomeUsuario.Trim().Substring(0, 1).ToUpperInvariant();
+    var tituloPagina = ViewData["Title"]?.ToString() ?? "EasyVan";
+}
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - EasyVan</title>
+    <meta name="theme-color" content="#0F4C5C" />
+    <title>@tituloPagina - EasyVan</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body class="d-flex flex-column min-vh-100">
-    @if (User.Identity?.IsAuthenticated == true)
+<body class="ev-body">
+    @if (autenticado)
     {
-        <header class="border-bottom">
-            <nav class="navbar navbar-expand-lg navbar-dark bg-petroleo">
-                <div class="container-fluid">
-                    <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
-                        <img src="~/images/logo.png" alt="EasyVan" class="nav-logo" />
-                    </a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                            aria-controls="navbarNav" aria-expanded="false" aria-label="Alternar navegação">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbarNav">
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            @if (User.IsInRole("Administrador"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Administrador">Início</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="Vans" asp-action="Index">Vans</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="Usuarios" asp-action="Index">Usuários</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="Motoristas" asp-action="Index">Motoristas</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="Alunos" asp-action="Index">Alunos</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="Rotas" asp-action="Index">Rotas</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="Viagens" asp-action="Index">Viagens</a>
-                                </li>
-                            }
-                            else if (User.IsInRole("Motorista"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Motorista">Início</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="Viagens" asp-action="Index">Viagens</a>
-                                </li>
-                            }
-                            else
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Aluno">Início</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Detalhes">Minha Van</a>
-                                </li>
-                            }
-                        </ul>
-                        <div class="d-flex align-items-center">
-                            <span class="navbar-text text-white-50 me-2">
-                                @User.Identity.Name
-                                <span class="badge bg-light text-petroleo ms-2">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
+        <div class="ev-shell">
+            <aside class="offcanvas-lg offcanvas-start ev-sidebar" tabindex="-1" id="easyVanSidebar" aria-labelledby="easyVanSidebarLabel">
+                <div class="offcanvas-header border-bottom">
+                    <h2 class="h6 mb-0" id="easyVanSidebarLabel">Navegação</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#easyVanSidebar" aria-label="Fechar menu"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <div class="ev-sidebar-brand">
+                        <a asp-controller="Home" asp-action="Index" aria-label="EasyVan — página inicial">
+                            <img src="~/images/logo.png" alt="EasyVan — Gestão de Rotas e Vans" />
+                        </a>
+                    </div>
+
+                    <nav class="ev-sidebar-nav" aria-label="Navegação principal">
+                        <p class="ev-sidebar-nav__label">Menu principal</p>
+                        @if (User.IsInRole("Administrador"))
+                        {
+                            <a class="nav-link @(controllerAtual == "Home" && actionAtual == "Administrador" ? "is-active" : "")"
+                               asp-controller="Home" asp-action="Administrador" aria-current="@(controllerAtual == "Home" && actionAtual == "Administrador" ? "page" : null)">Visão geral</a>
+                            <a class="nav-link @(controllerAtual == "Vans" ? "is-active" : "")"
+                               asp-controller="Vans" asp-action="Index" aria-current="@(controllerAtual == "Vans" ? "page" : null)">Vans</a>
+                            <a class="nav-link @(controllerAtual == "Motoristas" ? "is-active" : "")"
+                               asp-controller="Motoristas" asp-action="Index" aria-current="@(controllerAtual == "Motoristas" ? "page" : null)">Motoristas</a>
+                            <a class="nav-link @(controllerAtual == "Alunos" ? "is-active" : "")"
+                               asp-controller="Alunos" asp-action="Index" aria-current="@(controllerAtual == "Alunos" ? "page" : null)">Alunos</a>
+                            <a class="nav-link @(controllerAtual == "Rotas" ? "is-active" : "")"
+                               asp-controller="Rotas" asp-action="Index" aria-current="@(controllerAtual == "Rotas" ? "page" : null)">Rotas</a>
+                            <a class="nav-link @(controllerAtual == "Viagens" ? "is-active" : "")"
+                               asp-controller="Viagens" asp-action="Index" aria-current="@(controllerAtual == "Viagens" ? "page" : null)">Viagens</a>
+                            <a class="nav-link @(controllerAtual == "Usuarios" ? "is-active" : "")"
+                               asp-controller="Usuarios" asp-action="Index" aria-current="@(controllerAtual == "Usuarios" ? "page" : null)">Usuários</a>
+                        }
+                        else if (User.IsInRole("Motorista"))
+                        {
+                            <a class="nav-link @(controllerAtual == "Home" && actionAtual == "Motorista" ? "is-active" : "")"
+                               asp-controller="Home" asp-action="Motorista" aria-current="@(controllerAtual == "Home" && actionAtual == "Motorista" ? "page" : null)">Meu painel</a>
+                            <a class="nav-link @(controllerAtual == "Viagens" ? "is-active" : "")"
+                               asp-controller="Viagens" asp-action="Index" aria-current="@(controllerAtual == "Viagens" ? "page" : null)">Viagens</a>
+                        }
+                        else
+                        {
+                            <a class="nav-link @(controllerAtual == "Home" && actionAtual == "Aluno" ? "is-active" : "")"
+                               asp-controller="Home" asp-action="Aluno" aria-current="@(controllerAtual == "Home" && actionAtual == "Aluno" ? "page" : null)">Início</a>
+                            <a class="nav-link @(controllerAtual == "Home" && actionAtual == "Detalhes" ? "is-active" : "")"
+                               asp-controller="Home" asp-action="Detalhes" aria-current="@(controllerAtual == "Home" && actionAtual == "Detalhes" ? "page" : null)">Minha van</a>
+                        }
+                    </nav>
+
+                    <div class="ev-sidebar-bottom">
+                        <div class="ev-sidebar-user">
+                            <span class="ev-sidebar-user__avatar" aria-hidden="true">@inicialUsuario</span>
+                            <span class="ev-sidebar-user__meta">
+                                <span class="ev-sidebar-user__name">@nomeUsuario</span>
+                                <span class="ev-sidebar-user__role">@papelUsuario</span>
                             </span>
-                            <form asp-area="" asp-controller="Usuarios" asp-action="Logout" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-outline-light btn-sm">Sair</button>
-                            </form>
                         </div>
+                        <form asp-controller="Usuarios" asp-action="Logout" method="post">
+                            <button type="submit" class="btn btn-outline-secondary w-100">Sair da conta</button>
+                        </form>
                     </div>
                 </div>
-            </nav>
-        </header>
-    }
+            </aside>
 
-    <div class="container flex-fill">
-        <main role="main" class="py-3">
-            @RenderBody()
-        </main>
-    </div>
+            <div class="ev-main">
+                <header class="ev-topbar">
+                    <div class="d-flex align-items-center gap-3 min-w-0">
+                        <button class="ev-menu-toggle d-lg-none" type="button"
+                                data-bs-toggle="offcanvas" data-bs-target="#easyVanSidebar"
+                                aria-controls="easyVanSidebar" aria-label="Abrir navegação">
+                            <span aria-hidden="true">☰</span>
+                        </button>
+                        <div class="ev-topbar__title">@tituloPagina</div>
+                    </div>
+                    <div class="d-none d-sm-flex align-items-center gap-2">
+                        <span class="small text-muted">@nomeUsuario</span>
+                        <span class="badge bg-light text-petroleo border">@papelUsuario</span>
+                    </div>
+                </header>
 
-    <footer class="border-top footer text-muted bg-light mt-auto">
-        <div class="container py-3">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <span>&copy; 2026 EasyVan - Sistema de gerenciamento de transporte por vans.</span>
-                <small><a class="text-muted" asp-area="" asp-controller="Home" asp-action="Privacy">Privacidade</a></small>
+                <main id="conteudo" class="ev-content" role="main" tabindex="-1">
+                    @RenderBody()
+                </main>
+
+                <footer class="ev-footer">
+                    <span>&copy; @DateTime.Now.Year EasyVan · Gestão de transporte por vans.</span>
+                    <a asp-controller="Home" asp-action="Privacy">Privacidade</a>
+                </footer>
             </div>
         </div>
-    </footer>
+    }
+    else
+    {
+        <main id="conteudo" role="main">
+            @RenderBody()
+        </main>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
