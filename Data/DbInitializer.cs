@@ -10,10 +10,14 @@ namespace EasyVan.Data
     /// </summary>
     public static class DbInitializer
     {
-        public static void Initialize(ApplicationDbContext context, IPasswordService? senha = null)
+        public static void Initialize(
+            ApplicationDbContext context,
+            IPasswordService? senha = null,
+            bool seedDemoUsers = true,
+            string? adminEmail = null,
+            string? adminPassword = null)
         {
             var hasher = senha ?? new PasswordService();
-            var hash = hasher.Hash("123456");
 
             // Vans (referência da spec de filtros e busca).
             if (!context.Vans.Any())
@@ -55,16 +59,17 @@ namespace EasyVan.Data
                 );
             }
 
-            // Usuários de demonstração (senha: 123456).
-            if (!context.Usuarios.Any())
+            // Contas padrão de demonstração somente em Development.
+            if (seedDemoUsers && !context.Usuarios.Any())
             {
+                var demoHash = hasher.Hash("123456");
                 context.Usuarios.AddRange(
                     new Usuarios
                     {
                         Nome = "Administrador Demo",
                         Email = "admin@easyvan.com",
                         RoleManager = "Administrador",
-                        PasswordHasher = hash
+                        PasswordHasher = demoHash
                     },
                     new Usuarios
                     {
@@ -81,6 +86,21 @@ namespace EasyVan.Data
                         PasswordHasher = hash
                     }
                 );
+            }
+
+            // Em produção, cria o primeiro administrador apenas com credenciais fornecidas
+            // por variáveis de ambiente privadas (nunca usa senha padrão).
+            if (!seedDemoUsers && !context.Usuarios.Any()
+                && !string.IsNullOrWhiteSpace(adminEmail)
+                && !string.IsNullOrWhiteSpace(adminPassword))
+            {
+                context.Usuarios.Add(new Usuarios
+                {
+                    Nome = "Administrador",
+                    Email = adminEmail.Trim(),
+                    RoleManager = "Administrador",
+                    PasswordHasher = hasher.Hash(adminPassword)
+                });
             }
 
             // Motoristas.
