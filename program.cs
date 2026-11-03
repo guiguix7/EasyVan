@@ -37,7 +37,12 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var senha = scope.ServiceProvider.GetRequiredService<IPasswordService>();
     db.Database.Migrate();
-    DbInitializer.Initialize(db, senha);
+    DbInitializer.Initialize(
+        db,
+        senha,
+        seedDemoUsers: app.Environment.IsDevelopment(),
+        adminEmail: builder.Configuration["EASYVAN_ADMIN_EMAIL"],
+        adminPassword: builder.Configuration["EASYVAN_ADMIN_PASSWORD"]);
 }
 
 // Configure the HTTP request pipeline.
