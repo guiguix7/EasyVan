@@ -76,7 +76,7 @@ namespace EasyVan.Data
                         Nome = "Motorista Demo",
                         Email = "motorista@easyvan.com",
                         RoleManager = "Motorista",
-                        PasswordHasher = hash
+                        PasswordHasher = demoHash
                     },
                     new Usuarios
                     {
