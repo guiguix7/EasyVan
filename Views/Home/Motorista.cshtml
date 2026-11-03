@@ -1,137 +1,133 @@
 @model dynamic
 
 @{
-    ViewData["Title"] = "Painel do Motorista";
+    ViewData["Title"] = "Meu painel";
     var alunos = Model?.Alunos as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
     var rotas = Model?.Rotas as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
 }
 
-<section class="py-4">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-8">
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-petroleo text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Painel do Motorista</h5>
-                    <span class="badge bg-light text-petroleo">Motorista</span>
-                </div>
-                <div class="card-body">
-                    @if (Model.Van != null)
-                    {
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-4">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body text-center">
-                                        <h6 class="text-muted">Van</h6>
-                                        <h4 class="mb-1">#@Model.Van.Id</h4>
-                                        <p class="mb-1"><strong>@Model.Van.Plate</strong></p>
-                                        <span class="badge badge-status-operacional">@Model.Van.Status</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body text-center">
-                                        <h6 class="text-muted">Capacidade</h6>
-                                        <h4 class="mb-1">@Model.Van.Capacity alunos</h4>
-                                        <p class="mb-0 text-muted">@Model.Van.Route</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body text-center">
-                                        <h6 class="text-muted">Horários</h6>
-                                        <h4 class="mb-1">@Model.Van.Schedule</h4>
-                                        <p class="mb-0 text-muted">Motorista: @Model.Van.Driver</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <h6 class="text-uppercase fw-semibold mb-3">Alunos transportados</h6>
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Nome</th>
-                                                <th>Email</th>
-                                                <th>Telefone</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var aluno in alunos)
-                                            {
-                                                <tr>
-                                                    <td>@aluno.Nome</td>
-                                                    <td>@aluno.Email</td>
-                                                    <td>@aluno.Telefone</td>
-                                                    <td>
-                                                        <span class="badge @(aluno.Ativo ? "badge-status-operacional" : "badge-status-outro")">
-                                                            @(aluno.Ativo ? "Ativo" : "Inativo")
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            }
-                                            @if (!alunos.Any())
-                                            {
-                                                <tr>
-                                                    <td colspan="4" class="text-center text-muted py-3">Nenhum aluno cadastrado.</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-4">
-                            <div class="col-12">
-                                <h6 class="text-uppercase fw-semibold mb-3">Rotas disponíveis</h6>
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Nome</th>
-                                                <th>Origem → Destino</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach (var rota in rotas)
-                                            {
-                                                <tr>
-                                                    <td>@rota.Nome</td>
-                                                    <td>@rota.Origem → @rota.Destino</td>
-                                                    <td>
-                                                        <span class="badge @(rota.Ativo ? "badge-status-operacional" : "badge-status-outro")">
-                                                            @(rota.Ativo ? "Ativo" : "Inativo")
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            }
-                                            @if (!rotas.Any())
-                                            {
-                                                <tr>
-                                                    <td colspan="3" class="text-center text-muted py-3">Nenhuma rota cadastrada.</td>
-                                                </tr>
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-warning text-center">
-                            Nenhuma van cadastrada no sistema.
-                        </div>
-                    }
-                </div>
-            </div>
+<section class="ev-page">
+    <header class="ev-page-heading">
+        <div>
+            <h1>Meu painel</h1>
+            <p>Consulte os dados da van, os alunos cadastrados e as rotas disponíveis.</p>
         </div>
-    </div>
+        <div class="ev-page-actions">
+            <a asp-controller="Viagens" asp-action="Index" class="btn btn-primary">Ver viagens</a>
+        </div>
+    </header>
+
+    @if (Model.Van != null)
+    {
+        <section class="ev-stat-grid" aria-label="Informações da van apresentada">
+            <article class="ev-stat">
+                <span class="ev-stat__label">Veículo</span>
+                <strong class="ev-stat__value">#@Model.Van.Id</strong>
+                <span class="ev-stat__detail">@Model.Van.Plate</span>
+            </article>
+            <article class="ev-stat">
+                <span class="ev-stat__label">Capacidade</span>
+                <strong class="ev-stat__value">@Model.Van.Capacity</strong>
+                <span class="ev-stat__detail">Lugares informados no cadastro</span>
+            </article>
+            <article class="ev-stat">
+                <span class="ev-stat__label">Status</span>
+                <strong class="ev-stat__value fs-4">@Model.Van.Status</strong>
+                <span class="ev-stat__detail">@Model.Van.Route</span>
+            </article>
+        </section>
+
+        <section class="ev-panel">
+            <h2 class="ev-panel__title">Dados do veículo</h2>
+            <dl class="row mb-0">
+                <dt class="col-sm-3 text-muted">Motorista no cadastro</dt>
+                <dd class="col-sm-9">@Model.Van.Driver</dd>
+                <dt class="col-sm-3 text-muted">Horários informados</dt>
+                <dd class="col-sm-9">@Model.Van.Schedule</dd>
+                <dt class="col-sm-3 text-muted">Descrição</dt>
+                <dd class="col-sm-9 mb-0">@(string.IsNullOrWhiteSpace((string)Model.Van.Description) ? "Sem descrição cadastrada." : Model.Van.Description)</dd>
+            </dl>
+        </section>
+    }
+    else
+    {
+        <div class="ev-panel ev-empty" role="status">
+            <h2 class="h5">Nenhuma van encontrada</h2>
+            <p class="mb-0">Não há veículos cadastrados para exibição neste momento.</p>
+        </div>
+    }
+
+    <section class="ev-panel">
+        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+            <h2 class="ev-panel__title mb-0">Alunos ativos</h2>
+            <span class="small text-muted">@alunos.Count() registros</span>
+        </div>
+        @if (alunos.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Nome</th>
+                            <th scope="col">E-mail</th>
+                            <th scope="col">Telefone</th>
+                            <th scope="col">Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var aluno in alunos)
+                        {
+                            <tr>
+                                <td><strong>@aluno.Nome</strong></td>
+                                <td>@aluno.Email</td>
+                                <td>@aluno.Telefone</td>
+                                <td><span class="badge badge-status-operacional">Ativo</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="ev-empty">Nenhum aluno ativo cadastrado.</div>
+        }
+    </section>
+
+    <section class="ev-panel">
+        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+            <h2 class="ev-panel__title mb-0">Rotas ativas</h2>
+            <span class="small text-muted">@rotas.Count() registros</span>
+        </div>
+        @if (rotas.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Rota</th>
+                            <th scope="col">Origem</th>
+                            <th scope="col">Destino</th>
+                            <th scope="col">Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var rota in rotas)
+                        {
+                            <tr>
+                                <td><strong>@rota.Nome</strong></td>
+                                <td>@rota.Origem</td>
+                                <td>@rota.Destino</td>
+                                <td><span class="badge badge-status-operacional">Ativa</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="ev-empty">Nenhuma rota ativa cadastrada.</div>
+        }
+    </section>
 </section>

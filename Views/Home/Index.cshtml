@@ -1,45 +1,54 @@
-﻿@model EasyVan.Models.LoginViewModel
+@model EasyVan.Models.LoginViewModel
 
 @{
-    ViewData["Title"] = "Easy Van - Login";
+    ViewData["Title"] = "Entrar";
 }
 
-<section class="login-page d-flex align-items-center justify-content-center">
-    <div class="login-card shadow-lg p-4 w-100" style="max-width: 480px;">
-        <div class="text-center mb-4">
-            <img src="~/images/logo.png" alt="EasyVan Logo" class="logo-img mb-3" />
+<section class="ev-login-page">
+    <div class="ev-login-layout">
+        <div class="ev-login-aside">
+            <a class="ev-login-brand" asp-controller="Home" asp-action="Index" aria-label="EasyVan — início">
+                <img src="~/images/logo.png" alt="EasyVan — Gestão de Rotas e Vans" />
+            </a>
+
+            <div>
+                <h1>O transporte organizado começa aqui.</h1>
+                <p>Tenha as informações da operação em um só lugar. Acompanhe vans, motoristas, alunos, rotas e viagens com mais clareza no dia a dia.</p>
+            </div>
+
+            <span class="ev-login-note">Gestão de transporte por vans, sem complicação.</span>
         </div>
 
-        <form asp-controller="Usuarios" asp-action="Login" method="post" class="login-form">
-            <input type="hidden" asp-for="RememberMe" value="false" />
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        <div class="ev-login-content">
+            <h2>Acesse sua conta</h2>
+            <p>Entre com seu e-mail e senha para continuar.</p>
 
-            <div class="mb-3">
-                <label asp-for="Email" class="form-label">Email</label>
-                <input asp-for="Email" class="form-control" placeholder="Digite seu email" />
-                <span asp-validation-for="Email" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label">Senha</label>
-                <input asp-for="Password" class="form-control" placeholder="Digite sua senha" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Entrar</button>
-        </form>
+            <form asp-controller="Usuarios" asp-action="Login" method="post" class="ev-login-form">
+                <input type="hidden" asp-for="RememberMe" value="false" />
 
-        <div class="mt-3 text-center text-muted small">
-            <p class="mb-0">&copy; 2026 Easy Van</p>
+                <div asp-validation-summary="ModelOnly" class="ev-login-error" role="alert"></div>
+
+                <div>
+                    <label asp-for="Email" class="form-label">E-mail</label>
+                    <input asp-for="Email" class="form-control" type="email"
+                           placeholder="voce@exemplo.com" autocomplete="username"
+                           inputmode="email" autocapitalize="none" spellcheck="false" />
+                    <span asp-validation-for="Email" class="text-danger ev-form-validation"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Password" class="form-label">Senha</label>
+                    <input asp-for="Password" class="form-control" type="password"
+                           placeholder="Digite sua senha" autocomplete="current-password" />
+                    <span asp-validation-for="Password" class="text-danger ev-form-validation"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Entrar na plataforma</button>
+            </form>
         </div>
     </div>
 </section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        function preencher(email, senha) {
-            document.querySelector('input[name="Email"]').value = email;
-            document.querySelector('input[name="Password"]').value = senha;
-            document.querySelector('form').submit();
-        }
-    </script>
 }

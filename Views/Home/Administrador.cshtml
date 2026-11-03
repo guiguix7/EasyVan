@@ -1,101 +1,92 @@
 @model dynamic
 
 @{
-    ViewData["Title"] = "Painel do Administrador";
+    ViewData["Title"] = "Visão geral";
     var alertas = Model?.Alertas as IEnumerable<string> ?? Enumerable.Empty<string>();
 }
 
-<section class="py-4">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-8">
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-petroleo text-white">
-                    <h5 class="mb-0">Resumo do Administrador</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3 text-center mb-4">
-                        <div class="col-md-3">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="text-muted text-uppercase small">Total de vans</h6>
-                                    <h3 class="mb-0">@Model.TotalVans</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="text-muted text-uppercase small">Vans operacionais</h6>
-                                    <h3 class="mb-0 text-success">@Model.VansOperacionais</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="text-muted text-uppercase small">Em manutenção</h6>
-                                    <h3 class="mb-0 text-danger">@Model.VansManutencao</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="text-muted text-uppercase small">Motoristas</h6>
-                                    <h3 class="mb-0">@Model.TotalMotoristas</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="text-muted text-uppercase small">Alunos</h6>
-                                    <h3 class="mb-0">@Model.TotalAlunos</h3>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="text-muted text-uppercase small">Rotas</h6>
-                                    <h3 class="mb-0">@Model.TotalRotas</h3>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    @if (alertas.Any())
-                    {
-                        <div class="alert alert-warning">
-                            <h6 class="text-warning">Alertas</h6>
-                            <ul class="mb-0">
-                                @foreach (var alerta in alertas)
-                                {
-                                    <li>@alerta</li>
-                                }
-                            </ul>
-                        </div>
-                    }
-
-                    <div class="d-grid gap-2 mt-4">
-                        <a asp-controller="Vans" asp-action="Index" class="btn btn-primary btn-lg">
-                            <span class="me-2">🚌</span> Gerenciar Vans
-                        </a>
-                        <a asp-controller="Motoristas" asp-action="Index" class="btn btn-outline-primary">
-                            Motoristas
-                        </a>
-                        <a asp-controller="Alunos" asp-action="Index" class="btn btn-outline-primary">
-                            Alunos
-                        </a>
-                        <a asp-controller="Rotas" asp-action="Index" class="btn btn-outline-primary">
-                            Rotas
-                        </a>
-                        <a asp-controller="Usuarios" asp-action="Index" class="btn btn-outline-primary">
-                            Usuários
-                        </a>
-                    </div>
-                </div>
-            </div>
+<section class="ev-page">
+    <header class="ev-page-heading">
+        <div>
+            <h1>Visão geral da operação</h1>
+            <p>Consulte os cadastros e acompanhe a situação atual da sua estrutura de transporte.</p>
         </div>
-    </div>
+        <div class="ev-page-actions">
+            <a asp-controller="Vans" asp-action="Index" class="btn btn-primary">Gerenciar frota</a>
+        </div>
+    </header>
+
+    <section aria-label="Indicadores da operação">
+        <div class="ev-stat-grid">
+            <article class="ev-stat">
+                <span class="ev-stat__label">Total de vans</span>
+                <strong class="ev-stat__value">@Model.TotalVans</strong>
+                <span class="ev-stat__detail">Veículos cadastrados</span>
+            </article>
+            <article class="ev-stat">
+                <span class="ev-stat__label">Vans operacionais</span>
+                <strong class="ev-stat__value">@Model.VansOperacionais</strong>
+                <span class="ev-stat__detail">Com status operacional</span>
+            </article>
+            <article class="ev-stat">
+                <span class="ev-stat__label">Em manutenção</span>
+                <strong class="ev-stat__value">@Model.VansManutencao</strong>
+                <span class="ev-stat__detail">Veículos sinalizados</span>
+            </article>
+            <article class="ev-stat">
+                <span class="ev-stat__label">Motoristas ativos</span>
+                <strong class="ev-stat__value">@Model.TotalMotoristas</strong>
+                <span class="ev-stat__detail">Cadastros ativos</span>
+            </article>
+            <article class="ev-stat">
+                <span class="ev-stat__label">Alunos ativos</span>
+                <strong class="ev-stat__value">@Model.TotalAlunos</strong>
+                <span class="ev-stat__detail">Cadastros ativos</span>
+            </article>
+            <article class="ev-stat">
+                <span class="ev-stat__label">Rotas ativas</span>
+                <strong class="ev-stat__value">@Model.TotalRotas</strong>
+                <span class="ev-stat__detail">Rotas disponíveis no cadastro</span>
+            </article>
+        </div>
+    </section>
+
+    @if (alertas.Any())
+    {
+        <section class="ev-alert" aria-labelledby="alertas-titulo" role="status">
+            <h2 id="alertas-titulo">Atenção à operação</h2>
+            <ul>
+                @foreach (var alerta in alertas)
+                {
+                    <li>@alerta</li>
+                }
+            </ul>
+        </section>
+    }
+
+    <section aria-labelledby="atalhos-titulo">
+        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+            <h2 id="atalhos-titulo" class="ev-panel__title mb-0">Acessos rápidos</h2>
+        </div>
+        <nav class="ev-shortcuts" aria-label="Acessos rápidos da administração">
+            <a asp-controller="Vans" asp-action="Index" class="ev-shortcut">
+                <span>Vans</span><span aria-hidden="true">→</span>
+            </a>
+            <a asp-controller="Motoristas" asp-action="Index" class="ev-shortcut">
+                <span>Motoristas</span><span aria-hidden="true">→</span>
+            </a>
+            <a asp-controller="Alunos" asp-action="Index" class="ev-shortcut">
+                <span>Alunos</span><span aria-hidden="true">→</span>
+            </a>
+            <a asp-controller="Rotas" asp-action="Index" class="ev-shortcut">
+                <span>Rotas</span><span aria-hidden="true">→</span>
+            </a>
+            <a asp-controller="Viagens" asp-action="Index" class="ev-shortcut">
+                <span>Viagens</span><span aria-hidden="true">→</span>
+            </a>
+            <a asp-controller="Usuarios" asp-action="Index" class="ev-shortcut">
+                <span>Usuários</span><span aria-hidden="true">→</span>
+            </a>
+        </nav>
+    </section>
 </section>
