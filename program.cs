@@ -25,7 +25,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // localhost não usa HTTPS
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // Railway serve a aplicação por HTTPS
         options.Cookie.SameSite = SameSiteMode.Lax; // permite o cookie em requisições same-site no navegador
     });
 
