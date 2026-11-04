@@ -1,51 +1,68 @@
-# Política de Privacidade - EasyVan
+# Política de Privacidade
 
-Data de vigência: 28 de maio de 2026
+**Projeto:** EasyVan  
+**Data de vigência:** 3 de novembro de 2026
 
-Esta Política de Privacidade descreve como o projeto EasyVan ("nós", "nosso", "EasyVan") coleta, usa, compartilha e protege as informações pessoais dos usuários ("você"). Ao utilizar a aplicação EasyVan, você concorda com as práticas descritas nesta política.
+Este documento descreve, em linguagem objetiva, quais dados o EasyVan pode tratar durante o uso da aplicação. Ele deve ser revisado pelo responsável pelo projeto e por assessoria jurídica antes de uma publicação comercial, especialmente para adequação à LGPD.
 
-**1. Dados que coletamos**
-- Dados fornecidos diretamente: nome, email, senha e outras informações de perfil quando você se cadastra ou atualiza seu perfil.
-- Dados de uso: informações de interação com a aplicação (páginas visitadas, ações realizadas, timestamps).
-- Dados técnicos: endereço IP, tipo de navegador, sistema operacional, identificadores de dispositivo e logs do servidor.
-- Cookies e tecnologias semelhantes: identificadores para manter sessões, preferências e análises.
+## 1. Dados tratados
 
-**2. Como usamos os dados**
-- Para fornecer, operar e manter a aplicação.
-- Para autenticar usuários e gerenciar contas.
-- Para melhorar e personalizar a experiência do usuário.
-- Para comunicação (suporte, notificações importantes e atualizações de serviço).
-- Para fins de segurança, prevenção de fraudes e investigação de abusos.
+O sistema pode armazenar:
 
-**3. Compartilhamento de dados**
-- Não vendemos suas informações pessoais.
-- Podemos compartilhar dados com provedores de serviços terceirizados que nos auxiliam (hospedagem, análises, envio de email), sempre sob contratos que exigem proteção e uso limitado dos dados.
-- Podemos divulgar informações quando exigido por lei ou para proteger nossos direitos, propriedade ou segurança.
+- nome, e-mail, telefone e endereço informados em cadastros;
+- dados operacionais de motoristas, incluindo CNH, quando cadastrados pelo gestor;
+- dados de vans, rotas, viagens e presenças;
+- credenciais de acesso, armazenadas como hash de senha PBKDF2;
+- dados técnicos mínimos necessários ao funcionamento do servidor e da sessão, como cookies de autenticação e registros de aplicação.
 
-**4. Armazenamento e segurança**
-- Adotamos medidas técnicas e organizacionais razoáveis para proteger seus dados contra acesso não autorizado, alteração, divulgação ou destruição.
-- Apesar das medidas tomadas, nenhum sistema é 100% seguro; não podemos garantir segurança absoluta.
+O projeto não implementa GPS, pagamentos, publicidade comportamental ou serviço de analytics identificado no código atual.
 
-**5. Retenção de dados**
-- Reteremos seus dados pelo tempo necessário para cumprir os propósitos descritos nesta política, ou conforme exigido pela lei.
+## 2. Finalidades
 
-**6. Seus direitos**
-- Você pode, conforme aplicável na sua jurisdição, solicitar acesso, correção, exclusão ou portabilidade dos seus dados.
-- Para exercer seus direitos ou tirar dúvidas sobre privacidade, entre em contato conosco (ver seção "Contato").
+Os dados são utilizados para:
 
-**7. Cookies e tecnologias semelhantes**
-- Utilizamos cookies para manter sessões, preferências e coletar estatísticas de uso.
-- Você pode desabilitar cookies no seu navegador, mas isso pode afetar a funcionalidade da aplicação.
+- autenticar usuários e aplicar permissões por papel;
+- administrar vans, motoristas, alunos, rotas e viagens;
+- registrar presença e exibir informações de transporte;
+- manter a integridade, a disponibilidade e a segurança da aplicação;
+- corrigir falhas e atender solicitações relacionadas ao sistema.
 
-**8. Menores**
-- Nossa aplicação não é destinada a menores de 13 anos. Não coletamos conscientemente dados de crianças. Se souber que informações de uma criança foram coletadas, entre em contato conosco para que possamos remover os dados.
+## 3. Compartilhamento
 
-**9. Alterações nesta política**
-- Podemos atualizar esta Política de Privacidade ocasionalmente. Publicaremos a data de vigência atualizada no topo deste documento e, quando apropriado, notificaremos os usuários sobre alterações significativas.
+O EasyVan não vende dados pessoais. O compartilhamento deve ficar limitado a:
 
-**10. Contato**
-- Para questões sobre esta política ou para exercer seus direitos, entre em contato: contato@seudominio.com (substitua pelo email de contato do projeto).
+- provedores de hospedagem ou infraestrutura necessários para operar a aplicação;
+- autoridades públicas, quando houver obrigação legal válida;
+- responsáveis pelo projeto, para suporte e administração do serviço.
 
----
+Não há integração de terceiros para pagamentos, e-mail, mapas ou analytics implementada nesta versão.
 
-Observação: este documento é um modelo genérico de política de privacidade. Consulte um profissional jurídico para adequar a política às leis aplicáveis (por exemplo, LGPD no Brasil, GDPR na UE) e às necessidades específicas do seu projeto.
+## 4. Cookies e sessões
+
+O sistema utiliza cookie de autenticação para manter a sessão do usuário. O cookie é configurado como HttpOnly e SameSite e possui expiração. Desabilitar cookies pode impedir o login e o uso de áreas protegidas.
+
+## 5. Armazenamento e retenção
+
+Em desenvolvimento, os dados são armazenados no arquivo SQLite `easyvan.db`. Em produção, o local e o período de retenção dependem da infraestrutura adotada pelo responsável pelo serviço.
+
+Os dados devem ser mantidos somente pelo período necessário à operação, às obrigações legais e à defesa de direitos. O responsável pela implantação deve definir rotinas de backup, exclusão e restauração.
+
+## 6. Direitos dos titulares
+
+Nos termos aplicáveis da LGPD, o titular pode solicitar confirmação de tratamento, acesso, correção, anonimização, eliminação, portabilidade e informações sobre o uso de seus dados, observadas as hipóteses legais e a capacidade operacional do serviço.
+
+O canal de contato oficial ainda não está configurado no repositório. Antes da publicação, substitua este aviso por um e-mail ou formulário mantido pelo controlador do tratamento.
+
+## 7. Menores
+
+O sistema pode conter dados de alunos no contexto do transporte escolar ou universitário. O responsável pela operação deve definir a base legal, os procedimentos de consentimento ou representação e as salvaguardas aplicáveis a menores.
+
+## 8. Segurança
+
+O projeto usa hash PBKDF2 para senhas e autenticação por cookie. Ainda assim, a segurança depende da configuração do ambiente, da proteção dos segredos, do controle de acesso ao banco e da atualização das dependências. Consulte [SECURITY.md](SECURITY.md).
+
+## 9. Alterações
+
+Esta política deve ser atualizada quando o tratamento de dados, a infraestrutura ou as funcionalidades do EasyVan mudarem. A data de vigência deve acompanhar cada revisão publicada.
+
+> Este documento é uma descrição técnica do comportamento atual do projeto e não substitui orientação jurídica.

@@ -1,51 +1,45 @@
-# Política de Privacidade - EasyVan
+# Segurança
 
-Data de vigência: 28 de maio de 2026
+Este documento registra os controles de segurança implementados no EasyVan e os cuidados necessários para executá-lo.
 
-Esta Política de Privacidade descreve como o projeto EasyVan ("nós", "nosso", "EasyVan") coleta, usa, compartilha e protege as informações pessoais dos usuários ("você"). Ao utilizar a aplicação EasyVan, você concorda com as práticas descritas nesta política.
+## Controles implementados
 
-**1. Dados que coletamos**
-- Dados fornecidos diretamente: nome, email, senha e outras informações de perfil quando você se cadastra ou atualiza seu perfil.
-- Dados de uso: informações de interação com a aplicação (páginas visitadas, ações realizadas, timestamps).
-- Dados técnicos: endereço IP, tipo de navegador, sistema operacional, identificadores de dispositivo e logs do servidor.
-- Cookies e tecnologias semelhantes: identificadores para manter sessões, preferências e análises.
+- Senhas são transformadas em hash PBKDF2 pelo serviço `IPasswordService`.
+- A autenticação usa cookies HttpOnly, SameSite e com expiração configurada.
+- O sistema diferencia Administrador, Motorista e Aluno.
+- Dados são persistidos por Entity Framework Core, sem SQL cru nos fluxos comuns.
+- O banco é atualizado por migrações versionadas na inicialização.
+- Em produção, as chaves de Data Protection são persistidas em `/data/keys`.
+- O primeiro administrador de produção só é criado com `EASYVAN_ADMIN_EMAIL` e `EASYVAN_ADMIN_PASSWORD`.
+- O pipeline de produção usa tratamento de exceções e HSTS.
 
-**2. Como usamos os dados**
-- Para fornecer, operar e manter a aplicação.
-- Para autenticar usuários e gerenciar contas.
-- Para melhorar e personalizar a experiência do usuário.
-- Para comunicação (suporte, notificações importantes e atualizações de serviço).
-- Para fins de segurança, prevenção de fraudes e investigação de abusos.
+## Implantação segura
 
-**3. Compartilhamento de dados**
-- Não vendemos suas informações pessoais.
-- Podemos compartilhar dados com provedores de serviços terceirizados que nos auxiliam (hospedagem, análises, envio de email), sempre sob contratos que exigem proteção e uso limitado dos dados.
-- Podemos divulgar informações quando exigido por lei ou para proteger nossos direitos, propriedade ou segurança.
+1. Use `ASPNETCORE_ENVIRONMENT=Production`.
+2. Defina uma senha forte e única para `EASYVAN_ADMIN_PASSWORD`.
+3. Armazene variáveis de ambiente em um cofre ou no mecanismo seguro do provedor.
+4. Monte volumes persistentes para o banco e `/data/keys` quando necessário.
+5. Restrinja o acesso direto ao arquivo SQLite e aos logs.
+6. Publique a aplicação atrás de HTTPS e de uma rede controlada.
+7. Faça backup do banco antes de atualizações e migrações.
+8. Atualize o .NET e os pacotes NuGet regularmente.
 
-**4. Armazenamento e segurança**
-- Adotamos medidas técnicas e organizacionais razoáveis para proteger seus dados contra acesso não autorizado, alteração, divulgação ou destruição.
-- Apesar das medidas tomadas, nenhum sistema é 100% seguro; não podemos garantir segurança absoluta.
+## Limitações conhecidas
 
-**5. Retenção de dados**
-- Reteremos seus dados pelo tempo necessário para cumprir os propósitos descritos nesta política, ou conforme exigido pela lei.
+- O cadastro público permite escolher o papel conforme a implementação atual; isso precisa ser restringido antes de um uso real, para impedir que um usuário se promova a Administrador ou Motorista.
+- Não há limitação de tentativas de login, recuperação de senha ou autenticação multifator implementada.
+- O sistema ainda não possui multi-tenancy ou isolamento entre operadores.
+- O banco SQLite local não deve ser usado como solução de alta disponibilidade sem uma arquitetura adicional.
+- A restauração automática de chaves de Data Protection depende da persistência de `/data/keys` no ambiente de hospedagem.
+- O pacote `SQLitePCLRaw.lib.e_sqlite3` reporta uma vulnerabilidade conhecida durante o restore; a atualização ou substituição deve ser avaliada antes da produção.
 
-**6. Seus direitos**
-- Você pode, conforme aplicável na sua jurisdição, solicitar acesso, correção, exclusão ou portabilidade dos seus dados.
-- Para exercer seus direitos ou tirar dúvidas sobre privacidade, entre em contato conosco (ver seção "Contato").
+## Segredos e dados sensíveis
 
-**7. Cookies e tecnologias semelhantes**
-- Utilizamos cookies para manter sessões, preferências e coletar estatísticas de uso.
-- Você pode desabilitar cookies no seu navegador, mas isso pode afetar a funcionalidade da aplicação.
+Não versione:
 
-**8. Menores**
-- Nossa aplicação não é destinada a menores de 13 anos. Não coletamos conscientemente dados de crianças. Se souber que informações de uma criança foram coletadas, entre em contato conosco para que possamos remover os dados.
+- senhas, tokens, certificados ou chaves;
+- `easyvan.db` e cópias de backup;
+- conteúdo real de produção ou dados pessoais;
+- arquivos de configuração com credenciais.
 
-**9. Alterações nesta política**
-- Podemos atualizar esta Política de Privacidade ocasionalmente. Publicaremos a data de vigência atualizada no topo deste documento e, quando apropriado, notificaremos os usuários sobre alterações significativas.
-
-**10. Contato**
-- Para questões sobre esta política ou para exercer seus direitos, entre em contato: contato@seudominio.com (substitua pelo email de contato do projeto).
-
----
-
-Observação: este documento é um modelo genérico de política de privacidade. Consulte um profissional jurídico para adequar a política às leis aplicáveis (por exemplo, LGPD no Brasil, GDPR na UE) e às necessidades específicas do seu projeto.
+Ao reportar uma falha, não inclua dados pessoais ou segredos. Descreva o impacto, os passos mínimos para reprodução e a versão afetada. O canal de contato de segurança ainda deve ser definido pelo responsável pelo projeto antes da publicação.

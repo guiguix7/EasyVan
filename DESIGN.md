@@ -1,113 +1,72 @@
-# EasyVan — Design System e direção visual
+# EasyVan: sistema visual
 
-> **Status:** direção visual documentada e aplicada parcialmente na branch \`design/redesign-premium-ui\`.
-> **Base:** marca e código existentes em \`wwwroot/images/logo.png\`, \`wwwroot/css/site.css\`, Razor Views, \`AGENTS.md\` e relatório de produto EasyVan.
-> **Escopo:** identidade, padrões de interface, navegação, componentes, responsividade e acessibilidade do frontend MVC.
+**Status:** direção visual consolidada e aplicada ao frontend MVC. A validação visual completa ainda depende de revisão no navegador em todos os breakpoints.
 
-## 1. Princípio de design
+## Direção
 
-O EasyVan é uma ferramenta operacional para organizar transporte por vans. A interface deve permitir que gestores consultem e mantenham cadastros com eficiência, motoristas encontrem informações de viagens rapidamente e passageiros localizem os dados de seu transporte sem navegação complexa.
+O EasyVan é uma ferramenta operacional de transporte, não um ERP genérico. A interface prioriza leitura rápida, previsibilidade, clareza de estado e consistência. A sofisticação vem da hierarquia, proporção, espaçamento e legibilidade, não de efeitos decorativos.
 
-O design prioriza leitura rápida, previsibilidade, clareza de estado e consistência entre telas. A sofisticação vem da hierarquia, proporção, espaçamento, legibilidade e tratamento dos estados — não de efeitos decorativos.
+## Identidade
 
-## 2. Identidade visual observada
+A marca usa o logo existente em `wwwroot/images/logo.png`, com azul-petróleo e âmbar como referências principais.
 
-A identidade visual não foi criada do zero. O logo já presente em \`wwwroot/images/logo.png\` associa o nome EasyVan a um veículo e elementos de rota, usando azul-petróleo e âmbar. O CSS existente já registrava uma paleta coerente com o logo. A implementação consolida essa direção e remove conflitos dos estilos antigos.
-
-### Tokens de cor
-
-| Token CSS | Valor | Uso |
+| Token | Valor | Uso |
 |---|---|---|
-| \`--ev-petroleo\` | \`#0F4C5C\` | Navegação, ação primária e identidade |
-| \`--ev-petroleo-escuro\` | \`#0B3744\` | Hover e ênfase |
-| \`--ev-ambar\` | \`#F5A524\` | Destaque e acento |
-| \`--ev-fundo\` | \`#F6F7F9\` | Fundo da aplicação |
-| \`--ev-superficie\` | \`#FFFFFF\` | Conteúdo e painéis |
-| \`--ev-texto\` | \`#1F2933\` | Texto principal |
-| \`--ev-texto-secundario\` | \`#52616B\` | Texto auxiliar |
-| \`--ev-linha\` | \`#DCE3E7\` | Divisórias e bordas |
-| \`--ev-verde\` | \`#1B873F\` | Estado operacional |
-| \`--ev-vermelho\` | \`#C0392B\` | Situação de atenção/manutenção |
+| `--ev-petroleo` | `#0F4C5C` | identidade, navegação e ação primária |
+| `--ev-petroleo-escuro` | `#0B3744` | hover e ênfase |
+| `--ev-ambar` | `#F5A524` | destaque e acento |
+| `--ev-fundo` | `#F6F7F9` | fundo da aplicação |
+| `--ev-superficie` | `#FFFFFF` | conteúdo e painéis |
+| `--ev-texto` | `#1F2933` | texto principal |
+| `--ev-texto-secundario` | `#52616B` | texto auxiliar |
+| `--ev-linha` | `#DCE3E7` | bordas e divisórias |
+| `--ev-verde` | `#1B873F` | estado operacional |
+| `--ev-vermelho` | `#C0392B` | atenção e manutenção |
 
-Status não deve ser comunicado somente pela cor: mantenha sempre o rótulo textual.
+Status nunca deve ser comunicado somente pela cor: use sempre o rótulo textual.
 
-## 3. Tipografia
+## Tipografia e forma
 
-A aplicação utiliza a pilha sans-serif nativa do sistema operacional para preservar legibilidade, evitar dependência externa e manter carregamento rápido. O corpo padrão é 16px. Títulos usam peso e escala moderados, com hierarquia clara entre título de página, título de seção, rótulo de campo e metadados.
+- Usar a pilha sans-serif nativa para preservar legibilidade e reduzir dependências externas.
+- Manter corpo de 16 px e hierarquia clara entre título, seção, campo e metadado.
+- Usar espaçamentos em múltiplos de 4 px, com passos usuais de 8, 12, 16, 24 e 32 px.
+- Usar controles com raio de 8 px e painéis com raio de até 12 px.
+- Reservar sombras para contextos que indiquem elevação.
+- Manter o âmbar como acento, sem competir com ações primárias.
 
-Números operacionais devem utilizar algarismos tabulares quando isso melhorar comparação. Texto de formulário e tabela não deve ser reduzido para acomodar layouts; reorganize a composição em telas estreitas.
+## Navegação por perfil
 
-## 4. Forma e composição
+- **Administrador:** visão geral, vans, motoristas, alunos, rotas, viagens e usuários.
+- **Motorista:** painel e viagens.
+- **Aluno:** início e consulta da própria van.
 
-- Base de espaçamento: múltiplos de 4px, com passos usuais de 8, 12, 16, 24 e 32px.
-- Raio de controles: 8px.
-- Raio de painéis e superfícies: 12px.
-- Bordas discretas em superfícies; sombras reservadas a contextos em que indiquem elevação.
-- Ações primárias em azul-petróleo; âmbar deve permanecer acento, sem competir com ações principais.
-- Evitar cartões aninhados e usar painéis somente quando ajudarem a agrupar informação relacionada.
+A navegação deve respeitar as rotas implementadas e nunca sugerir capacidades fora do produto atual.
 
-## 5. Navegação e arquitetura de interface
+## Componentes
 
-### Desktop
+- Botões com texto claro para comandos importantes.
+- Campos com labels visíveis, foco evidente e mensagens de validação próximas.
+- Tabelas com cabeçalho contrastante e ações alinhadas.
+- Filtros combináveis, estado ativo identificável e ação explícita para limpar.
+- Estados vazios com explicação e próxima ação real.
+- Alertas diretos, sem depender somente da cor.
 
-A navegação principal utiliza uma sidebar clara e persistente, com marca no topo, opções de acordo com o perfil e identificação da conta na parte inferior. A área de conteúdo ocupa a largura restante e possui cabeçalho contextual.
+## Responsividade
 
-### Mobile
+- Até 767 px: uma coluna, controles grandes e cartões quando tabelas prejudicarem a leitura.
+- De 768 a 991 px: composição intermediária e navegação adaptada.
+- A partir de 992 px: maior densidade de informação e navegação persistente.
 
-A sidebar transforma-se em offcanvas Bootstrap acionado por botão com nome acessível. O conteúdo passa a uma coluna única. Listagens com muitos campos devem apresentar cartões compactos quando a tabela comprometer a leitura; os fluxos essenciais permanecem acessíveis.
+Evite overflow horizontal da página. Tabelas excepcionalmente largas podem ter rolagem própria. Alvos interativos devem buscar pelo menos 44 px.
 
-### Perfis e navegação existente
+## Acessibilidade
 
-- **Administrador:** Visão geral, Vans, Motoristas, Alunos, Rotas, Viagens e Usuários.
-- **Motorista:** Meu painel e Viagens.
-- **Aluno:** Início e Minha van.
+Usar semântica HTML, títulos hierárquicos, labels associados, foco visível, navegação por teclado, contraste compatível com WCAG 2.2 AA e suporte a `prefers-reduced-motion`. Consulte [ACCESSIBILITY.md](ACCESSIBILITY.md).
 
-A navegação respeita as rotas existentes; não cria páginas ou capacidades ainda não implementadas.
+## Limites funcionais
 
-## 6. Componentes e padrões
+O design não deve inventar GPS, reservas, notificações, cobrança, multi-tenancy ou integrações externas. Informações de dashboard devem vir dos modelos do backend.
 
-- **Botões:** primário (azul-petróleo), secundário neutro, contorno e perigo. Ações devem possuir texto claro.
-- **Campos:** rótulos visíveis, altura confortável, foco evidente e mensagens de validação junto ao campo.
-- **Tabelas:** cabeçalho com contraste, densidade consistente, ações alinhadas e alternativa mobile quando a quantidade de colunas exigir.
-- **Filtros:** controles com rótulos, filtros combináveis, estado ativo identificável e ação explícita para limpar.
-- **Estados vazios:** explicar o que não foi encontrado e indicar uma próxima ação real.
-- **Status:** rótulo textual com tratamento visual redundante.
-- **Alertas:** texto direto, motivo identificável e sem depender somente de cor.
+## Verificação pendente
 
-## 7. Responsividade
-
-A implementação utiliza os breakpoints do Bootstrap existentes. A adaptação deve considerar o conteúdo, não apenas reduzir larguras.
-
-- Até 767px: composição de uma coluna, ações com área de toque adequada e cards móveis para vans.
-- 768px a 991px: composição intermediária, indicadores em duas colunas e navegação em offcanvas.
-- A partir de 992px: sidebar persistente e maior densidade de informação operacional.
-
-Alvos interativos devem buscar pelo menos 44px de altura/largura quando aplicável. Evitar overflow horizontal na página; tabelas excepcionalmente largas podem ter rolagem própria quando não houver alternativa fiel.
-
-## 8. Acessibilidade e movimento
-
-- Idioma do documento: \`pt-BR\`.
-- Usar semântica HTML, títulos hierárquicos e labels associados aos controles.
-- Preservar navegação por teclado e foco visível.
-- Não depender somente de cor para status e mensagens.
-- Mensagens de validação devem permanecer próximas aos campos e não apagar os valores digitados.
-- Respeitar \`prefers-reduced-motion\`.
-- Manter contraste compatível com WCAG 2.2 AA; a validação de contraste computado e os testes com leitor de tela precisam ocorrer no navegador.
-
-## 9. Restrições funcionais
-
-Este documento descreve a interface, não amplia o escopo funcional. Não apresentar como existentes funcionalidades de GPS em tempo real, reservas, notificações, cobrança recorrente, multi-tenancy ou integração externa sem implementação e validação correspondentes.
-
-Dados apresentados no dashboard devem vir do modelo fornecido pelo backend. A interface não deve criar métricas, viagens ou associações de passageiros fictícias.
-
-## 10. Verificação pendente
-
-A branch foi editada por meio da API do GitHub, sem checkout local disponível neste ambiente. Portanto, ainda estão pendentes:
-
-- \`dotnet build\` e testes automatizados;
-- execução do ASP.NET e inspeção visual no navegador;
-- verificação de viewport desktop, tablet e mobile;
-- contraste computado, navegação por teclado e leitor de tela;
-- detecção automatizada Impeccable e revisão visual final.
-
-Essas verificações não devem ser consideradas aprovadas até serem executadas no ambiente de desenvolvimento.
+A compilação e a execução local já foram validadas. Ainda devem ser feitas, antes de uma entrega pública, a inspeção visual em desktop, tablet e mobile, a verificação de contraste computado, os testes de teclado e a revisão com leitor de tela.

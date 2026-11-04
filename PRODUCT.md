@@ -1,76 +1,67 @@
-# Product
+# Produto EasyVan
 
-<!-- impeccable:product-schema 1 -->
+## Visão
 
-## Platform
+O EasyVan é uma ferramenta operacional para organizar o transporte por vans. Seu objetivo é reunir em um único fluxo os cadastros, as rotas, as viagens e as presenças que hoje podem ficar espalhados em planilhas ou mensagens.
 
-web
+## Usuários
 
-## Users
+### Administrador
 
-Três perfis usam o EasyVan no navegador:
+Trabalha principalmente no desktop e administra vans, motoristas, alunos, rotas, viagens e usuários. Precisa localizar registros rapidamente, comparar status e corrigir cadastros com segurança.
 
-- **Administrador / gestor:** passa boa parte do dia em desktop, mantendo frota, motoristas, alunos, rotas, viagens e contas. Precisa localizar registros rápido, comparar status e corrigir cadastros sem perder contexto.
-- **Motorista:** usa principalmente celular, em pé ou dentro da van. Precisa abrir a viagem do dia, iniciar/finalizar o percurso e marcar presença com poucos toques.
-- **Aluno / passageiro:** consulta a van, a rota e o horário do próprio transporte. Tem pouca familiaridade técnica e precisa de uma resposta direta, sem navegação extensa.
+### Motorista
 
-## Product Purpose
+Usa a aplicação principalmente no celular. Precisa consultar suas viagens, iniciar e finalizar percursos e registrar presenças com poucos toques.
 
-Centralizar a operação de transporte por vans em um único sistema: veículos, motoristas, alunos, rotas e viagens. O sucesso significa que o gestor encontra e mantém a informação sem planilhas paralelas, o motorista consegue operar a viagem no celular e o aluno entende onde e quando embarca.
+### Aluno
 
-## Positioning
+Consulta as informações do próprio transporte, como van, rota e horário, sem navegar por áreas administrativas.
 
-O EasyVan é uma ferramenta operacional de transporte por vans, não um ERP genérico. A interface deve comunicar mobilidade e organização: placa, rota, horário, status da van e andamento da viagem são os objetos centrais, e não métricas financeiras ou dashboards abstratos.
+## Capacidades atuais
 
-## Operating Context
+- autenticação por cookie;
+- autorização por Administrador, Motorista e Aluno;
+- CRUD de usuários, vans, motoristas, alunos e rotas;
+- busca e filtros de vans por texto, status e capacidade;
+- criação, início e finalização de viagens;
+- registro e consulta de presenças;
+- painéis específicos por papel;
+- persistência em SQLite por Entity Framework Core;
+- dados de referência inicializados pelo `Data/DbInitializer.cs`.
 
-- Aplicação ASP.NET Core MVC renderizada no servidor; uso em desktop e celular.
-- O gestor trabalha em sessões longas e alterna entre listagens, formulários e detalhes.
-- O motorista opera em campo, com conectividade variável e alvos de toque grandes.
-- O aluno consulta poucas informações e não deve enfrentar menus administrativos.
-- O produto usa dados reais do banco SQLite: vans, motoristas, alunos, rotas, viagens e presenças. Não há dados de GPS, pagamento, reserva ou notificação em tempo real implementados.
+## Limites atuais
 
-## Capabilities and Constraints
+Não apresentar como existente aquilo que ainda não está implementado. Permanecem fora do escopo atual:
 
-Implementado e verificável no código:
+- GPS ou localização em tempo real;
+- reservas e pagamentos;
+- notificações push ou por e-mail;
+- multi-tenancy;
+- integração com mapas, catracas ou serviços externos;
+- métricas de mercado, preços, depoimentos ou estudos de caso.
 
-- Login por cookie com três papéis: Administrador, Motorista e Aluno.
-- CRUD de vans, motoristas, alunos e rotas (administração).
-- Listagem e filtros de vans por texto, status e capacidade (`spec/filtros-e-busca.md`).
-- Viagens com criação, início, fim e lista de presença.
-- Painéis distintos por papel.
-- Senhas com hash PBKDF2; cadastro público ainda permite escolher perfil (dívida de segurança registrada, não alterada nesta entrega).
-- Stack fixa: Razor Views, Bootstrap 5, jQuery e CSS próprio. Sem SPA, sem dependências novas.
+## Princípios de produto
 
-Fora de escopo desta entrega: multi-tenancy, notificações, GPS, pagamentos e novas entidades.
+1. **Operação primeiro:** placa, rota, horário, status e viagem têm prioridade visual.
+2. **Uma ação principal:** cada tela deve deixar claro o próximo passo.
+3. **Densidade com respiro:** gestores precisam comparar registros; motoristas precisam tocar e ler com rapidez.
+4. **Estado é informação:** vazio, erro, manutenção, viagem em andamento e presença devem ser compreensíveis.
+5. **Dados reais:** indicadores e listas devem vir do backend, sem métricas fictícias.
+6. **Acesso adequado ao papel:** usuários não devem receber menus ou ações administrativas sem necessidade.
 
-## Brand Commitments
+## Evidências do projeto
 
-- Nome **EasyVan** e logotipo existente em `wwwroot/images/logo.png` (van, rota, azul e laranja).
-- Paleta já consolidada em `DESIGN.md`: azul-petróleo `#0F4C5C` como cor de identidade e ação, âmbar `#F5A524` como acento.
-- Interface em português do Brasil.
-- Status sempre com rótulo textual, nunca apenas cor.
+- Logo em `wwwroot/images/logo.png`.
+- Dados de referência em `Data/DbInitializer.cs`.
+- Regras de busca em `spec/filtros-e-busca.md`.
+- Plano de testes em `plan/03-plano-de-testes.md`.
+- Testes automatizados em `tests/EasyVan.Tests`.
 
-## Evidence on Hand
+## Próximas prioridades
 
-- Logo raster oficial em `wwwroot/images/logo.png`.
-- Três vans, três motoristas, três alunos e três rotas de referência em `Data/DbInitializer.cs`.
-- Contas de demonstração apenas em Development: `admin@easyvan.com`, `motorista@easyvan.com`, `aluno@easyvan.com`, senha `123456`.
-- Especificação de filtros em `spec/filtros-e-busca.md` e plano de testes em `plan/03-plano-de-testes.md`.
-- Não existem depoimentos, clientes, preços, métricas de mercado ou estudos de caso. Nada disso deve ser inventado.
-
-## Product Principles
-
-1. **A operação primeiro.** Placa, rota, horário e status vêm antes de qualquer elemento decorativo.
-2. **Uma ação principal por tela.** O usuário deve saber o que fazer em seguida sem procurar.
-3. **Densidade com respiro.** O gestor precisa comparar muitos registros; o motorista precisa de alvos grandes. A composição muda de verdade entre desktop e celular.
-4. **O estado é informação.** Vazio, erro, manutenção, viagem em andamento e presença precisam ser visíveis e compreensíveis.
-5. **Familiaridade sem monotonia.** Padrões conhecidos de produto (tabela, formulário, navegação lateral) executados com precisão, não reinventados por estilo.
-
-## Accessibility & Inclusion
-
-- WCAG 2.2 AA como referência.
-- Navegação completa por teclado, foco visível e vínculo entre rótulos, ajuda e erros.
-- Alvos de toque de pelo menos 44 px nos fluxos de campo.
-- Respeito a `prefers-reduced-motion`.
-- Contraste verificado nos tokens de texto, botões, badges e estados.
+- restringir o papel permitido no cadastro público;
+- revisar e atualizar a dependência SQLite com vulnerabilidade reportada;
+- ampliar testes de controllers, serviços e fluxos de autorização;
+- validar acessibilidade e comportamento visual em desktop e mobile;
+- avaliar o isolamento de dados antes de qualquer multi-tenancy.

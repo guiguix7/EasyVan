@@ -1,6 +1,158 @@
 # EasyVan
 
+Sistema web para gestão de transporte por vans. O EasyVan centraliza vans, motoristas, alunos, rotas, viagens, presenças e contas de acesso em uma aplicação ASP.NET Core MVC.
+
+## Estado atual
+
+O projeto está funcional para desenvolvimento local e possui:
+
+- login por cookie e autorização por papel;
+- perfis de Administrador, Motorista e Aluno;
+- CRUD de usuários, vans, motoristas, alunos e rotas;
+- criação, início, finalização e acompanhamento de viagens;
+- registro de presença dos alunos nas viagens;
+- busca e filtros combináveis de vans por texto, status e capacidade;
+- persistência em SQLite com Entity Framework Core e migrações aplicadas na inicialização;
+- hash de senhas com PBKDF2 por meio de `IPasswordService`;
+- interface Razor responsiva com Bootstrap, jQuery e CSS próprio;
+- imagem Docker pronta para publicação em ambiente que forneça a porta 8080.
+
+O produto ainda não implementa GPS em tempo real, reservas, pagamentos, notificações, multi-tenancy ou integração externa.
+
+## Tecnologia
+
+- .NET 10 e ASP.NET Core MVC;
+- Razor Views;
+- Entity Framework Core 8;
+- SQLite;
+- Bootstrap e jQuery;
+- xUnit para testes automatizados;
+- Docker com imagens oficiais do .NET 10.
+
+## Pré-requisitos
+
+- .NET SDK 10;
+- Git, caso o projeto seja obtido por repositório;
+- Docker opcional para execução em contêiner.
+
+Não é necessário executar `npm install`: o projeto não possui `package.json` e não usa Node.js como parte da aplicação principal.
+
+## Executar localmente
+
+Na raiz do projeto:
+
+```powershell
+dotnet restore
+dotnet build
+dotnet test
+dotnet run
+```
+
+Acesse `http://localhost:5256`.
+
+Na primeira inicialização, a aplicação aplica as migrações existentes no arquivo `easyvan.db` e cria os dados de referência que ainda não existirem. O banco local é um artefato de desenvolvimento e não deve ser versionado.
+
+### Contas de demonstração
+
+As contas abaixo são criadas somente quando `ASPNETCORE_ENVIRONMENT=Development` e o banco ainda não possui usuários:
+
+| Perfil | E-mail | Senha |
+|---|---|---|
+| Administrador | `admin@easyvan.com` | `123456` |
+| Motorista | `motorista@easyvan.com` | `123456` |
+| Aluno | `aluno@easyvan.com` | `123456` |
+
+Essas credenciais são exclusivas para demonstração local. Não as utilize em produção.
+
+## Configuração
+
+A conexão padrão é definida em `appsettings.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=easyvan.db"
+  }
+}
+```
+
+Em produção, prefira variáveis de ambiente:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT = "Production"
+$env:ConnectionStrings__DefaultConnection = "Data Source=/data/easyvan.db"
+$env:EASYVAN_ADMIN_EMAIL = "admin@exemplo.com"
+$env:EASYVAN_ADMIN_PASSWORD = "defina-uma-senha-forte"
+```
+
+Quando o banco de produção estiver vazio, `EASYVAN_ADMIN_EMAIL` e `EASYVAN_ADMIN_PASSWORD` permitem criar o primeiro administrador. A aplicação não cria senha padrão em produção.
+
+Em produção, as chaves do cookie do ASP.NET Core Data Protection são persistidas em `/data/keys`. Esse diretório deve estar em um volume persistente quando o ambiente reiniciar contêineres.
+
+## Docker
+
+Construir e executar:
+
+```powershell
+docker build -t easyvan .
+docker run --rm -p 8080:8080 `
+  -e ASPNETCORE_ENVIRONMENT=Production `
+  -e EASYVAN_ADMIN_EMAIL=admin@exemplo.com `
+  -e EASYVAN_ADMIN_PASSWORD="defina-uma-senha-forte" `
+  -v easyvan-data:/data `
+  easyvan
+```
+
+Acesse `http://localhost:8080`. O Dockerfile configura `ASPNETCORE_URLS=http://0.0.0.0:8080`.
+
+## Estrutura
+
+```text
+Controllers/     Fluxos MVC e regras de entrada
+Data/             DbContext, inicialização e persistência
+Models/           Entidades e ViewModels
+Services/         Serviços de domínio, incluindo hash de senhas
+Views/            Views Razor da aplicação
+Migrations/       Migrações do Entity Framework Core
+tests/            Projeto de testes xUnit
+wwwroot/          CSS, JavaScript, imagens e bibliotecas estáticas
+spec/             Especificações funcionais
+plan/             Planos de implementação e testes
+```
+
+## Testes e validação
+
+```powershell
+dotnet restore
+dotnet build
+dotnet test
+```
+
+O conjunto atual inclui testes da normalização de papéis em `tests/EasyVan.Tests`. A compilação também valida as Views Razor.
+
+## Segurança
+
+- Senhas novas são armazenadas com hash PBKDF2, nunca em texto simples.
+- A autenticação usa cookie HttpOnly, SameSite e expiração deslizante.
+- Ações administrativas devem respeitar o papel do usuário.
+- Segredos de produção devem ser fornecidos por variáveis de ambiente ou pelo provedor de hospedagem.
+- Não versione `easyvan.db`, tokens, senhas ou chaves de Data Protection.
+
+Consulte [SECURITY.md](SECURITY.md) para os controles, limitações conhecidas e responsabilidades de implantação.
+
+## Documentação do projeto
+
+- [Direção de produto](PRODUCT.md)
+- [Sistema visual](DESIGN.md)
+- [Acessibilidade](ACCESSIBILITY.md)
+- [Contribuição](CONTRIBUTING.md)
+- [Privacidade](PRIVACY.md)
+- [Segurança](SECURITY.md)
+- [Especificação de filtros](spec/filtros-e-busca.md)
+- [Plano de testes](plan/03-plano-de-testes.md)
+
 ## Equipe
+
 - Guilherme Pereira Andraz
 - Davi Gato Grijó da Silva
 - Victor Hugo Volpi Pereira
@@ -8,94 +160,6 @@
 - Pedro Ailton dos Santos Cavalieri
 - Enzo Miguel Bertoluci Ovido
 
-## Sobre o projeto
-EasyVan é um sistema web ASP.NET Core MVC para gerenciar o transporte de vans. O objetivo é centralizar rotas, horários, passageiros e motoristas em uma interface web simples e responsiva.
+## Licença
 
-## Status atual
-- Aplicação ASP.NET Core MVC funcionando
-- Login e cadastro integrados com banco SQLite via EF Core
-- `ApplicationDbContext` implementado em `Data/ApplicationDbContext.cs`
-- `UsuariosController` atualizado para persistir dados no banco
-- `Vans` e `Usuarios` modelos preparados para persistência
-- Banco é criado automaticamente em tempo de execução com `EnsureCreated()` (desenvolvimento)
-
-## Funcionalidades implementadas
-- Login visual com campos de email e senha (view `Home/Index`)
-- Cadastro de usuário via formulário (`Home/Pages/cadastro`) persistido em SQLite
-- Validação de campos obrigatórios e formato de email
-- CRUD de usuários via `UsuariosController` usando EF Core
-- Model `Van` com CRUD básico em memória (pode ser migrado para EF Core)
-- **Busca e filtros na listagem de vans** (`/Vans`): busca por placa, motorista, rota e descrição (sem diferenciar maiúsculas/acentos) e filtros por status e capacidade mínima/máxima, combináveis entre si (ver `spec/filtros-e-busca.md`)
-
-## Funcionalidades planejadas
-- Migrar todas as listas em memória para EF Core (Vans)
-- Adicionar autenticação com ASP.NET Identity (hash de senhas)
-- Implementar níveis de acesso (Admin / User / Driver)
-- Criar interfaces administrativas para gerenciar vans e rotas
-
-## Tecnologias
-- ASP.NET Core MVC (.NET 10)
-- Razor Views
-- Bootstrap
-- jQuery
-- CSS customizado em `wwwroot/css/site.css`
-
-## Estrutura do projeto
-```
-Controllers/        Controladores MVC
-Views/              Views Razor
-Models/             Modelos e ViewModels
-wwwroot/            CSS, JS e bibliotecas
-API/                Arquivos placeholder para API
-Backend/JS/         Estrutura placeholder de servidor Node.js
-plan/               Planejamento da feature Filtros e Busca (gerado com IA)
-spec/               Especificação da feature Filtros e Busca
-DataBase/           Estrutura placeholder de banco de dados
-```
-
-## Como executar (desenvolvimento)
-1. Abra o terminal na pasta do projeto.
-2. (Opcional) Instale pacotes front-end se houver (não obrigatório):
-
-```powershell
-npm install
-```
-
-3. Restaure pacotes .NET e compile:
-
-```powershell
-dotnet restore
-dotnet build
-```
-
-4. Execute a aplicação:
-
-```powershell
-dotnet run
-```
-
-5. Acesse `http://localhost:5256`.
-
-Notas:
-- O projeto agora usa SQLite via EF Core. O arquivo do banco será criado em `easyvan.db` na raiz do projeto.
-- Em desenvolvimento o banco é criado automaticamente com `EnsureCreated()`; para produção, use migrações EF Core.
-
-## Observações
-- Senhas atualmente são armazenadas em texto simples (não criptografadas). Para produção, implemente hashing (ASP.NET Identity ou BCrypt).
-- Se preferir controlar o esquema do banco, remova `EnsureCreated()` e use migrações EF Core:
-
-```powershell
-dotnet ef migrations add Initial
-dotnet ef database update
-```
-
-## Tipos de usuário
-- `Aluno` (padrão)
-- `Admin` (gerenciador)
-- `Driver` (motorista)
-
-## Próximos passos que recomendo
-- Criar view e controller para cadastrar `Van` persistente via EF Core.
-- Implementar hashing de senhas e autenticação com Identity.
-- Gerar arquivo `.docx` com prompts de IA usados durante o desenvolvimento (conforme solicitado pelo professor).
- 
+Não há uma licença open source definida neste momento. Consulte [LICENSE](LICENSE) antes de redistribuir ou reutilizar o código.
