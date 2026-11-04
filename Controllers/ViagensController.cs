@@ -130,7 +130,7 @@ namespace EasyVan.Controllers
 
             if (viagem.Status != "Agendada")
             {
-                ModelState.AddModelError(string.Empty, "Só é possível iniciar uma viagem com status Agendada.");
+                TempData["Erro"] = "Só é possível iniciar uma viagem com status Agendada.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
@@ -156,7 +156,7 @@ namespace EasyVan.Controllers
 
             if (viagem.Status != "EmAndamento")
             {
-                ModelState.AddModelError(string.Empty, "Só é possível finalizar uma viagem em andamento.");
+                TempData["Erro"] = "Só é possível finalizar uma viagem em andamento.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
@@ -182,7 +182,7 @@ namespace EasyVan.Controllers
 
             if (viagem.Status != "EmAndamento")
             {
-                ModelState.AddModelError(string.Empty, "A presença só pode ser marcada enquanto a viagem está em andamento.");
+                TempData["Erro"] = "A presença só pode ser marcada enquanto a viagem está em andamento.";
                 return RedirectToAction(nameof(Details), new { id = viagemId });
             }
 
@@ -222,7 +222,7 @@ namespace EasyVan.Controllers
 
             if (viagem.Status != "EmAndamento")
             {
-                ModelState.AddModelError(string.Empty, "A presença só pode ser inicializada enquanto a viagem está em andamento.");
+                TempData["Erro"] = "A presença só pode ser inicializada enquanto a viagem está em andamento.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 

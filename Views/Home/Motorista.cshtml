@@ -4,130 +4,186 @@
     ViewData["Title"] = "Meu painel";
     var alunos = Model?.Alunos as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
     var rotas = Model?.Rotas as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var totalAlunos = alunos.Count();
+    var totalRotas = rotas.Count();
+
+    string Iniciais(string? nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome)) return "?";
+        var partes = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return partes.Length == 1
+            ? partes[0].Substring(0, 1).ToUpperInvariant()
+            : (partes[0].Substring(0, 1) + partes[^1].Substring(0, 1)).ToUpperInvariant();
+    }
 }
 
 <section class="ev-page">
-    <header class="ev-page-heading">
-        <div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Área do motorista</p>
             <h1>Meu painel</h1>
-            <p>Consulte os dados da van, os alunos cadastrados e as rotas disponíveis.</p>
+            <p class="ev-page-head__lead">Acesse os dados do veículo, os alunos ativos e as rotas disponíveis para a operação.</p>
         </div>
-        <div class="ev-page-actions">
-            <a asp-controller="Viagens" asp-action="Index" class="btn btn-primary">Ver viagens</a>
+        <div class="ev-page-head__actions">
+            <a asp-controller="Viagens" asp-action="Index" class="btn btn-primary">
+                <partial name="_Icon" model='"trip"' />
+                Ver viagens
+            </a>
         </div>
     </header>
 
     @if (Model.Van != null)
     {
-        <section class="ev-stat-grid" aria-label="Informações da van apresentada">
-            <article class="ev-stat">
-                <span class="ev-stat__label">Veículo</span>
-                <strong class="ev-stat__value">#@Model.Van.Id</strong>
-                <span class="ev-stat__detail">@Model.Van.Plate</span>
-            </article>
-            <article class="ev-stat">
-                <span class="ev-stat__label">Capacidade</span>
-                <strong class="ev-stat__value">@Model.Van.Capacity</strong>
-                <span class="ev-stat__detail">Lugares informados no cadastro</span>
-            </article>
-            <article class="ev-stat">
-                <span class="ev-stat__label">Status</span>
-                <strong class="ev-stat__value fs-4">@Model.Van.Status</strong>
-                <span class="ev-stat__detail">@Model.Van.Route</span>
-            </article>
-        </section>
+        <section class="ev-panel ev-panel--flush" aria-labelledby="van-atual">
+            <div class="ev-detail-head ev-detail-head--panel">
+                <div>
+                    <p class="ev-eyebrow">Veículo de referência</p>
+                    <div class="ev-detail-head__identity">
+                        <span class="ev-plate ev-plate--lg">@Model.Van.Plate</span>
+                        <partial name="_StatusBadge" model="Model.Van.Status" />
+                    </div>
+                    <p class="ev-detail-head__meta">
+                        <partial name="_Icon" model='"route"' />
+                        @(string.IsNullOrWhiteSpace((string)Model.Van.Route) ? "Rota não informada" : Model.Van.Route)
+                        <span aria-hidden="true">·</span>
+                        <partial name="_Icon" model='"clock"' />
+                        @(string.IsNullOrWhiteSpace((string)Model.Van.Schedule) ? "Horário não informado" : Model.Van.Schedule)
+                    </p>
+                </div>
+                <a asp-controller="Vans" asp-action="Details" asp-route-id="@Model.Van.Id" class="btn btn-outline-secondary">
+                    Ver cadastro
+                </a>
+            </div>
 
-        <section class="ev-panel">
-            <h2 class="ev-panel__title">Dados do veículo</h2>
-            <dl class="row mb-0">
-                <dt class="col-sm-3 text-muted">Motorista no cadastro</dt>
-                <dd class="col-sm-9">@Model.Van.Driver</dd>
-                <dt class="col-sm-3 text-muted">Horários informados</dt>
-                <dd class="col-sm-9">@Model.Van.Schedule</dd>
-                <dt class="col-sm-3 text-muted">Descrição</dt>
-                <dd class="col-sm-9 mb-0">@(string.IsNullOrWhiteSpace((string)Model.Van.Description) ? "Sem descrição cadastrada." : Model.Van.Description)</dd>
+            <dl class="ev-data">
+                <div class="ev-data__item">
+                    <dt>Capacidade</dt>
+                    <dd>@Model.Van.Capacity lugares</dd>
+                </div>
+                <div class="ev-data__item">
+                    <dt>Motorista no cadastro</dt>
+                    <dd>@(string.IsNullOrWhiteSpace((string)Model.Van.Driver) ? "Não informado" : Model.Van.Driver)</dd>
+                </div>
+                <div class="ev-data__item ev-data__item--wide">
+                    <dt>Descrição</dt>
+                    <dd>@(string.IsNullOrWhiteSpace((string)Model.Van.Description) ? "Sem descrição cadastrada." : Model.Van.Description)</dd>
+                </div>
             </dl>
         </section>
+
+        <div class="ev-metrics ev-metrics--three" aria-label="Resumo da operação">
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Capacidade</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"van"' /></span>
+                </div>
+                <strong class="ev-metric__value">@Model.Van.Capacity</strong>
+                <span class="ev-metric__hint">lugares na van</span>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Alunos ativos</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
+                </div>
+                <strong class="ev-metric__value">@totalAlunos</strong>
+                <span class="ev-metric__hint">passageiros cadastrados</span>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Rotas ativas</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
+                </div>
+                <strong class="ev-metric__value">@totalRotas</strong>
+                <span class="ev-metric__hint">trajetos disponíveis</span>
+            </article>
+        </div>
     }
     else
     {
-        <div class="ev-panel ev-empty" role="status">
-            <h2 class="h5">Nenhuma van encontrada</h2>
-            <p class="mb-0">Não há veículos cadastrados para exibição neste momento.</p>
+        <div class="ev-panel ev-empty">
+            <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"van"' /></span>
+            <h2 class="ev-empty__title">Nenhuma van disponível</h2>
+            <p class="ev-empty__text">Não há veículos cadastrados para exibição neste momento. Procure a administração da operação.</p>
         </div>
     }
 
-    <section class="ev-panel">
-        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-            <h2 class="ev-panel__title mb-0">Alunos ativos</h2>
-            <span class="small text-muted">@alunos.Count() registros</span>
-        </div>
-        @if (alunos.Any())
-        {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th scope="col">Nome</th>
-                            <th scope="col">E-mail</th>
-                            <th scope="col">Telefone</th>
-                            <th scope="col">Situação</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var aluno in alunos)
-                        {
-                            <tr>
-                                <td><strong>@aluno.Nome</strong></td>
-                                <td>@aluno.Email</td>
-                                <td>@aluno.Telefone</td>
-                                <td><span class="badge badge-status-operacional">Ativo</span></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+    <div class="ev-detail-grid">
+        <section class="ev-panel ev-panel--flush" aria-labelledby="alunos-ativos">
+            <div class="ev-panel__head">
+                <div>
+                    <h2 id="alunos-ativos">Alunos ativos</h2>
+                    <p class="ev-panel__hint">Passageiros disponíveis para as viagens.</p>
+                </div>
+                <span class="ev-count">@totalAlunos</span>
             </div>
-        }
-        else
-        {
-            <div class="ev-empty">Nenhum aluno ativo cadastrado.</div>
-        }
-    </section>
 
-    <section class="ev-panel">
-        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-            <h2 class="ev-panel__title mb-0">Rotas ativas</h2>
-            <span class="small text-muted">@rotas.Count() registros</span>
-        </div>
-        @if (rotas.Any())
-        {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th scope="col">Rota</th>
-                            <th scope="col">Origem</th>
-                            <th scope="col">Destino</th>
-                            <th scope="col">Situação</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var rota in rotas)
-                        {
-                            <tr>
-                                <td><strong>@rota.Nome</strong></td>
-                                <td>@rota.Origem</td>
-                                <td>@rota.Destino</td>
-                                <td><span class="badge badge-status-operacional">Ativa</span></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+            @if (alunos.Any())
+            {
+                <ul class="ev-attendance">
+                    @foreach (var aluno in alunos)
+                    {
+                        <li class="ev-attendance__item">
+                            <div class="ev-person">
+                                <span class="ev-avatar" aria-hidden="true">@Iniciais((string)aluno.Nome)</span>
+                                <div class="ev-person__meta">
+                                    <span class="ev-person__name">@aluno.Nome</span>
+                                    <span class="ev-person__sub">@aluno.Email</span>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace((string)aluno.Telefone))
+                            {
+                                <span class="ev-person__sub">@aluno.Telefone</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="ev-empty ev-empty--compact">
+                    <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
+                    <p class="ev-empty__title">Nenhum aluno ativo</p>
+                    <p class="ev-empty__text">A lista será exibida quando houver passageiros cadastrados.</p>
+                </div>
+            }
+        </section>
+
+        <section class="ev-panel ev-panel--flush" aria-labelledby="rotas-ativas">
+            <div class="ev-panel__head">
+                <div>
+                    <h2 id="rotas-ativas">Rotas ativas</h2>
+                    <p class="ev-panel__hint">Trajetos que podem ser usados nas viagens.</p>
+                </div>
+                <span class="ev-count">@totalRotas</span>
             </div>
-        }
-        else
-        {
-            <div class="ev-empty">Nenhuma rota ativa cadastrada.</div>
-        }
-    </section>
+
+            @if (rotas.Any())
+            {
+                <ul class="ev-attendance">
+                    @foreach (var rota in rotas)
+                    {
+                        <li class="ev-attendance__item">
+                            <div class="ev-attendance__note">
+                                <span class="ev-person__name">@rota.Nome</span>
+                                <div class="ev-route-leg mt-1">
+                                    <span class="ev-route-leg__stop">@rota.Origem</span>
+                                    <partial name="_Icon" model='"arrow-right"' />
+                                    <span class="ev-route-leg__stop ev-route-leg__stop--end">@rota.Destino</span>
+                                </div>
+                            </div>
+                            <partial name="_StatusBadge" model='"Ativa"' />
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="ev-empty ev-empty--compact">
+                    <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
+                    <p class="ev-empty__title">Nenhuma rota ativa</p>
+                    <p class="ev-empty__text">As rotas disponíveis aparecerão aqui.</p>
+                </div>
+            }
+        </section>
+    </div>
 </section>

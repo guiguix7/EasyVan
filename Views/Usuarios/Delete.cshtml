@@ -1,17 +1,61 @@
 @model EasyVan.Models.Usuarios
 
 @{
-    ViewData["Title"] = "Excluir Usuário";
+    ViewData["Title"] = "Excluir usuário";
 }
 
-<h1>Excluir Usuário</h1>
+<section class="ev-page">
+    <a asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para usuários
+    </a>
 
-<div class="alert alert-danger">
-    <p>Tem certeza que deseja excluir o usuário <strong>@Model.Nome</strong>?</p>
-</div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Confirmação</p>
+            <h1>Excluir usuário</h1>
+            <p class="ev-page-head__lead">Revise a conta antes de confirmar. A exclusão não pode ser desfeita.</p>
+        </div>
+    </header>
 
-<form asp-action="Delete" method="post">
-    <input type="hidden" asp-for="Id" />
-    <button type="submit" class="btn btn-danger">Excluir</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-</form>
+    <div class="ev-detail-grid">
+        <section class="ev-panel ev-panel--flush" aria-labelledby="usuario-exclusao">
+            <div class="ev-panel__head">
+                <div>
+                    <h2 id="usuario-exclusao">@Model.Nome</h2>
+                    <p class="ev-panel__hint">Usuário #@Model.Id</p>
+                </div>
+                <partial name="_StatusBadge" model="Model.RoleManager" />
+            </div>
+            <dl class="ev-data">
+                <div class="ev-data__item">
+                    <dt>E-mail</dt>
+                    <dd>@Model.Email</dd>
+                </div>
+                <div class="ev-data__item">
+                    <dt>Perfil</dt>
+                    <dd>@Model.RoleManager</dd>
+                </div>
+            </dl>
+        </section>
+
+        <aside>
+            <div class="ev-notice ev-notice--danger" role="alert">
+                <partial name="_Icon" model='"alert"' />
+                <div class="ev-notice__body">
+                    <p class="ev-notice__title">Esta ação é permanente</p>
+                    <p class="mb-0">A conta perderá o acesso à plataforma. Se esta for a única conta de administrador, o gerenciamento pode ficar indisponível.</p>
+                </div>
+            </div>
+
+            <form asp-action="Delete" method="post" class="ev-form-actions mt-3">
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn btn-danger">
+                    <partial name="_Icon" model='"trash"' />
+                    Excluir definitivamente
+                </button>
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancelar</a>
+            </form>
+        </aside>
+    </div>
+</section>

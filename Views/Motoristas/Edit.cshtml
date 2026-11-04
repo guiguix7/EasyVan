@@ -1,59 +1,98 @@
 @model EasyVan.Models.Motorista
 
 @{
-    ViewData["Title"] = "Editar Motorista";
+    ViewData["Title"] = "Editar motorista";
 }
 
-<section class="py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h3">Editar Motorista</h1>
-        <a asp-action="Index" class="btn btn-outline-secondary">Voltar à listagem</a>
-    </div>
+<section class="ev-page">
+    <a asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para motoristas
+    </a>
 
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form asp-action="Edit" method="post">
-                        <input type="hidden" asp-for="Id" />
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Motorista #@Model.Id</p>
+            <h1>Editar motorista</h1>
+            <p class="ev-page-head__lead">Atualize os dados de contato e a situação do cadastro.</p>
+        </div>
+        <div class="ev-page-head__actions">
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Ver detalhes</a>
+        </div>
+    </header>
 
-                        <div class="mb-3">
-                            <label asp-for="Nome" class="form-label">Nome</label>
-                            <input asp-for="Nome" class="form-control" />
-                            <span asp-validation-for="Nome" class="text-danger"></span>
-                        </div>
+    <form asp-action="Edit" method="post" class="ev-form-layout">
+        <div class="ev-form-main">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="ev-notice ev-notice--danger" role="alert"></div>
 
-                        <div class="mb-3">
-                            <label asp-for="Email" class="form-label">Email</label>
-                            <input asp-for="Email" class="form-control" type="email" />
-                            <span asp-validation-for="Email" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Telefone" class="form-label">Telefone</label>
-                            <input asp-for="Telefone" class="form-control" />
-                            <span asp-validation-for="Telefone" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="CNH" class="form-label">CNH</label>
-                            <input asp-for="CNH" class="form-control" />
-                            <span asp-validation-for="CNH" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3 form-check">
-                            <input asp-for="Ativo" class="form-check-input" />
-                            <label asp-for="Ativo" class="form-check-label">Motorista ativo</label>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
-                    </form>
+            <section class="ev-panel ev-form-section" aria-labelledby="dados-motorista">
+                <div class="ev-form-section__head">
+                    <h2 id="dados-motorista">Dados do motorista</h2>
+                    <p>Nome e e-mail usados nos registros da operação.</p>
                 </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="Nome" class="form-label">Nome completo <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Nome" class="form-control" autocomplete="name" />
+                        <span asp-validation-for="Nome" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="Email" class="form-label">E-mail <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Email" class="form-control" type="email" autocomplete="email"
+                               inputmode="email" autocapitalize="none" spellcheck="false" />
+                        <span asp-validation-for="Email" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="Telefone" class="form-label">Telefone</label>
+                        <input asp-for="Telefone" class="form-control" type="tel" autocomplete="tel" inputmode="tel" />
+                        <span asp-validation-for="Telefone" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="CNH" class="form-label">CNH</label>
+                        <input asp-for="CNH" class="form-control" autocomplete="off" />
+                        <span asp-validation-for="CNH" class="ev-form-validation"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="situacao-motorista">
+                <div class="ev-form-section__head">
+                    <h2 id="situacao-motorista">Situação</h2>
+                    <p>Define se o motorista pode ser selecionado em novas viagens.</p>
+                </div>
+                <div class="ev-check">
+                    <input asp-for="Ativo" class="form-check-input" />
+                    <div class="ev-check__text">
+                        <label asp-for="Ativo">Motorista ativo</label>
+                        <span>Cadastros inativos continuam no histórico, mas não aparecem na criação de viagens.</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="ev-form-actions">
+                <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                <span class="ev-form-actions__spacer"></span>
+                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
+                    <partial name="_Icon" model='"trash"' />
+                    Excluir motorista
+                </a>
             </div>
         </div>
-    </div>
+
+        <aside class="ev-form-aside">
+            <section class="ev-panel">
+                <div class="ev-panel__body">
+                    <h2>Histórico preservado</h2>
+                    <p class="mb-0">Alterar o nome aqui não reescreve viagens antigas. Inativar o cadastro impede novas seleções sem apagar o histórico.</p>
+                </div>
+            </section>
+        </aside>
+    </form>
 </section>
 
 @section Scripts {

@@ -1,31 +1,65 @@
 @model EasyVan.Models.Van
 
 @{
-    ViewData["Title"] = "Excluir Van";
+    ViewData["Title"] = "Excluir van";
 }
 
-<section class="py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h3">Excluir Van</h1>
-        <a asp-action="Index" class="btn btn-outline-secondary">Voltar à listagem</a>
-    </div>
+<section class="ev-page">
+    <a asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para vans
+    </a>
 
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm border-danger">
-                <div class="card-body text-center">
-                    <div class="alert alert-danger mb-4">
-                        <p>Tem certeza que deseja excluir a van <strong>@Model.Plate</strong>?</p>
-                        <p class="mb-0 text-muted">Esta ação não pode ser desfeita.</p>
-                    </div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Confirmação</p>
+            <h1>Excluir van</h1>
+            <p class="ev-page-head__lead">Revise o veículo antes de confirmar. A exclusão não pode ser desfeita.</p>
+        </div>
+    </header>
 
-                    <form asp-action="Delete" method="post">
-                        <input type="hidden" asp-for="Id" />
-                        <button type="submit" class="btn btn-danger">Excluir</button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
-                    </form>
+    <div class="ev-detail-grid">
+        <section class="ev-panel ev-panel--flush" aria-labelledby="van-exclusao">
+            <div class="ev-panel__head">
+                <div>
+                    <h2 id="van-exclusao"><span class="ev-plate">@Model.Plate</span></h2>
+                    <p class="ev-panel__hint">Van #@Model.Id</p>
+                </div>
+                <partial name="_StatusBadge" model="Model.Status" />
+            </div>
+            <dl class="ev-data">
+                <div class="ev-data__item">
+                    <dt>Motorista</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(Model.Driver) ? "Não informado" : Model.Driver)</dd>
+                </div>
+                <div class="ev-data__item">
+                    <dt>Capacidade</dt>
+                    <dd>@Model.Capacity lugares</dd>
+                </div>
+                <div class="ev-data__item ev-data__item--wide">
+                    <dt>Rota</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(Model.Route) ? "Não informada" : Model.Route)</dd>
+                </div>
+            </dl>
+        </section>
+
+        <aside>
+            <div class="ev-notice ev-notice--danger" role="alert">
+                <partial name="_Icon" model='"alert"' />
+                <div class="ev-notice__body">
+                    <p class="ev-notice__title">Esta ação é permanente</p>
+                    <p class="mb-0">A van será removida da frota. Se ela estiver associada a viagens, o histórico pode ser afetado.</p>
                 </div>
             </div>
-        </div>
+
+            <form asp-action="Delete" method="post" class="ev-form-actions mt-3">
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn btn-danger">
+                    <partial name="_Icon" model='"trash"' />
+                    Excluir definitivamente
+                </button>
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancelar</a>
+            </form>
+        </aside>
     </div>
 </section>

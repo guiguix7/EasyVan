@@ -2,43 +2,70 @@
 
 @{
     ViewData["Title"] = "Alunos";
+    var alunos = Model.ToList();
+    var ativos = alunos.Count(a => a.Ativo);
 }
 
 <section class="ev-page">
-    <header class="ev-page-heading">
-        <div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Cadastros</p>
             <h1>Alunos</h1>
-            <p>Consulte os alunos cadastrados e mantenha os dados de contato organizados.</p>
+            <p class="ev-page-head__lead">Consulte os passageiros cadastrados e mantenha os dados de contato organizados.</p>
         </div>
-        <div class="ev-page-actions">
-            <a asp-action="Create" class="btn btn-primary">Novo aluno</a>
+        <div class="ev-page-head__actions">
+            <a asp-action="Create" class="btn btn-primary">
+                <partial name="_Icon" model='"plus"' />
+                Novo aluno
+            </a>
         </div>
     </header>
 
-    @if (Model.Any())
+    @if (alunos.Any())
     {
-        <section class="ev-panel d-none d-lg-block p-0 overflow-hidden" aria-label="Tabela de alunos">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
+        <div class="ev-results">
+            <p class="mb-0">
+                <strong>@alunos.Count</strong> alunos cadastrados · <strong>@ativos</strong> ativos.
+            </p>
+        </div>
+
+        <section class="ev-panel ev-panel--flush ev-list-desktop" aria-label="Tabela de alunos">
+            <div class="ev-table-scroll">
+                <table class="ev-table">
                     <thead>
                         <tr>
-                            <th scope="col">Nome</th><th scope="col">E-mail</th><th scope="col">Telefone</th>
-                            <th scope="col">Endereço</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Ações</span></th>
+                            <th scope="col">Nome</th>
+                            <th scope="col">E-mail</th>
+                            <th scope="col">Telefone</th>
+                            <th scope="col">Endereço</th>
+                            <th scope="col">Status</th>
+                            <th scope="col"><span class="visually-hidden">Ações</span></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var aluno in Model)
+                        @foreach (var aluno in alunos)
                         {
                             <tr>
-                                <td><strong>@aluno.Nome</strong></td>
+                                <td>
+                                    <span class="ev-table__primary">@aluno.Nome</span>
+                                    <span class="ev-table__secondary">Aluno #@aluno.Id</span>
+                                </td>
                                 <td>@aluno.Email</td>
-                                <td>@aluno.Telefone</td>
-                                <td>@aluno.Endereco</td>
-                                <td><span class="badge @(aluno.Ativo ? "badge-status-operacional" : "badge-status-outro")">@(aluno.Ativo ? "Ativo" : "Inativo")</span></td>
-                                <td class="text-end tabela-acoes">
-                                    <a asp-action="Details" asp-route-id="@aluno.Id" class="btn btn-sm btn-outline-primary">Detalhes</a>
-                                    <a asp-action="Edit" asp-route-id="@aluno.Id" class="btn btn-sm btn-outline-secondary">Editar</a>
-                                    <a asp-action="Delete" asp-route-id="@aluno.Id" class="btn btn-sm btn-outline-danger">Excluir</a>
+                                <td>@(string.IsNullOrWhiteSpace(aluno.Telefone) ? "—" : aluno.Telefone)</td>
+                                <td>@(string.IsNullOrWhiteSpace(aluno.Endereco) ? "—" : aluno.Endereco)</td>
+                                <td><partial name="_StatusBadge" model='aluno.Ativo ? "Ativo" : "Inativo"' /></td>
+                                <td class="is-actions">
+                                    <div class="ev-row-actions">
+                                        <a asp-action="Details" asp-route-id="@aluno.Id" class="ev-link-action">Detalhes</a>
+                                        <a asp-action="Edit" asp-route-id="@aluno.Id" class="ev-link-action">
+                                            <partial name="_Icon" model='"edit"' />
+                                            Editar
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@aluno.Id" class="ev-link-action ev-link-action--danger">
+                                            <partial name="_Icon" model='"trash"' />
+                                            Excluir
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -46,23 +73,36 @@
                 </table>
             </div>
         </section>
-        <section class="ev-mobile-vans d-lg-none" aria-label="Lista de alunos">
-            @foreach (var aluno in Model)
+
+        <section class="ev-records ev-list-mobile" aria-label="Lista de alunos">
+            @foreach (var aluno in alunos)
             {
-                <article class="ev-van-mobile">
-                    <div class="ev-van-mobile__head">
-                        <div class="ev-van-mobile__plate">@aluno.Nome</div>
-                        <span class="badge @(aluno.Ativo ? "badge-status-operacional" : "badge-status-outro")">@(aluno.Ativo ? "Ativo" : "Inativo")</span>
+                <article class="ev-record">
+                    <div class="ev-record__head">
+                        <div>
+                            <h2 class="ev-record__title">@aluno.Nome</h2>
+                            <span class="ev-record__meta">Aluno #@aluno.Id</span>
+                        </div>
+                        <partial name="_StatusBadge" model='aluno.Ativo ? "Ativo" : "Inativo"' />
                     </div>
-                    <div class="ev-van-mobile__data">
-                        <div class="ev-van-mobile__item"><span>E-mail</span><strong>@aluno.Email</strong></div>
-                        <div class="ev-van-mobile__item"><span>Telefone</span><strong>@aluno.Telefone</strong></div>
-                        <div class="ev-van-mobile__item"><span>Endereço</span><strong>@aluno.Endereco</strong></div>
-                    </div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a asp-action="Details" asp-route-id="@aluno.Id" class="btn btn-outline-primary flex-fill">Detalhes</a>
-                        <a asp-action="Edit" asp-route-id="@aluno.Id" class="btn btn-outline-secondary flex-fill">Editar</a>
-                        <a asp-action="Delete" asp-route-id="@aluno.Id" class="btn btn-outline-danger flex-fill">Excluir</a>
+                    <dl class="ev-record__data">
+                        <div class="ev-span-2">
+                            <dt>E-mail</dt>
+                            <dd>@aluno.Email</dd>
+                        </div>
+                        <div>
+                            <dt>Telefone</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(aluno.Telefone) ? "Não informado" : aluno.Telefone)</dd>
+                        </div>
+                        <div>
+                            <dt>Endereço</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(aluno.Endereco) ? "Não informado" : aluno.Endereco)</dd>
+                        </div>
+                    </dl>
+                    <div class="ev-record__actions">
+                        <a asp-action="Details" asp-route-id="@aluno.Id" class="btn btn-outline-primary">Detalhes</a>
+                        <a asp-action="Edit" asp-route-id="@aluno.Id" class="btn btn-outline-secondary">Editar</a>
+                        <a asp-action="Delete" asp-route-id="@aluno.Id" class="btn btn-outline-danger">Excluir</a>
                     </div>
                 </article>
             }
@@ -71,8 +111,9 @@
     else
     {
         <div class="ev-panel ev-empty">
-            <h2 class="h5 mb-2">Nenhum aluno cadastrado</h2>
-            <p class="mb-3">Cadastre os alunos para organizar as informações da operação.</p>
+            <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
+            <h2 class="ev-empty__title">Nenhum aluno cadastrado</h2>
+            <p class="ev-empty__text">Cadastre os alunos para organizar as informações de transporte e a presença nas viagens.</p>
             <a asp-action="Create" class="btn btn-primary">Cadastrar aluno</a>
         </div>
     }

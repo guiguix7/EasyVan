@@ -1,31 +1,65 @@
 @model EasyVan.Models.Motorista
 
 @{
-    ViewData["Title"] = "Excluir Motorista";
+    ViewData["Title"] = "Excluir motorista";
 }
 
-<section class="py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h3">Excluir Motorista</h1>
-        <a asp-action="Index" class="btn btn-outline-secondary">Voltar à listagem</a>
-    </div>
+<section class="ev-page">
+    <a asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para motoristas
+    </a>
 
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm border-danger text-center">
-                <div class="card-body">
-                    <div class="alert alert-danger mb-4">
-                        <p>Tem certeza que deseja excluir o motorista <strong>@Model.Nome</strong>?</p>
-                        <p class="mb-0 text-muted">Esta ação não pode ser desfeita.</p>
-                    </div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Confirmação</p>
+            <h1>Excluir motorista</h1>
+            <p class="ev-page-head__lead">Revise o cadastro antes de confirmar. A exclusão não pode ser desfeita.</p>
+        </div>
+    </header>
 
-                    <form asp-action="Delete" method="post">
-                        <input type="hidden" asp-for="Id" />
-                        <button type="submit" class="btn btn-danger">Excluir</button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
-                    </form>
+    <div class="ev-detail-grid">
+        <section class="ev-panel ev-panel--flush" aria-labelledby="motorista-exclusao">
+            <div class="ev-panel__head">
+                <div>
+                    <h2 id="motorista-exclusao">@Model.Nome</h2>
+                    <p class="ev-panel__hint">Motorista #@Model.Id</p>
+                </div>
+                <partial name="_StatusBadge" model='Model.Ativo ? "Ativo" : "Inativo"' />
+            </div>
+            <dl class="ev-data">
+                <div class="ev-data__item">
+                    <dt>E-mail</dt>
+                    <dd>@Model.Email</dd>
+                </div>
+                <div class="ev-data__item">
+                    <dt>Telefone</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(Model.Telefone) ? "Não informado" : Model.Telefone)</dd>
+                </div>
+                <div class="ev-data__item ev-data__item--wide">
+                    <dt>CNH</dt>
+                    <dd class="is-mono">@(string.IsNullOrWhiteSpace(Model.CNH) ? "Não informada" : Model.CNH)</dd>
+                </div>
+            </dl>
+        </section>
+
+        <aside>
+            <div class="ev-notice ev-notice--danger" role="alert">
+                <partial name="_Icon" model='"alert"' />
+                <div class="ev-notice__body">
+                    <p class="ev-notice__title">Esta ação é permanente</p>
+                    <p class="mb-0">O motorista será removido dos cadastros. Viagens que já referenciam este registro podem ser afetadas.</p>
                 </div>
             </div>
-        </div>
+
+            <form asp-action="Delete" method="post" class="ev-form-actions mt-3">
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn btn-danger">
+                    <partial name="_Icon" model='"trash"' />
+                    Excluir definitivamente
+                </button>
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancelar</a>
+            </form>
+        </aside>
     </div>
 </section>

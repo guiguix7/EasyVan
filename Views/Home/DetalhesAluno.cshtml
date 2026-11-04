@@ -5,51 +5,95 @@
 }
 
 <section class="ev-page">
-    <header class="ev-page-heading">
-        <div>
-            <h1>Minha van</h1>
-            <p>Consulte as informações do veículo e os dados de transporte disponíveis.</p>
-        </div>
-        <div class="ev-page-actions">
-            <a asp-controller="Home" asp-action="Aluno" class="btn btn-outline-secondary">Voltar ao início</a>
-        </div>
-    </header>
+    <a asp-controller="Home" asp-action="Aluno" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar ao início
+    </a>
 
     @if (Model.Van != null)
     {
-        <section class="ev-panel">
-            <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
-                <div>
-                    <span class="small text-muted">Identificação do veículo</span>
-                    <h2 class="h3 mb-1">@Model.Van.Plate</h2>
-                    <span class="small text-muted">Van #@Model.Van.Id</span>
+        <header class="ev-detail-head">
+            <div>
+                <p class="ev-eyebrow">Área do aluno · Van #@Model.Van.Id</p>
+                <div class="ev-detail-head__identity">
+                    <span class="ev-plate ev-plate--lg">@Model.Van.Plate</span>
+                    <partial name="_StatusBadge" model="Model.Van.Status" />
                 </div>
-                <span class="badge @(Model.Van.Status == "Operacional" ? "badge-status-operacional" : Model.Van.Status == "Manutenção" ? "badge-status-manutencao" : "badge-status-outro")">
-                    @Model.Van.Status
-                </span>
+                <p class="ev-detail-head__meta">
+                    <partial name="_Icon" model='"route"' />
+                    @(string.IsNullOrWhiteSpace((string)Model.Van.Route) ? "Rota não informada" : Model.Van.Route)
+                    <span aria-hidden="true">·</span>
+                    <partial name="_Icon" model='"clock"' />
+                    @(string.IsNullOrWhiteSpace((string)Model.Van.Schedule) ? "Horário não informado" : Model.Van.Schedule)
+                </p>
             </div>
+        </header>
 
-            <dl class="row mb-0">
-                <dt class="col-sm-3 text-muted">Rota</dt>
-                <dd class="col-sm-9">@Model.Van.Route</dd>
-                <dt class="col-sm-3 text-muted">Horários</dt>
-                <dd class="col-sm-9">@Model.Van.Schedule</dd>
-                <dt class="col-sm-3 text-muted">Capacidade</dt>
-                <dd class="col-sm-9">@Model.Van.Capacity lugares</dd>
-                <dt class="col-sm-3 text-muted">Motorista no cadastro</dt>
-                <dd class="col-sm-9">@Model.MotoristaNome</dd>
-                <dt class="col-sm-3 text-muted">Descrição</dt>
-                <dd class="col-sm-9 mb-0">@Model.Van.Description</dd>
-            </dl>
-        </section>
+        <div class="ev-detail-grid">
+            <section class="ev-panel ev-panel--flush" aria-labelledby="dados-veiculo">
+                <div class="ev-panel__head">
+                    <div>
+                        <h2 id="dados-veiculo">Dados do transporte</h2>
+                        <p class="ev-panel__hint">Informações do veículo consultado.</p>
+                    </div>
+                </div>
+                <dl class="ev-data">
+                    <div class="ev-data__item">
+                        <dt>Placa</dt>
+                        <dd><span class="ev-plate">@Model.Van.Plate</span></dd>
+                    </div>
+                    <div class="ev-data__item">
+                        <dt>Situação</dt>
+                        <dd>@Model.Van.Status</dd>
+                    </div>
+                    <div class="ev-data__item">
+                        <dt>Rota</dt>
+                        <dd>@(string.IsNullOrWhiteSpace((string)Model.Van.Route) ? "Não informada" : Model.Van.Route)</dd>
+                    </div>
+                    <div class="ev-data__item">
+                        <dt>Horários</dt>
+                        <dd>@(string.IsNullOrWhiteSpace((string)Model.Van.Schedule) ? "Não informados" : Model.Van.Schedule)</dd>
+                    </div>
+                    <div class="ev-data__item">
+                        <dt>Capacidade</dt>
+                        <dd>@Model.Van.Capacity lugares</dd>
+                    </div>
+                    <div class="ev-data__item">
+                        <dt>Motorista</dt>
+                        <dd>@(string.IsNullOrWhiteSpace((string)Model.MotoristaNome) ? "Não informado" : Model.MotoristaNome)</dd>
+                    </div>
+                    <div class="ev-data__item ev-data__item--wide">
+                        <dt>Descrição</dt>
+                        <dd>@(string.IsNullOrWhiteSpace((string)Model.Van.Description) ? "Sem descrição cadastrada." : Model.Van.Description)</dd>
+                    </div>
+                </dl>
+            </section>
 
-        <p class="small text-muted mb-0">As informações exibidas correspondem ao veículo retornado pelo cadastro atual do sistema.</p>
+            <aside class="ev-form-aside">
+                <section class="ev-panel">
+                    <div class="ev-panel__body">
+                        <h2>Sobre esta consulta</h2>
+                        <p class="mb-0">As informações exibidas correspondem ao veículo retornado pelo cadastro atual do sistema. Se os dados não corresponderem ao seu transporte, procure a administração.</p>
+                    </div>
+                </section>
+
+                <div class="ev-notice ev-notice--info mt-3" role="note">
+                    <partial name="_Icon" model='"info"' />
+                    <div class="ev-notice__body">
+                        <p class="ev-notice__title">Horários podem mudar</p>
+                        <p class="mb-0">Confirme a saída com o motorista ou com a operação antes de se deslocar.</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
     }
     else
     {
-        <div class="ev-panel ev-empty" role="status">
-            <h2 class="h5">Nenhuma van disponível</h2>
-            <p class="mb-0">Não foi encontrada uma van para consulta neste momento.</p>
+        <div class="ev-panel ev-empty">
+            <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"van"' /></span>
+            <h1 class="ev-empty__title">Nenhuma van disponível</h1>
+            <p class="ev-empty__text">Não foi encontrada uma van para consulta neste momento. Procure a administração da operação.</p>
+            <a asp-controller="Home" asp-action="Aluno" class="btn btn-outline-secondary">Voltar ao início</a>
         </div>
     }
 </section>

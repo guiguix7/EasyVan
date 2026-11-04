@@ -1,6 +1,33 @@
 ﻿@{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = "Privacidade";
+    var autenticado = User.Identity?.IsAuthenticated == true;
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+@if (autenticado)
+{
+    <section class="ev-page">
+        <header class="ev-page-head">
+            <div class="ev-page-head__text">
+                <p class="ev-eyebrow">Transparência</p>
+                <h1>Privacidade</h1>
+                <p class="ev-page-head__lead">Como o EasyVan trata os dados usados na operação de transporte.</p>
+            </div>
+        </header>
+
+        <section class="ev-panel ev-panel--flush" aria-label="Política de privacidade">
+            <partial name="_PrivacidadeConteudo" />
+        </section>
+    </section>
+}
+else
+{
+    <section class="ev-public">
+        <a class="ev-public__brand" asp-controller="Home" asp-action="Index" aria-label="EasyVan — início">
+            <img src="~/images/logo.png" alt="EasyVan — Gestão de Rotas e Vans" width="174" height="82" />
+        </a>
+
+        <section class="ev-public__panel" aria-label="Política de privacidade">
+            <partial name="_PrivacidadeConteudo" />
+        </section>
+    </section>
+}

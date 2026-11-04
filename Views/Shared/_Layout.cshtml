@@ -6,79 +6,155 @@
     var papelUsuario = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Conta";
     var inicialUsuario = string.IsNullOrWhiteSpace(nomeUsuario) ? "E" : nomeUsuario.Trim().Substring(0, 1).ToUpperInvariant();
     var tituloPagina = ViewData["Title"]?.ToString() ?? "EasyVan";
+
+    var secaoAtual = controllerAtual switch
+    {
+        "Vans" or "Motoristas" or "Alunos" or "Rotas" => "Cadastros",
+        "Viagens" => "Operação",
+        "Usuarios" => "Administração",
+        _ => papelUsuario == "Administrador" ? "Operação" : "Minha área"
+    };
+
+    var inicioDoPapel = papelUsuario switch
+    {
+        "Administrador" => "Administrador",
+        "Motorista" => "Motorista",
+        _ => "Aluno"
+    };
 }
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#0F4C5C" />
-    <title>@tituloPagina - EasyVan</title>
+    <meta name="description" content="EasyVan — gestão de transporte por vans: frota, rotas, horários e viagens em um só lugar." />
+    <title>@tituloPagina · EasyVan</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="ev-body">
+    @await Html.PartialAsync("_IconSprite")
+
+    <a class="ev-skip-link" href="#conteudo">Pular para o conteúdo</a>
+
     @if (autenticado)
     {
         <div class="ev-shell">
-            <a class="ev-skip-link" href="#conteudo">Pular para o conteúdo</a>
             <aside class="offcanvas-lg offcanvas-start ev-sidebar" tabindex="-1" id="easyVanSidebar" aria-labelledby="easyVanSidebarLabel">
-                <div class="offcanvas-header border-bottom">
-                    <h2 class="h6 mb-0" id="easyVanSidebarLabel">Navegação</h2>
-                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#easyVanSidebar" aria-label="Fechar menu"></button>
+                <div class="offcanvas-header ev-sidebar__mobile-head">
+                    <h2 class="ev-sidebar__mobile-title" id="easyVanSidebarLabel">Menu</h2>
+                    <button type="button" class="ev-icon-button" data-bs-dismiss="offcanvas" data-bs-target="#easyVanSidebar" aria-label="Fechar menu">
+                        <partial name="_Icon" model='"x"' />
+                    </button>
                 </div>
+
                 <div class="offcanvas-body">
-                    <div class="ev-sidebar-brand">
-                        <a asp-controller="Home" asp-action="Index" aria-label="EasyVan — página inicial">
-                            <img src="~/images/logo.png" alt="EasyVan — Gestão de Rotas e Vans" />
+                    <div class="ev-sidebar__brand">
+                        <a asp-controller="Home" asp-action="@inicioDoPapel" aria-label="EasyVan — ir para o início">
+                            <img src="~/images/logo.png" alt="EasyVan — Gestão de Rotas e Vans" width="174" height="82" />
                         </a>
                     </div>
 
-                    <nav class="ev-sidebar-nav" aria-label="Navegação principal">
-                        <p class="ev-sidebar-nav__label">Menu principal</p>
+                    <nav class="ev-nav" aria-label="Navegação principal">
                         @if (User.IsInRole("Administrador"))
                         {
-                            <a class="nav-link @(controllerAtual == "Home" && actionAtual == "Administrador" ? "is-active" : "")"
-                               asp-controller="Home" asp-action="Administrador" aria-current="@(controllerAtual == "Home" && actionAtual == "Administrador" ? "page" : null)">Visão geral</a>
-                            <a class="nav-link @(controllerAtual == "Vans" ? "is-active" : "")"
-                               asp-controller="Vans" asp-action="Index" aria-current="@(controllerAtual == "Vans" ? "page" : null)">Vans</a>
-                            <a class="nav-link @(controllerAtual == "Motoristas" ? "is-active" : "")"
-                               asp-controller="Motoristas" asp-action="Index" aria-current="@(controllerAtual == "Motoristas" ? "page" : null)">Motoristas</a>
-                            <a class="nav-link @(controllerAtual == "Alunos" ? "is-active" : "")"
-                               asp-controller="Alunos" asp-action="Index" aria-current="@(controllerAtual == "Alunos" ? "page" : null)">Alunos</a>
-                            <a class="nav-link @(controllerAtual == "Rotas" ? "is-active" : "")"
-                               asp-controller="Rotas" asp-action="Index" aria-current="@(controllerAtual == "Rotas" ? "page" : null)">Rotas</a>
-                            <a class="nav-link @(controllerAtual == "Viagens" ? "is-active" : "")"
-                               asp-controller="Viagens" asp-action="Index" aria-current="@(controllerAtual == "Viagens" ? "page" : null)">Viagens</a>
-                            <a class="nav-link @(controllerAtual == "Usuarios" ? "is-active" : "")"
-                               asp-controller="Usuarios" asp-action="Index" aria-current="@(controllerAtual == "Usuarios" ? "page" : null)">Usuários</a>
+                            <p class="ev-nav__label">Operação</p>
+                            <a class="ev-nav__link @(controllerAtual == "Home" && actionAtual == "Administrador" ? "is-active" : "")"
+                               asp-controller="Home" asp-action="Administrador"
+                               aria-current="@(controllerAtual == "Home" && actionAtual == "Administrador" ? "page" : null)">
+                                <partial name="_Icon" model='"dashboard"' />
+                                <span>Visão geral</span>
+                            </a>
+                            <a class="ev-nav__link @(controllerAtual == "Viagens" ? "is-active" : "")"
+                               asp-controller="Viagens" asp-action="Index"
+                               aria-current="@(controllerAtual == "Viagens" ? "page" : null)">
+                                <partial name="_Icon" model='"trip"' />
+                                <span>Viagens</span>
+                            </a>
+
+                            <p class="ev-nav__label">Cadastros</p>
+                            <a class="ev-nav__link @(controllerAtual == "Vans" ? "is-active" : "")"
+                               asp-controller="Vans" asp-action="Index"
+                               aria-current="@(controllerAtual == "Vans" ? "page" : null)">
+                                <partial name="_Icon" model='"van"' />
+                                <span>Vans</span>
+                            </a>
+                            <a class="ev-nav__link @(controllerAtual == "Motoristas" ? "is-active" : "")"
+                               asp-controller="Motoristas" asp-action="Index"
+                               aria-current="@(controllerAtual == "Motoristas" ? "page" : null)">
+                                <partial name="_Icon" model='"driver"' />
+                                <span>Motoristas</span>
+                            </a>
+                            <a class="ev-nav__link @(controllerAtual == "Alunos" ? "is-active" : "")"
+                               asp-controller="Alunos" asp-action="Index"
+                               aria-current="@(controllerAtual == "Alunos" ? "page" : null)">
+                                <partial name="_Icon" model='"students"' />
+                                <span>Alunos</span>
+                            </a>
+                            <a class="ev-nav__link @(controllerAtual == "Rotas" ? "is-active" : "")"
+                               asp-controller="Rotas" asp-action="Index"
+                               aria-current="@(controllerAtual == "Rotas" ? "page" : null)">
+                                <partial name="_Icon" model='"route"' />
+                                <span>Rotas</span>
+                            </a>
+
+                            <p class="ev-nav__label">Administração</p>
+                            <a class="ev-nav__link @(controllerAtual == "Usuarios" ? "is-active" : "")"
+                               asp-controller="Usuarios" asp-action="Index"
+                               aria-current="@(controllerAtual == "Usuarios" ? "page" : null)">
+                                <partial name="_Icon" model='"users"' />
+                                <span>Usuários</span>
+                            </a>
                         }
                         else if (User.IsInRole("Motorista"))
                         {
-                            <a class="nav-link @(controllerAtual == "Home" && actionAtual == "Motorista" ? "is-active" : "")"
-                               asp-controller="Home" asp-action="Motorista" aria-current="@(controllerAtual == "Home" && actionAtual == "Motorista" ? "page" : null)">Meu painel</a>
-                            <a class="nav-link @(controllerAtual == "Viagens" ? "is-active" : "")"
-                               asp-controller="Viagens" asp-action="Index" aria-current="@(controllerAtual == "Viagens" ? "page" : null)">Viagens</a>
+                            <p class="ev-nav__label">Minha operação</p>
+                            <a class="ev-nav__link @(controllerAtual == "Home" && actionAtual == "Motorista" ? "is-active" : "")"
+                               asp-controller="Home" asp-action="Motorista"
+                               aria-current="@(controllerAtual == "Home" && actionAtual == "Motorista" ? "page" : null)">
+                                <partial name="_Icon" model='"dashboard"' />
+                                <span>Meu painel</span>
+                            </a>
+                            <a class="ev-nav__link @(controllerAtual == "Viagens" ? "is-active" : "")"
+                               asp-controller="Viagens" asp-action="Index"
+                               aria-current="@(controllerAtual == "Viagens" ? "page" : null)">
+                                <partial name="_Icon" model='"trip"' />
+                                <span>Viagens</span>
+                            </a>
                         }
                         else
                         {
-                            <a class="nav-link @(controllerAtual == "Home" && actionAtual == "Aluno" ? "is-active" : "")"
-                               asp-controller="Home" asp-action="Aluno" aria-current="@(controllerAtual == "Home" && actionAtual == "Aluno" ? "page" : null)">Início</a>
-                            <a class="nav-link @(controllerAtual == "Home" && actionAtual == "Detalhes" ? "is-active" : "")"
-                               asp-controller="Home" asp-action="Detalhes" aria-current="@(controllerAtual == "Home" && actionAtual == "Detalhes" ? "page" : null)">Minha van</a>
+                            <p class="ev-nav__label">Minha área</p>
+                            <a class="ev-nav__link @(controllerAtual == "Home" && actionAtual == "Aluno" ? "is-active" : "")"
+                               asp-controller="Home" asp-action="Aluno"
+                               aria-current="@(controllerAtual == "Home" && actionAtual == "Aluno" ? "page" : null)">
+                                <partial name="_Icon" model='"dashboard"' />
+                                <span>Início</span>
+                            </a>
+                            <a class="ev-nav__link @(controllerAtual == "Home" && actionAtual == "Detalhes" ? "is-active" : "")"
+                               asp-controller="Home" asp-action="Detalhes"
+                               aria-current="@(controllerAtual == "Home" && actionAtual == "Detalhes" ? "page" : null)">
+                                <partial name="_Icon" model='"van"' />
+                                <span>Minha van</span>
+                            </a>
                         }
                     </nav>
 
-                    <div class="ev-sidebar-bottom">
-                        <div class="ev-sidebar-user">
-                            <span class="ev-sidebar-user__avatar" aria-hidden="true">@inicialUsuario</span>
-                            <span class="ev-sidebar-user__meta">
-                                <span class="ev-sidebar-user__name">@nomeUsuario</span>
-                                <span class="ev-sidebar-user__role">@papelUsuario</span>
+                    <div class="ev-sidebar__bottom">
+                        <div class="ev-account">
+                            <span class="ev-account__avatar" aria-hidden="true">@inicialUsuario</span>
+                            <span class="ev-account__meta">
+                                <span class="ev-account__name">@nomeUsuario</span>
+                                <span class="ev-account__role">@papelUsuario</span>
                             </span>
                         </div>
                         <form asp-controller="Usuarios" asp-action="Logout" method="post">
-                            <button type="submit" class="btn btn-outline-secondary w-100">Sair da conta</button>
+                            <button type="submit" class="ev-logout">
+                                <partial name="_Icon" model='"logout"' />
+                                <span>Sair da conta</span>
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -86,18 +162,23 @@
 
             <div class="ev-main">
                 <header class="ev-topbar">
-                    <div class="d-flex align-items-center gap-3 min-w-0">
+                    <div class="ev-topbar__left">
                         <button class="ev-menu-toggle d-lg-none" type="button"
                                 data-bs-toggle="offcanvas" data-bs-target="#easyVanSidebar"
                                 aria-controls="easyVanSidebar" aria-label="Abrir navegação">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                            <partial name="_Icon" model='"menu"' />
                         </button>
-                        <div class="ev-topbar__title">@tituloPagina</div>
+
+                        <nav class="ev-breadcrumb" aria-label="Você está em">
+                            <span class="ev-breadcrumb__root">EasyVan</span>
+                            <partial name="_Icon" model='"chevron-right"' />
+                            <span class="ev-breadcrumb__section">@secaoAtual</span>
+                            <partial name="_Icon" model='"chevron-right"' />
+                            <span class="ev-breadcrumb__page" aria-current="page">@tituloPagina</span>
+                        </nav>
                     </div>
-                    <div class="d-none d-sm-flex align-items-center gap-2">
-                        <span class="small text-muted">@nomeUsuario</span>
-                        <span class="badge bg-light text-petroleo border">@papelUsuario</span>
-                    </div>
+
+                    <span class="ev-topbar__date">@DateTime.Today.ToString("dd/MM/yyyy")</span>
                 </header>
 
                 <main id="conteudo" class="ev-content" role="main" tabindex="-1">

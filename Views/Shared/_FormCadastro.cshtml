@@ -1,0 +1,49 @@
+@model EasyVan.Models.Usuarios
+
+@{
+    var rotuloEnvio = ViewData["SubmitLabel"] as string ?? "Criar conta";
+}
+
+<form asp-controller="Usuarios" asp-action="Create" method="post" class="ev-auth__form">
+    <div asp-validation-summary="ModelOnly" class="ev-auth__error" role="alert"></div>
+
+    <div class="ev-field">
+        <label asp-for="Nome" class="form-label">Nome completo</label>
+        <input asp-for="Nome" class="form-control" placeholder="Seu nome completo" autocomplete="name" />
+        <span asp-validation-for="Nome" class="ev-form-validation"></span>
+    </div>
+
+    <div class="ev-field">
+        <label asp-for="Email" class="form-label">E-mail</label>
+        <input asp-for="Email" class="form-control" type="email" placeholder="voce@exemplo.com"
+               autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" />
+        <span asp-validation-for="Email" class="ev-form-validation"></span>
+    </div>
+
+    <div class="ev-field">
+        <label asp-for="RoleManager" class="form-label">Perfil de acesso</label>
+        <select asp-for="RoleManager" class="form-select">
+            <option value="Aluno">Aluno</option>
+            <option value="Motorista">Motorista</option>
+            <option value="Administrador">Administrador</option>
+        </select>
+        <p class="ev-hint">O perfil define quais áreas da plataforma a pessoa pode acessar.</p>
+        <span asp-validation-for="RoleManager" class="ev-form-validation"></span>
+    </div>
+
+    <div class="ev-field">
+        <label asp-for="PasswordHasher" class="form-label">Senha</label>
+        <div class="ev-password">
+            <input asp-for="PasswordHasher" id="senhaCadastro" class="form-control" type="password"
+                   placeholder="Crie uma senha" autocomplete="new-password" />
+            <button type="button" class="ev-password__toggle" data-password-toggle
+                    aria-controls="senhaCadastro" aria-pressed="false" aria-label="Mostrar senha">
+                <partial name="_Icon" model='"eye"' />
+            </button>
+        </div>
+        <p class="ev-hint">Mínimo de 6 caracteres.</p>
+        <span asp-validation-for="PasswordHasher" class="ev-form-validation"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">@rotuloEnvio</button>
+</form>

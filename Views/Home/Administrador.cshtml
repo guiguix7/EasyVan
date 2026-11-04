@@ -1,92 +1,287 @@
 @model dynamic
+@using EasyVan.Models
 
 @{
     ViewData["Title"] = "Visão geral";
+
+    int totalVans = Model?.TotalVans ?? 0;
+    int vansOperacionais = Model?.VansOperacionais ?? 0;
+    int vansManutencao = Model?.VansManutencao ?? 0;
+    int vansOutros = Model?.VansOutros ?? 0;
+    int totalMotoristas = Model?.TotalMotoristas ?? 0;
+    int totalAlunos = Model?.TotalAlunos ?? 0;
+    int totalRotas = Model?.TotalRotas ?? 0;
+    int viagensHoje = Model?.ViagensHoje ?? 0;
+    int viagensEmAndamento = Model?.ViagensEmAndamento ?? 0;
+    int viagensAgendadas = Model?.ViagensAgendadas ?? 0;
+
     var alertas = Model?.Alertas as IEnumerable<string> ?? Enumerable.Empty<string>();
+    var proximasViagens = Model?.ProximasViagens as IEnumerable<Viagem> ?? Enumerable.Empty<Viagem>();
+    var vansEmManutencao = Model?.VansEmManutencao as IEnumerable<Van> ?? Enumerable.Empty<Van>();
+
+    double pctOperacionais = totalVans > 0 ? Math.Round(vansOperacionais * 100.0 / totalVans) : 0;
+    double pctManutencao = totalVans > 0 ? Math.Round(vansManutencao * 100.0 / totalVans) : 0;
+    double pctOutros = totalVans > 0 ? Math.Max(0, 100 - pctOperacionais - pctManutencao) : 0;
 }
 
 <section class="ev-page">
-    <header class="ev-page-heading">
-        <div>
-            <h1>Visão geral da operação</h1>
-            <p>Consulte os cadastros e acompanhe a situação atual da sua estrutura de transporte.</p>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Operação</p>
+            <h1>Visão geral</h1>
+            <p class="ev-page-head__lead">A situação da frota, dos cadastros e das viagens de hoje em uma única leitura.</p>
         </div>
-        <div class="ev-page-actions">
-            <a asp-controller="Vans" asp-action="Index" class="btn btn-primary">Gerenciar frota</a>
+        <div class="ev-page-head__actions">
+            <a asp-controller="Viagens" asp-action="Create" class="btn btn-primary">
+                <partial name="_Icon" model='"plus"' />
+                Nova viagem
+            </a>
+            <a asp-controller="Vans" asp-action="Index" class="btn btn-outline-secondary">Gerenciar frota</a>
         </div>
     </header>
 
-    <section aria-label="Indicadores da operação">
-        <div class="ev-stat-grid">
-            <article class="ev-stat">
-                <span class="ev-stat__label">Total de vans</span>
-                <strong class="ev-stat__value">@Model.TotalVans</strong>
-                <span class="ev-stat__detail">Veículos cadastrados</span>
-            </article>
-            <article class="ev-stat">
-                <span class="ev-stat__label">Vans operacionais</span>
-                <strong class="ev-stat__value">@Model.VansOperacionais</strong>
-                <span class="ev-stat__detail">Com status operacional</span>
-            </article>
-            <article class="ev-stat">
-                <span class="ev-stat__label">Em manutenção</span>
-                <strong class="ev-stat__value">@Model.VansManutencao</strong>
-                <span class="ev-stat__detail">Veículos sinalizados</span>
-            </article>
-            <article class="ev-stat">
-                <span class="ev-stat__label">Motoristas ativos</span>
-                <strong class="ev-stat__value">@Model.TotalMotoristas</strong>
-                <span class="ev-stat__detail">Cadastros ativos</span>
-            </article>
-            <article class="ev-stat">
-                <span class="ev-stat__label">Alunos ativos</span>
-                <strong class="ev-stat__value">@Model.TotalAlunos</strong>
-                <span class="ev-stat__detail">Cadastros ativos</span>
-            </article>
-            <article class="ev-stat">
-                <span class="ev-stat__label">Rotas ativas</span>
-                <strong class="ev-stat__value">@Model.TotalRotas</strong>
-                <span class="ev-stat__detail">Rotas disponíveis no cadastro</span>
-            </article>
-        </div>
+    <section class="ev-metrics" aria-label="Indicadores da operação">
+        <article class="ev-metric">
+            <div class="ev-metric__top">
+                <span class="ev-metric__label">Vans</span>
+                <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"van"' /></span>
+            </div>
+            <strong class="ev-metric__value">@totalVans</strong>
+            <span class="ev-metric__hint">@vansOperacionais operacionais · @vansManutencao em manutenção</span>
+        </article>
+
+        <article class="ev-metric">
+            <div class="ev-metric__top">
+                <span class="ev-metric__label">Motoristas ativos</span>
+                <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"driver"' /></span>
+            </div>
+            <strong class="ev-metric__value">@totalMotoristas</strong>
+            <span class="ev-metric__hint">Cadastros aptos a operar</span>
+        </article>
+
+        <article class="ev-metric">
+            <div class="ev-metric__top">
+                <span class="ev-metric__label">Alunos ativos</span>
+                <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
+            </div>
+            <strong class="ev-metric__value">@totalAlunos</strong>
+            <span class="ev-metric__hint">Passageiros nos cadastros ativos</span>
+        </article>
+
+        <article class="ev-metric">
+            <div class="ev-metric__top">
+                <span class="ev-metric__label">Rotas ativas</span>
+                <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
+            </div>
+            <strong class="ev-metric__value">@totalRotas</strong>
+            <span class="ev-metric__hint">Trajetos disponíveis</span>
+        </article>
     </section>
 
     @if (alertas.Any())
     {
-        <section class="ev-alert" aria-labelledby="alertas-titulo" role="status">
-            <h2 id="alertas-titulo">Atenção à operação</h2>
-            <ul>
-                @foreach (var alerta in alertas)
-                {
-                    <li>@alerta</li>
-                }
-            </ul>
-        </section>
+        <div class="ev-notice ev-notice--warning" role="status">
+            <partial name="_Icon" model='"alert"' />
+            <div class="ev-notice__body">
+                <p class="ev-notice__title">Atenção à operação</p>
+                <ul>
+                    @foreach (var alerta in alertas)
+                    {
+                        <li>@alerta</li>
+                    }
+                </ul>
+            </div>
+        </div>
     }
 
-    <section aria-labelledby="atalhos-titulo">
-        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
-            <h2 id="atalhos-titulo" class="ev-panel__title mb-0">Acessos rápidos</h2>
+    <div class="ev-dash-grid">
+        <div class="ev-form-main">
+            <section class="ev-panel" aria-labelledby="frota-titulo">
+                <div class="ev-panel__head">
+                    <div>
+                        <h2 id="frota-titulo">Composição da frota</h2>
+                        <p class="ev-panel__hint">Situação atual dos veículos cadastrados.</p>
+                    </div>
+                    <a asp-controller="Vans" asp-action="Index" class="ev-link-action">
+                        Ver vans
+                        <partial name="_Icon" model='"arrow-right"' />
+                    </a>
+                </div>
+                <div class="ev-panel__body">
+                    @if (totalVans > 0)
+                    {
+                        <div class="ev-meter">
+                            <div class="ev-meter__bar" role="img"
+                                 aria-label="Frota: @vansOperacionais operacionais, @vansManutencao em manutenção e @vansOutros em outros status.">
+                                @if (pctOperacionais > 0)
+                                {
+                                    <span class="ev-meter__segment ev-meter__segment--success" style="width:@pctOperacionais%"></span>
+                                }
+                                @if (pctManutencao > 0)
+                                {
+                                    <span class="ev-meter__segment ev-meter__segment--warning" style="width:@pctManutencao%"></span>
+                                }
+                                @if (pctOutros > 0)
+                                {
+                                    <span class="ev-meter__segment ev-meter__segment--neutral" style="width:@pctOutros%"></span>
+                                }
+                            </div>
+                            <ul class="ev-legend">
+                                <li class="ev-legend__item">
+                                    <span class="ev-legend__swatch ev-legend__swatch--success" aria-hidden="true"></span>
+                                    Operacionais <strong>@vansOperacionais</strong>
+                                </li>
+                                <li class="ev-legend__item">
+                                    <span class="ev-legend__swatch ev-legend__swatch--warning" aria-hidden="true"></span>
+                                    Em manutenção <strong>@vansManutencao</strong>
+                                </li>
+                                <li class="ev-legend__item">
+                                    <span class="ev-legend__swatch ev-legend__swatch--neutral" aria-hidden="true"></span>
+                                    Outros status <strong>@vansOutros</strong>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="ev-empty">
+                            <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"van"' /></span>
+                            <p class="ev-empty__title">Nenhuma van cadastrada</p>
+                            <p class="ev-empty__text">Cadastre o primeiro veículo para acompanhar a composição da frota.</p>
+                            <a asp-controller="Vans" asp-action="Create" class="btn btn-primary">Cadastrar van</a>
+                        </div>
+                    }
+                </div>
+
+                @if (vansEmManutencao.Any())
+                {
+                    <div class="ev-panel__head">
+                        <h2>Precisam de atenção</h2>
+                    </div>
+                    <ul class="ev-attention">
+                        @foreach (var van in vansEmManutencao)
+                        {
+                            <li class="ev-attention__item">
+                                <div class="ev-attention__text">
+                                    <span class="ev-attention__title">
+                                        <span class="ev-plate">@van.Plate</span>
+                                        <span class="ms-2">@van.Driver</span>
+                                    </span>
+                                    <span class="ev-attention__sub">@van.Route</span>
+                                </div>
+                                <div class="ev-cluster">
+                                    <partial name="_StatusBadge" model="van.Status" />
+                                    <a asp-controller="Vans" asp-action="Details" asp-route-id="@van.Id"
+                                       class="ev-link-action">
+                                        Detalhes
+                                        <partial name="_Icon" model='"chevron-right"' />
+                                    </a>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+
+            <section class="ev-panel" aria-labelledby="atalhos-titulo">
+                <div class="ev-panel__head">
+                    <div>
+                        <h2 id="atalhos-titulo">Acessos rápidos</h2>
+                        <p class="ev-panel__hint">Cadastros que mantêm a operação em dia.</p>
+                    </div>
+                </div>
+                <div class="ev-panel__body">
+                    <nav class="ev-shortcuts" aria-label="Acessos rápidos da administração">
+                        <a asp-controller="Motoristas" asp-action="Index" class="ev-shortcut">
+                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"driver"' /></span>
+                            <span class="ev-shortcut__text">
+                                <span class="ev-shortcut__label">Motoristas</span>
+                                <span class="ev-shortcut__hint">@totalMotoristas ativos</span>
+                            </span>
+                        </a>
+                        <a asp-controller="Alunos" asp-action="Index" class="ev-shortcut">
+                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
+                            <span class="ev-shortcut__text">
+                                <span class="ev-shortcut__label">Alunos</span>
+                                <span class="ev-shortcut__hint">@totalAlunos ativos</span>
+                            </span>
+                        </a>
+                        <a asp-controller="Rotas" asp-action="Index" class="ev-shortcut">
+                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
+                            <span class="ev-shortcut__text">
+                                <span class="ev-shortcut__label">Rotas</span>
+                                <span class="ev-shortcut__hint">@totalRotas ativas</span>
+                            </span>
+                        </a>
+                        <a asp-controller="Vans" asp-action="Index" class="ev-shortcut">
+                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"van"' /></span>
+                            <span class="ev-shortcut__text">
+                                <span class="ev-shortcut__label">Frota</span>
+                                <span class="ev-shortcut__hint">@totalVans veículos</span>
+                            </span>
+                        </a>
+                        <a asp-controller="Usuarios" asp-action="Index" class="ev-shortcut">
+                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"users"' /></span>
+                            <span class="ev-shortcut__text">
+                                <span class="ev-shortcut__label">Usuários</span>
+                                <span class="ev-shortcut__hint">Contas e perfis</span>
+                            </span>
+                        </a>
+                        <a asp-controller="Home" asp-action="Privacy" class="ev-shortcut">
+                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"shield"' /></span>
+                            <span class="ev-shortcut__text">
+                                <span class="ev-shortcut__label">Privacidade</span>
+                                <span class="ev-shortcut__hint">Tratamento de dados</span>
+                            </span>
+                        </a>
+                    </nav>
+                </div>
+            </section>
         </div>
-        <nav class="ev-shortcuts" aria-label="Acessos rápidos da administração">
-            <a asp-controller="Vans" asp-action="Index" class="ev-shortcut">
-                <span>Vans</span><span aria-hidden="true">→</span>
-            </a>
-            <a asp-controller="Motoristas" asp-action="Index" class="ev-shortcut">
-                <span>Motoristas</span><span aria-hidden="true">→</span>
-            </a>
-            <a asp-controller="Alunos" asp-action="Index" class="ev-shortcut">
-                <span>Alunos</span><span aria-hidden="true">→</span>
-            </a>
-            <a asp-controller="Rotas" asp-action="Index" class="ev-shortcut">
-                <span>Rotas</span><span aria-hidden="true">→</span>
-            </a>
-            <a asp-controller="Viagens" asp-action="Index" class="ev-shortcut">
-                <span>Viagens</span><span aria-hidden="true">→</span>
-            </a>
-            <a asp-controller="Usuarios" asp-action="Index" class="ev-shortcut">
-                <span>Usuários</span><span aria-hidden="true">→</span>
-            </a>
-        </nav>
-    </section>
+
+        <section class="ev-panel" aria-labelledby="viagens-titulo">
+            <div class="ev-panel__head">
+                <div>
+                    <h2 id="viagens-titulo">Viagens de hoje e próximas</h2>
+                    <p class="ev-panel__hint">@viagensHoje hoje · @viagensEmAndamento em andamento · @viagensAgendadas agendadas</p>
+                </div>
+                <a asp-controller="Viagens" asp-action="Index" class="ev-link-action">
+                    Ver todas
+                    <partial name="_Icon" model='"arrow-right"' />
+                </a>
+            </div>
+
+            @if (proximasViagens.Any())
+            {
+                <ul class="ev-today">
+                    @foreach (var viagem in proximasViagens)
+                    {
+                        <li>
+                            <a asp-controller="Viagens" asp-action="Details" asp-route-id="@viagem.Id" class="ev-today__item">
+                                <span class="ev-today__time">
+                                    @(viagem.HoraInicio.HasValue ? viagem.HoraInicio.Value.ToString(@"hh\:mm") : "A definir")
+                                </span>
+                                <span>
+                                    <span class="ev-today__route">@viagem.Rota?.Nome</span>
+                                    <span class="ev-today__meta">
+                                        @viagem.Data.ToString("dd/MM") · @viagem.Van?.Plate · @viagem.Motorista?.Nome
+                                    </span>
+                                </span>
+                                <partial name="_StatusBadge" model="viagem.Status" />
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="ev-empty">
+                    <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"calendar"' /></span>
+                    <p class="ev-empty__title">Nenhuma viagem agendada</p>
+                    <p class="ev-empty__text">Não há viagens de hoje ou futuras aguardando início.</p>
+                    <a asp-controller="Viagens" asp-action="Create" class="btn btn-primary">Agendar viagem</a>
+                </div>
+            }
+        </section>
+    </div>
 </section>

@@ -3,34 +3,56 @@
 @{
     ViewData["Title"] = "Vans";
     var filtrosAtivos = Model.Filtro.TemFiltroAtivo;
+    var estado = ViewData.ModelState;
+    var erroBusca = estado.TryGetValue("Busca", out var entradaBusca) && entradaBusca.Errors.Count > 0
+        ? entradaBusca.Errors[0].ErrorMessage : null;
+    var erroStatus = estado.TryGetValue("Status", out var entradaStatus) && entradaStatus.Errors.Count > 0
+        ? entradaStatus.Errors[0].ErrorMessage : null;
+    var erroMin = estado.TryGetValue("CapacidadeMin", out var entradaMin) && entradaMin.Errors.Count > 0
+        ? entradaMin.Errors[0].ErrorMessage : null;
+    var erroMax = estado.TryGetValue("CapacidadeMax", out var entradaMax) && entradaMax.Errors.Count > 0
+        ? entradaMax.Errors[0].ErrorMessage : null;
 }
 
 <section class="ev-page">
-    <header class="ev-page-heading">
-        <div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Cadastros</p>
             <h1>Vans</h1>
-            <p>Consulte os veículos cadastrados, refine a busca e verifique a situação da frota.</p>
+            <p class="ev-page-head__lead">Consulte os veículos, refine a busca e verifique a situação da frota.</p>
         </div>
-        <div class="ev-page-actions">
+        <div class="ev-page-head__actions">
             @if (User.IsInRole("Administrador"))
             {
-                <a asp-action="Create" class="btn btn-primary">Cadastrar van</a>
+                <a asp-action="Create" class="btn btn-primary">
+                    <partial name="_Icon" model='"plus"' />
+                    Cadastrar van
+                </a>
             }
         </div>
     </header>
 
-    <section class="ev-filter-panel" aria-label="Busca e filtros de vans">
+    <section class="ev-filter" aria-label="Busca e filtros de vans">
         <form method="get" asp-controller="Vans" asp-action="Index" role="search">
-            <div class="row g-3 align-items-end">
-                <div class="col-12 col-lg-5">
+            <div class="ev-filter__grid">
+                <div class="ev-field">
                     <label for="busca" class="form-label">Buscar veículo</label>
                     <input type="search" id="busca" name="busca" value="@Model.Filtro.Busca"
-                           maxlength="100" class="form-control"
-                           placeholder="Placa, motorista, rota ou descrição" />
+                           maxlength="100" class="form-control" autocomplete="off"
+                           placeholder="Placa, motorista, rota ou descrição"
+                           aria-invalid="@(erroBusca is null ? null : "true")"
+                           aria-describedby="@(erroBusca is null ? null : "busca-erro")" />
+                    @if (erroBusca is not null)
+                    {
+                        <span id="busca-erro" class="ev-form-validation">@erroBusca</span>
+                    }
                 </div>
-                <div class="col-12 col-sm-6 col-lg-2">
+
+                <div class="ev-field">
                     <label for="status" class="form-label">Status</label>
-                    <select id="status" name="status" class="form-select">
+                    <select id="status" name="status" class="form-select"
+                            aria-invalid="@(erroStatus is null ? null : "true")"
+                            aria-describedby="@(erroStatus is null ? null : "status-erro")">
                         <option value="">Todos</option>
                         @foreach (var status in Model.StatusDisponiveis)
                         {
@@ -44,22 +66,44 @@
                             }
                         }
                     </select>
+                    @if (erroStatus is not null)
+                    {
+                        <span id="status-erro" class="ev-form-validation">@erroStatus</span>
+                    }
                 </div>
-                <div class="col-6 col-sm-3 col-lg-1">
+
+                <div class="ev-field">
                     <label for="capacidadeMin" class="form-label">Mín.</label>
                     <input type="number" id="capacidadeMin" name="capacidadeMin"
                            value="@Model.Filtro.CapacidadeMin" min="0" max="1000" step="1"
-                           class="form-control" aria-label="Capacidade mínima" />
+                           class="form-control" aria-label="Capacidade mínima, em lugares"
+                           aria-invalid="@(erroMin is null ? null : "true")"
+                           aria-describedby="@(erroMin is null ? null : "capacidade-min-erro")" />
+                    @if (erroMin is not null)
+                    {
+                        <span id="capacidade-min-erro" class="ev-form-validation">@erroMin</span>
+                    }
                 </div>
-                <div class="col-6 col-sm-3 col-lg-1">
+
+                <div class="ev-field">
                     <label for="capacidadeMax" class="form-label">Máx.</label>
                     <input type="number" id="capacidadeMax" name="capacidadeMax"
                            value="@Model.Filtro.CapacidadeMax" min="0" max="1000" step="1"
-                           class="form-control" aria-label="Capacidade máxima" />
+                           class="form-control" aria-label="Capacidade máxima, em lugares"
+                           aria-invalid="@(erroMax is null ? null : "true")"
+                           aria-describedby="@(erroMax is null ? null : "capacidade-max-erro")" />
+                    @if (erroMax is not null)
+                    {
+                        <span id="capacidade-max-erro" class="ev-form-validation">@erroMax</span>
+                    }
                 </div>
-                <div class="col-12 col-lg-3 d-flex flex-wrap gap-2">
-                    <button type="submit" class="btn btn-primary flex-fill">Aplicar filtros</button>
-                    <a asp-controller="Vans" asp-action="Index" class="btn btn-outline-secondary flex-fill">Limpar</a>
+
+                <div class="ev-filter__actions">
+                    <button type="submit" class="btn btn-primary">
+                        <partial name="_Icon" model='"filter"' />
+                        Aplicar
+                    </button>
+                    <a asp-controller="Vans" asp-action="Index" class="btn btn-outline-secondary">Limpar</a>
                 </div>
             </div>
         </form>
@@ -67,6 +111,7 @@
         @if (filtrosAtivos)
         {
             <div class="ev-filter-chips" aria-label="Filtros ativos">
+                <span class="ev-filter-chips__label">Filtros ativos:</span>
                 @if (!string.IsNullOrWhiteSpace(Model.Filtro.Busca))
                 {
                     <span class="ev-filter-chip">Busca: @Model.Filtro.Busca</span>
@@ -83,35 +128,28 @@
                 {
                     <span class="ev-filter-chip">Máximo: @Model.Filtro.CapacidadeMax</span>
                 }
+                <a asp-controller="Vans" asp-action="Index" class="ev-link-action">Limpar filtros</a>
             </div>
         }
     </section>
 
-    @if (!ViewData.ModelState.IsValid)
-    {
-        <div class="alert alert-warning mb-0" role="alert">
-            <ul class="mb-0">
-                @foreach (var erro in ViewData.ModelState.Values.SelectMany(e => e.Errors))
-                {
-                    <li>@erro.ErrorMessage</li>
-                }
-            </ul>
-        </div>
-    }
-
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-        <p class="ev-results-meta mb-0">
+    <div class="ev-results">
+        <p class="mb-0">
             Exibindo <strong>@Model.Vans.Count</strong> de <strong>@Model.TotalGeral</strong> vans.
         </p>
         <a href="@Url.Action("Index", "Vans", new { busca = Model.Filtro.Busca, status = Model.Filtro.Status, capacidadeMin = Model.Filtro.CapacidadeMin, capacidadeMax = Model.Filtro.CapacidadeMax })"
-           class="small text-petroleo">Atualizar resultados</a>
+           class="ev-results__refresh">
+            <partial name="_Icon" model='"refresh"' />
+            Atualizar resultados
+        </a>
     </div>
 
     @if (!Model.Vans.Any())
     {
         <div class="ev-panel ev-empty">
-            <h2 class="h5 mb-2">@(filtrosAtivos ? "Nenhuma van encontrada" : "Sua frota ainda está vazia")</h2>
-            <p class="mb-3">
+            <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"search"' /></span>
+            <h2 class="ev-empty__title">@(filtrosAtivos ? "Nenhuma van encontrada" : "Sua frota ainda está vazia")</h2>
+            <p class="ev-empty__text">
                 @(filtrosAtivos
                     ? "Não encontramos veículos com os critérios informados. Ajuste os filtros ou limpe a busca."
                     : "Cadastre uma van para começar a organizar os veículos da operação.")
@@ -128,9 +166,9 @@
     }
     else
     {
-        <section class="d-none d-lg-block ev-panel p-0 overflow-hidden" aria-label="Tabela de vans">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
+        <section class="ev-panel ev-panel--flush ev-list-desktop" aria-label="Tabela de vans">
+            <div class="ev-table-scroll">
+                <table class="ev-table">
                     <thead>
                         <tr>
                             <th scope="col">Identificação</th>
@@ -145,22 +183,31 @@
                     <tbody>
                         @foreach (var van in Model.Vans)
                         {
-                            var statusClass = van.Status == "Operacional"
-                                ? "badge-status-operacional"
-                                : van.Status == "Manutenção" ? "badge-status-manutencao" : "badge-status-outro";
                             <tr>
                                 <td>
-                                    <strong class="d-block">@van.Plate</strong>
-                                    <span class="small text-muted">Van #@van.Id</span>
+                                    <span class="ev-plate">@van.Plate</span>
+                                    <span class="ev-table__secondary">Van #@van.Id</span>
                                 </td>
-                                <td>@van.Driver</td>
-                                <td>@van.Capacity lugares</td>
+                                <td>
+                                    <span class="ev-table__primary">@(string.IsNullOrWhiteSpace(van.Driver) ? "Não informado" : van.Driver)</span>
+                                </td>
+                                <td class="is-numeric">@van.Capacity lugares</td>
                                 <td>@van.Route</td>
-                                <td>@van.Schedule</td>
-                                <td><span class="badge @statusClass">@van.Status</span></td>
-                                <td class="text-end">
-                                    <a asp-controller="Vans" asp-action="Details" asp-route-id="@van.Id"
-                                       class="btn btn-sm btn-outline-primary">Ver detalhes</a>
+                                <td class="is-numeric">@van.Schedule</td>
+                                <td><partial name="_StatusBadge" model="van.Status" /></td>
+                                <td class="is-actions">
+                                    <div class="ev-row-actions">
+                                        <a asp-controller="Vans" asp-action="Details" asp-route-id="@van.Id" class="ev-link-action">
+                                            Detalhes
+                                        </a>
+                                        @if (User.IsInRole("Administrador"))
+                                        {
+                                            <a asp-controller="Vans" asp-action="Edit" asp-route-id="@van.Id" class="ev-link-action">
+                                                <partial name="_Icon" model='"edit"' />
+                                                Editar
+                                            </a>
+                                        }
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -169,40 +216,42 @@
             </div>
         </section>
 
-        <section class="ev-mobile-vans d-lg-none" aria-label="Lista de vans">
+        <section class="ev-records ev-list-mobile" aria-label="Lista de vans">
             @foreach (var van in Model.Vans)
             {
-                var statusClass = van.Status == "Operacional"
-                    ? "badge-status-operacional"
-                    : van.Status == "Manutenção" ? "badge-status-manutencao" : "badge-status-outro";
-                <article class="ev-van-mobile">
-                    <div class="ev-van-mobile__head">
+                <article class="ev-record">
+                    <div class="ev-record__head">
                         <div>
-                            <div class="ev-van-mobile__plate">@van.Plate</div>
-                            <div class="ev-van-mobile__id">Van #@van.Id</div>
+                            <h2 class="ev-record__title"><span class="ev-plate">@van.Plate</span></h2>
+                            <span class="ev-record__meta">Van #@van.Id</span>
                         </div>
-                        <span class="badge @statusClass">@van.Status</span>
+                        <partial name="_StatusBadge" model="van.Status" />
                     </div>
-                    <div class="ev-van-mobile__data">
-                        <div class="ev-van-mobile__item">
-                            <span>Motorista</span>
-                            <strong>@van.Driver</strong>
+                    <dl class="ev-record__data">
+                        <div>
+                            <dt>Motorista</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(van.Driver) ? "Não informado" : van.Driver)</dd>
                         </div>
-                        <div class="ev-van-mobile__item">
-                            <span>Capacidade</span>
-                            <strong>@van.Capacity lugares</strong>
+                        <div>
+                            <dt>Capacidade</dt>
+                            <dd>@van.Capacity lugares</dd>
                         </div>
-                        <div class="ev-van-mobile__item">
-                            <span>Rota</span>
-                            <strong>@van.Route</strong>
+                        <div>
+                            <dt>Rota</dt>
+                            <dd>@van.Route</dd>
                         </div>
-                        <div class="ev-van-mobile__item">
-                            <span>Horários</span>
-                            <strong>@van.Schedule</strong>
+                        <div>
+                            <dt>Horários</dt>
+                            <dd>@van.Schedule</dd>
                         </div>
+                    </dl>
+                    <div class="ev-record__actions">
+                        <a asp-controller="Vans" asp-action="Details" asp-route-id="@van.Id" class="btn btn-outline-primary">Detalhes</a>
+                        @if (User.IsInRole("Administrador"))
+                        {
+                            <a asp-controller="Vans" asp-action="Edit" asp-route-id="@van.Id" class="btn btn-outline-secondary">Editar</a>
+                        }
                     </div>
-                    <a asp-controller="Vans" asp-action="Details" asp-route-id="@van.Id"
-                       class="btn btn-outline-primary w-100">Ver detalhes</a>
                 </article>
             }
         </section>

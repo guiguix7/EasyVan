@@ -1,20 +1,75 @@
-@model dynamic
-
 @{
     ViewData["Title"] = "Início";
 }
 
 <section class="ev-page">
-    <header class="ev-page-heading">
-        <div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Área do aluno</p>
             <h1>Olá, @User.Identity?.Name</h1>
-            <p>Consulte as informações do seu transporte e encontre os dados da van disponíveis no sistema.</p>
+            <p class="ev-page-head__lead">Consulte os dados do transporte e encontre as informações da van disponíveis no sistema.</p>
         </div>
     </header>
 
-    <section class="ev-panel" aria-labelledby="transporte-titulo">
-        <h2 id="transporte-titulo" class="ev-panel__title">Informações de transporte</h2>
-        <p class="text-muted mb-3">Acesse a consulta de veículo, rota, horários e motorista.</p>
-        <a asp-controller="Home" asp-action="Detalhes" class="btn btn-primary">Consultar minha van</a>
+    <section class="ev-panel ev-hero" aria-labelledby="transporte-titulo">
+        <div class="ev-hero__content">
+            <p class="ev-eyebrow">Consulta de transporte</p>
+            <h2 id="transporte-titulo">Minha van</h2>
+            <p>Veja placa, rota, horários, capacidade e motorista responsável pelo veículo.</p>
+            <a asp-controller="Home" asp-action="Detalhes" class="btn btn-primary">
+                <partial name="_Icon" model='"van"' />
+                Consultar minha van
+            </a>
+        </div>
+        <div class="ev-hero__art" aria-hidden="true">
+            <partial name="_Icon" model='"route"' />
+        </div>
     </section>
+
+    <div class="ev-detail-grid">
+        <section class="ev-panel" aria-labelledby="como-consultar">
+            <div class="ev-panel__head">
+                <div>
+                    <h2 id="como-consultar">Como consultar</h2>
+                    <p class="ev-panel__hint">As informações vêm do cadastro atual da frota.</p>
+                </div>
+            </div>
+            <ol class="ev-steps">
+                <li class="ev-step">
+                    <span class="ev-step__number" aria-hidden="true">1</span>
+                    <div>
+                        <h3>Acesse “Minha van”</h3>
+                        <p>Abra a consulta pelo botão acima ou pelo menu lateral.</p>
+                    </div>
+                </li>
+                <li class="ev-step">
+                    <span class="ev-step__number" aria-hidden="true">2</span>
+                    <div>
+                        <h3>Confira o veículo</h3>
+                        <p>Placa, capacidade, rota, horários e situação são exibidos na mesma tela.</p>
+                    </div>
+                </li>
+                <li class="ev-step">
+                    <span class="ev-step__number" aria-hidden="true">3</span>
+                    <div>
+                        <h3>Fale com a operação</h3>
+                        <p>Em caso de dúvida sobre horário ou trajeto, procure o responsável pelo transporte.</p>
+                    </div>
+                </li>
+            </ol>
+        </section>
+
+        <aside class="ev-form-aside">
+            <section class="ev-panel">
+                <div class="ev-panel__body">
+                    <h2>Precisa de ajuda?</h2>
+                    <p>Se a van exibida não corresponder ao seu transporte, entre em contato com a administração para corrigir o cadastro.</p>
+                    <a asp-controller="Home" asp-action="Privacy" class="ev-link-action">
+                        <partial name="_Icon" model='"shield"' />
+                        Como tratamos seus dados
+                    </a>
+                </div>
+            </section>
+        </aside>
+    </div>
 </section>

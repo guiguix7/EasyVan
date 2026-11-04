@@ -2,166 +2,305 @@
 @using EasyVan.Models
 
 @{
-    ViewData["Title"] = "Detalhes da Viagem";
-    var alunos = ViewData["AlunosDaViagem"] as IEnumerable<EasyVan.Models.PresencaViagem> ?? Enumerable.Empty<EasyVan.Models.PresencaViagem>();
-    var papel = ViewData["Papel"] as string ?? string.Empty;
+    ViewData["Title"] = "Detalhes da viagem";
+    var alunos = ViewData["AlunosDaViagem"] as IEnumerable<PresencaViagem> ?? Enumerable.Empty<PresencaViagem>();
+    var listaAlunos = alunos.ToList();
+    var presentes = listaAlunos.Count(a => a.Presente);
+    var erro = TempData["Erro"] as string;
+
+    var etapaAtual = Model.Status switch
+    {
+        "Agendada" => 0,
+        "EmAndamento" => 1,
+        "Finalizada" => 2,
+        _ => -1
+    };
+
+    string Hora(TimeSpan? valor) => valor.HasValue ? valor.Value.ToString(@"hh\:mm") : "—";
+
+    string Iniciais(string? nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome)) return "?";
+        var partes = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return partes.Length == 1
+            ? partes[0].Substring(0, 1).ToUpperInvariant()
+            : (partes[0].Substring(0, 1) + partes[^1].Substring(0, 1)).ToUpperInvariant();
+    }
 }
 
-<section class="py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h3">Viagem #@Model.Id</h1>
-        <a asp-action="Index" class="btn btn-outline-secondary">Voltar à listagem</a>
-    </div>
+<section class="ev-page">
+    <a asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para viagens
+    </a>
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <h6 class="text-muted text-uppercase small">Van</h6>
-                    <p class="mb-1"><strong>@Model.Van?.Plate</strong></p>
-                    <p class="mb-0 text-muted">#@Model.Van?.Id · @Model.Van?.Capacity alunos</p>
-                </div>
+    <header class="ev-detail-head">
+        <div>
+            <p class="ev-eyebrow">Operação · Viagem #@Model.Id</p>
+            <div class="ev-detail-head__identity">
+                <h1>@(Model.Rota?.Nome ?? $"Viagem #{Model.Id}")</h1>
+                <partial name="_StatusBadge" model="Model.Status" />
             </div>
+            <p class="ev-detail-head__meta">
+                <partial name="_Icon" model='"calendar"' />
+                @Model.Data.ToString("dd/MM/yyyy")
+                <span aria-hidden="true">·</span>
+                <partial name="_Icon" model='"clock"' />
+                @Hora(Model.HoraInicio) – @Hora(Model.HoraFim)
+            </p>
         </div>
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <h6 class="text-muted text-uppercase small">Motorista</h6>
-                    <p class="mb-1"><strong>@Model.Motorista?.Nome</strong></p>
-                    <p class="mb-0 text-muted">@Model.Motorista?.Email</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
-                    <h6 class="text-muted text-uppercase small">Rota</h6>
-                    <p class="mb-1"><strong>@Model.Rota?.Nome</strong></p>
-                    <p class="mb-0 text-muted">@Model.Rota?.Origem → @Model.Rota?.Destino</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h6 class="text-muted text-uppercase small">Data</h6>
-                    <p class="mb-1"><strong>@Model.Data.ToShortDateString()</strong></p>
-                </div>
-            </div>
+        <div class="ev-detail-actions">
+            @if (Model.Status == "Agendada")
+            {
+                <form asp-action="Start" asp-route-id="@Model.Id" method="post" class="ev-inline-form">
+                    <button type="submit" class="btn btn-primary">
+                        <partial name="_Icon" model='"route"' />
+                        Iniciar viagem
+                    </button>
+                </form>
+            }
+            else if (Model.Status == "EmAndamento")
+            {
+                <form asp-action="Finish" asp-route-id="@Model.Id" method="post" class="ev-inline-form">
+                    <button type="submit" class="btn btn-primary">
+                        <partial name="_Icon" model='"check"' />
+                        Finalizar viagem
+                    </button>
+                </form>
+            }
         </div>
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h6 class="text-muted text-uppercase small">Início</h6>
-                    <p class="mb-1"><strong>@(Model.HoraInicio.HasValue ? Model.HoraInicio.Value.ToString(@"hh\:mm") : "—")</strong></p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <h6 class="text-muted text-uppercase small">Término</h6>
-                    <p class="mb-1"><strong>@(Model.HoraFim.HasValue ? Model.HoraFim.Value.ToString(@"hh\:mm") : "—")</strong></p>
-                </div>
-            </div>
-        </div>
-    </div>
+    </header>
 
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-petroleo text-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Status e ações</h5>
-            <span class="badge @(Model.Status == "Finalizada" ? "badge-status-operacional" : Model.Status == "EmAndamento" ? "badge bg-info text-dark" : "badge bg-secondary")">
-                @Model.Status
-            </span>
-        </div>
-        <div class="card-body">
-            <div class="d-grid gap-2 d-sm-flex justify-content-sm-end">
-                @if (Model.Status == "Agendada")
-                {
-                    <form asp-action="Start" asp-route-id="@Model.Id" method="post" class="d-inline">
-                        <button type="submit" class="btn btn-success btn-lg">Iniciar Viagem</button>
-                    </form>
-                }
-                else if (Model.Status == "EmAndamento")
-                {
-                    <form asp-action="Finish" asp-route-id="@Model.Id" method="post" class="d-inline">
-                        <button type="submit" class="btn btn-danger btn-lg">Finalizar Viagem</button>
-                    </form>
-                    <form asp-action="InicializarPresenca" asp-route-id="@Model.Id" method="post" class="d-inline">
-                        <button type="submit" class="btn btn-outline-primary">Inicializar lista de presença</button>
-                    </form>
-                }
-            </div>
-        </div>
-    </div>
-
-    @if (!string.IsNullOrWhiteSpace(Model.Observacao))
+    @if (!string.IsNullOrWhiteSpace(erro))
     {
-        <div class="alert alert-light mb-4">
-            <p class="mb-0"><strong>Observação:</strong> @Model.Observacao</p>
+        <div class="ev-notice ev-notice--danger" role="alert">
+            <partial name="_Icon" model='"alert"' />
+            <div class="ev-notice__body">
+                <p class="ev-notice__title">Não foi possível concluir a ação</p>
+                <p class="mb-0">@erro</p>
+            </div>
         </div>
     }
 
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">Lista de presença dos alunos</h5>
+    @if (etapaAtual >= 0)
+    {
+        <section class="ev-panel">
+            <div class="ev-panel__body">
+                <ol class="ev-route-progress" aria-label="Progresso da viagem">
+                    <li class="ev-route-progress__step @(etapaAtual > 0 ? "is-done" : "is-current")">
+                        <span class="ev-route-progress__dot" aria-hidden="true"><partial name="_Icon" model='"check"' /></span>
+                        <span class="ev-route-progress__label">Agendada</span>
+                    </li>
+                    <li class="ev-route-progress__step @(etapaAtual > 1 ? "is-done" : etapaAtual == 1 ? "is-current" : "")">
+                        <span class="ev-route-progress__dot" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
+                        <span class="ev-route-progress__label">Em andamento</span>
+                    </li>
+                    <li class="ev-route-progress__step @(etapaAtual == 2 ? "is-done" : "")">
+                        <span class="ev-route-progress__dot" aria-hidden="true"><partial name="_Icon" model='"check"' /></span>
+                        <span class="ev-route-progress__label">Finalizada</span>
+                    </li>
+                </ol>
+            </div>
+        </section>
+    }
+    else
+    {
+        <div class="ev-notice ev-notice--info" role="status">
+            <partial name="_Icon" model='"info"' />
+            <div class="ev-notice__body">
+                <p class="ev-notice__title">Viagem @(StatusUi.Label(Model.Status).ToLowerInvariant())</p>
+                <p class="mb-0">Esta viagem não está em andamento. Consulte os dados abaixo para o histórico.</p>
+            </div>
         </div>
-        <div class="card-body">
-            @if (Model.Status != "EmAndamento")
-            {
-                <div class="alert alert-info">
-                    <p class="mb-0">Inicie a viagem para marcar a presença dos alunos.</p>
+    }
+
+    <div class="ev-detail-grid">
+        <div class="ev-stack">
+            <section class="ev-panel ev-panel--flush" aria-labelledby="recursos-viagem">
+                <div class="ev-panel__head">
+                    <div>
+                        <h2 id="recursos-viagem">Recursos</h2>
+                        <p class="ev-panel__hint">Van, motorista e trajeto desta viagem.</p>
+                    </div>
                 </div>
-            }
-            else
+                <dl class="ev-data">
+                    <div class="ev-data__item">
+                        <dt>Van</dt>
+                        <dd>
+                            @if (Model.Van != null)
+                            {
+                                <span class="ev-plate">@Model.Van.Plate</span>
+                                <span class="ev-data__sub">@Model.Van.Capacity lugares</span>
+                            }
+                            else
+                            {
+                                <text>Van removida</text>
+                            }
+                        </dd>
+                    </div>
+                    <div class="ev-data__item">
+                        <dt>Motorista</dt>
+                        <dd>
+                            @if (Model.Motorista != null)
+                            {
+                                <text>@Model.Motorista.Nome</text>
+                                <span class="ev-data__sub">@Model.Motorista.Email</span>
+                            }
+                            else
+                            {
+                                <text>Motorista removido</text>
+                            }
+                        </dd>
+                    </div>
+                    <div class="ev-data__item ev-data__item--wide">
+                        <dt>Rota</dt>
+                        <dd>
+                            @if (Model.Rota != null)
+                            {
+                                <span class="ev-data__strong">@Model.Rota.Nome</span>
+                                <div class="ev-route-leg mt-2" aria-label="Trajeto">
+                                    <span class="ev-route-leg__stop">@Model.Rota.Origem</span>
+                                    <partial name="_Icon" model='"arrow-right"' />
+                                    <span class="ev-route-leg__stop ev-route-leg__stop--end">@Model.Rota.Destino</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <text>Rota removida</text>
+                            }
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Observacao))
             {
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Aluno</th>
-                                <th>Email</th>
-                                <th>Presente</th>
-                                <th>Observação</th>
-                                <th>Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var a in alunos)
-                            {
-                                <tr>
-                                    <td>@a.Aluno?.Nome</td>
-                                    <td>@a.Aluno?.Email</td>
-                                    <td>
-                                        @(a.Presente ? "<span class=\"badge badge-status-operacional\">Sim</span>" : "<span class=\"badge bg-secondary\">Não</span>")
-                                    </td>
-                                    <td>@a.Observacao</td>
-                                    <td>
-                                        <form asp-action="MarcarPresenca" method="post" class="d-inline">
-                                            <input type="hidden" name="viagemId" value="@Model.Id" />
-                                            <input type="hidden" name="alunoId" value="@a.AlunoId" />
-                                            <input type="hidden" name="presente" value="@(a.Presente ? "false" : "true")" />
-                                            <input type="hidden" name="observacao" value="@a.Observacao" />
-                                            <button type="submit" class="btn btn-sm @(a.Presente ? "btn-outline-success" : "btn-success")">
-                                                @(a.Presente ? "Marcar como não presente" : "Marcar como presente")
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            }
-                            @if (!alunos.Any())
-                            {
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-3">Clique em "Inicializar lista de presença" para carregar os alunos.</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                <section class="ev-panel" aria-labelledby="observacao-viagem">
+                    <div class="ev-panel__head">
+                        <div>
+                            <h2 id="observacao-viagem">Observação</h2>
+                        </div>
+                    </div>
+                    <div class="ev-panel__body">
+                        <p class="mb-0">@Model.Observacao</p>
+                    </div>
+                </section>
             }
         </div>
+
+        <aside class="ev-form-aside">
+            <section class="ev-panel">
+                <div class="ev-panel__body">
+                    <h2>Horários</h2>
+                    <dl class="ev-data ev-data--stacked">
+                        <div class="ev-data__item">
+                            <dt>Data</dt>
+                            <dd>@Model.Data.ToString("dd/MM/yyyy")</dd>
+                        </div>
+                        <div class="ev-data__item">
+                            <dt>Início registrado</dt>
+                            <dd>@Hora(Model.HoraInicio)</dd>
+                        </div>
+                        <div class="ev-data__item">
+                            <dt>Término registrado</dt>
+                            <dd>@Hora(Model.HoraFim)</dd>
+                        </div>
+                    </dl>
+                </div>
+            </section>
+        </aside>
     </div>
+
+    <section class="ev-panel ev-panel--flush" aria-labelledby="presenca-viagem">
+        <div class="ev-panel__head">
+            <div>
+                <h2 id="presenca-viagem">Lista de presença</h2>
+                <p class="ev-panel__hint">
+                    @if (Model.Status == "EmAndamento")
+                    {
+                        <text>@presentes de @listaAlunos.Count alunos presentes.</text>
+                    }
+                    else
+                    {
+                        <text>Disponível durante a viagem.</text>
+                    }
+                </p>
+            </div>
+            @if (Model.Status == "EmAndamento")
+            {
+                <form asp-action="InicializarPresenca" asp-route-id="@Model.Id" method="post" class="ev-inline-form">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        <partial name="_Icon" model='"refresh"' />
+                        Carregar alunos ativos
+                    </button>
+                </form>
+            }
+        </div>
+
+        @if (Model.Status == "Agendada")
+        {
+            <div class="ev-empty ev-empty--compact">
+                <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"clock"' /></span>
+                <h3 class="ev-empty__title">A viagem ainda não começou</h3>
+                <p class="ev-empty__text">Inicie a viagem para carregar os alunos e marcar a presença.</p>
+            </div>
+        }
+        else if (!listaAlunos.Any())
+        {
+            <div class="ev-empty ev-empty--compact">
+                <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
+                <h3 class="ev-empty__title">Nenhum aluno na lista</h3>
+                <p class="ev-empty__text">
+                    @if (Model.Status == "EmAndamento")
+                    {
+                        <text>Use “Carregar alunos ativos” para montar a lista desta viagem.</text>
+                    }
+                    else
+                    {
+                        <text>Nenhuma presença foi registrada nesta viagem.</text>
+                    }
+                </p>
+            </div>
+        }
+        else
+        {
+            <ul class="ev-attendance">
+                @foreach (var presenca in listaAlunos)
+                {
+                    <li class="ev-attendance__item">
+                        <div class="ev-person">
+                            <span class="ev-avatar" aria-hidden="true">@Iniciais(presenca.Aluno?.Nome)</span>
+                            <div class="ev-person__meta">
+                                <span class="ev-person__name">@(presenca.Aluno?.Nome ?? "Aluno removido")</span>
+                                <span class="ev-person__sub">@presenca.Aluno?.Email</span>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(presenca.Observacao))
+                        {
+                            <p class="ev-attendance__note">@presenca.Observacao</p>
+                        }
+
+                        <div class="ev-attendance__actions">
+                            <partial name="_StatusBadge" model='presenca.Presente ? "Presente" : "Ausente"' />
+                            @if (Model.Status == "EmAndamento")
+                            {
+                                <form asp-action="MarcarPresenca" method="post" class="ev-inline-form">
+                                    <input type="hidden" name="viagemId" value="@Model.Id" />
+                                    <input type="hidden" name="alunoId" value="@presenca.AlunoId" />
+                                    <input type="hidden" name="presente" value="@(presenca.Presente ? "false" : "true")" />
+                                    <input type="hidden" name="observacao" value="@presenca.Observacao" />
+                                    <button type="submit" class="btn btn-sm @(presenca.Presente ? "btn-outline-secondary" : "btn-outline-primary")"
+                                            aria-label="@(presenca.Presente ? "Marcar ausência de" : "Marcar presença de") @(presenca.Aluno?.Nome)">
+                                        @(presenca.Presente ? "Marcar ausência" : "Marcar presença")
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
 </section>

@@ -1,24 +1,29 @@
 @{
-    ViewData["Title"] = "Acesso Restrito";
+    ViewData["Title"] = "Acesso restrito";
 }
 
-<section class="py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm border-0 text-center">
-                <div class="card-body py-5">
-                    <div class="mb-4">
-                        <span class="badge bg-warning text-dark fs-1">⚠️</span>
-                    </div>
-                    <h1 class="h3 text-danger mb-3">Acesso Restrito</h1>
-                    <p class="text-muted mb-4">
-                        Você não tem permissão para acessar esta página.
-                        <br />
-                        Apenas <strong>administradores</strong> podem acessar esta área.
-                    </p>
-                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Voltar ao início</a>
-                </div>
+<section class="ev-page">
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Permissão necessária</p>
+            <h1>Acesso restrito</h1>
+            <p class="ev-page-head__lead">Esta área não está disponível para o seu perfil de acesso.</p>
+        </div>
+    </header>
+
+    <section class="ev-panel" aria-labelledby="restrito-titulo">
+        <div class="ev-state">
+            <span class="ev-state__icon ev-state__icon--warning" aria-hidden="true">
+                <partial name="_Icon" model='"lock"' />
+            </span>
+            <h2 id="restrito-titulo" class="h4">Seu perfil não tem permissão para esta página</h2>
+            <p>Volte para a sua área de trabalho. Se você precisa deste acesso, solicite a alteração do perfil a um administrador.</p>
+            <div class="ev-public__actions justify-content-center">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Ir para a minha área</a>
+                <form asp-controller="Usuarios" asp-action="Logout" method="post">
+                    <button type="submit" class="btn btn-outline-secondary">Sair da conta</button>
+                </form>
             </div>
         </div>
-    </div>
+    </section>
 </section>

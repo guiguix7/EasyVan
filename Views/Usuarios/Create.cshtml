@@ -1,39 +1,84 @@
 @model EasyVan.Models.Usuarios
 
 @{
-    ViewData["Title"] = "Novo Usuário";
+    var autenticado = User.Identity?.IsAuthenticated == true;
+    ViewData["Title"] = autenticado ? "Novo usuário" : "Criar cadastro";
+    ViewData["SubmitLabel"] = autenticado ? "Criar usuário" : "Criar conta";
 }
 
-<h1>Novo Usuário</h1>
+@if (autenticado)
+{
+    <section class="ev-page">
+        <a asp-action="Index" class="ev-back">
+            <partial name="_Icon" model='"back"' />
+            Voltar para usuários
+        </a>
 
-<form asp-action="Create" method="post">
-    <div class="mb-3">
-        <label asp-for="Nome" class="form-label"></label>
-        <input asp-for="Nome" class="form-control" />
-        <span asp-validation-for="Nome" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Email" class="form-label"></label>
-        <input asp-for="Email" class="form-control" type="email" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="RoleManager" class="form-label">Perfil</label>
-        <select asp-for="RoleManager" class="form-select">
-            <option value="Aluno">Aluno</option>
-            <option value="Motorista">Motorista</option>
-            <option value="Administrador">Administrador</option>
-        </select>
-        <span asp-validation-for="RoleManager" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="PasswordHasher" class="form-label">Senha</label>
-        <input asp-for="PasswordHasher" class="form-control" type="password" />
-        <span asp-validation-for="PasswordHasher" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Salvar</button>
-    <a asp-action="Index" class="btn btn-secondary">Voltar</a>
-</form>
+        <header class="ev-page-head">
+            <div class="ev-page-head__text">
+                <p class="ev-eyebrow">Administração</p>
+                <h1>Novo usuário</h1>
+                <p class="ev-page-head__lead">Crie uma conta e defina o perfil de acesso. A senha é gravada com hash.</p>
+            </div>
+        </header>
+
+        <div class="ev-form-layout">
+            <div class="ev-form-main">
+                <section class="ev-panel ev-form-section" aria-labelledby="dados-conta">
+                    <div class="ev-form-section__head">
+                        <h2 id="dados-conta">Dados da conta</h2>
+                        <p>Nome, e-mail, perfil e senha inicial.</p>
+                    </div>
+                    <partial name="_FormCadastro" model="Model" />
+                </section>
+            </div>
+
+            <aside class="ev-form-aside">
+                <section class="ev-panel">
+                    <div class="ev-panel__body">
+                        <h2>Perfis de acesso</h2>
+                        <ul>
+                            <li><strong>Aluno:</strong> consulta a própria van e o transporte.</li>
+                            <li><strong>Motorista:</strong> acompanha e opera as viagens.</li>
+                            <li><strong>Administrador:</strong> gerencia cadastros e contas.</li>
+                        </ul>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </section>
+}
+else
+{
+    <section class="ev-auth">
+        <div class="ev-auth__shell">
+            <aside class="ev-auth__aside">
+                <a class="ev-auth__brand" asp-controller="Home" asp-action="Index" aria-label="EasyVan — início">
+                    <img src="~/images/logo.png" alt="EasyVan — Gestão de Rotas e Vans" width="174" height="82" />
+                </a>
+
+                <div class="ev-auth__statement">
+                    <h1>Uma operação organizada começa com acesso.</h1>
+                    <p>Crie sua conta para consultar as informações de transporte disponíveis na plataforma.</p>
+                </div>
+
+                <p class="ev-auth__note mb-0">EasyVan · Gestão de transporte por vans.</p>
+            </aside>
+
+            <div class="ev-auth__panel">
+                <h2 class="ev-auth__title">Criar cadastro</h2>
+                <p class="ev-auth__lead">Preencha os dados para registrar uma conta.</p>
+
+                <partial name="_FormCadastro" model="Model" />
+
+                <div class="ev-auth__links">
+                    <span>Já possui uma conta?</span>
+                    <a asp-controller="Home" asp-action="Index">Entrar</a>
+                </div>
+            </div>
+        </div>
+    </section>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

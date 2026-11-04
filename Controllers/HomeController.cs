@@ -104,18 +104,51 @@ public class HomeController : Controller
         var totalAlunos = await _db.Alunos.CountAsync(a => a.Ativo);
         var totalRotas = await _db.Rotas.CountAsync(r => r.Ativo);
 
+        var inicioDoDia = DateTime.Today;
+        var fimDoDia = inicioDoDia.AddDays(1);
+        var viagensHoje = await _db.Viagens.CountAsync(v => v.Data >= inicioDoDia && v.Data < fimDoDia);
+        var viagensEmAndamento = await _db.Viagens.CountAsync(v => v.Status == "EmAndamento");
+        var viagensAgendadas = await _db.Viagens.CountAsync(v => v.Status == "Agendada");
+
+        // Dados reais já existentes no banco: próximas viagens e veículos que exigem atenção.
+        var proximasViagens = (await _db.Viagens
+            .Include(v => v.Van)
+            .Include(v => v.Motorista)
+            .Include(v => v.Rota)
+            .Where(v => v.Data >= inicioDoDia && (v.Status == "Agendada" || v.Status == "EmAndamento"))
+            .ToListAsync())
+            .OrderBy(v => v.Data)
+            .ThenBy(v => v.HoraInicio ?? TimeSpan.MaxValue)
+            .ThenBy(v => v.Id)
+            .Take(4)
+            .ToList();
+
+        var vansEmManutencao = await _db.Vans
+            .Where(v => v.Status == "Manutenção")
+            .OrderBy(v => v.Plate)
+            .Take(4)
+            .ToListAsync();
+
         var alertas = new List<string>();
         if (vansManutencao > 0)
             alertas.Add($"{vansManutencao} van(es) em manutenção.");
+        if (viagensEmAndamento > 0)
+            alertas.Add($"{viagensEmAndamento} viagem(ns) em andamento neste momento.");
 
         return View(new
         {
             TotalVans = totalVans,
             VansOperacionais = vansOperacionais,
             VansManutencao = vansManutencao,
+            VansOutros = totalVans - vansOperacionais - vansManutencao,
             TotalMotoristas = totalMotoristas,
             TotalAlunos = totalAlunos,
             TotalRotas = totalRotas,
+            ViagensHoje = viagensHoje,
+            ViagensEmAndamento = viagensEmAndamento,
+            ViagensAgendadas = viagensAgendadas,
+            ProximasViagens = proximasViagens,
+            VansEmManutencao = vansEmManutencao,
             Alertas = alertas
         });
     }

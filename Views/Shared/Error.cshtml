@@ -1,25 +1,75 @@
 ﻿@model ErrorViewModel
 @{
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = "Erro";
+    var autenticado = User.Identity?.IsAuthenticated == true;
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
-
-@if (Model.ShowRequestId)
+@if (autenticado)
 {
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+    <section class="ev-page">
+        <header class="ev-page-head">
+            <div class="ev-page-head__text">
+                <p class="ev-eyebrow">Falha inesperada</p>
+                <h1>Não foi possível concluir</h1>
+                <p class="ev-page-head__lead">A ação foi interrompida. Nenhuma alteração parcial deve ser considerada concluída.</p>
+            </div>
+        </header>
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+        <section class="ev-panel" aria-labelledby="erro-titulo">
+            <div class="ev-state">
+                <span class="ev-state__icon ev-state__icon--danger" aria-hidden="true">
+                    <partial name="_Icon" model='"alert"' />
+                </span>
+                <h2 id="erro-titulo" class="h4">Algo deu errado ao processar a solicitação</h2>
+                <p>Tente novamente. Se o problema continuar, informe o código abaixo ao responsável pelo sistema.</p>
+                @if (Model.ShowRequestId)
+                {
+                    <p>
+                        <span class="ev-state__code">Código: @Model.RequestId</span>
+                    </p>
+                }
+                <div class="ev-public__actions justify-content-center">
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Voltar ao início</a>
+                    <a asp-controller="Home" asp-action="Privacy" class="btn btn-outline-secondary">Privacidade</a>
+                </div>
+            </div>
+        </section>
+
+        <environment include="Development">
+            <div class="ev-notice ev-notice--info" role="note">
+                <partial name="_Icon" model='"info"' />
+                <div class="ev-notice__body">
+                    <p class="ev-notice__title">Ambiente de desenvolvimento</p>
+                    <p class="mb-0">Os detalhes técnicos da exceção aparecem no console do servidor. Não habilite este ambiente em produção.</p>
+                </div>
+            </div>
+        </environment>
+    </section>
+}
+else
+{
+    <section class="ev-public">
+        <a class="ev-public__brand" asp-controller="Home" asp-action="Index" aria-label="EasyVan — início">
+            <img src="~/images/logo.png" alt="EasyVan — Gestão de Rotas e Vans" width="174" height="82" />
+        </a>
+
+        <section class="ev-public__panel" aria-labelledby="erro-titulo">
+            <div class="ev-state">
+                <span class="ev-state__icon ev-state__icon--danger" aria-hidden="true">
+                    <partial name="_Icon" model='"alert"' />
+                </span>
+                <h1 id="erro-titulo">Algo deu errado</h1>
+                <p>Não foi possível processar a solicitação. Volte ao início e tente novamente.</p>
+                @if (Model.ShowRequestId)
+                {
+                    <p>
+                        <span class="ev-state__code">Código: @Model.RequestId</span>
+                    </p>
+                }
+                <div class="ev-public__actions justify-content-center">
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Ir para o login</a>
+                </div>
+            </div>
+        </section>
+    </section>
+}

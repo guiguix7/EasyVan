@@ -2,43 +2,70 @@
 
 @{
     ViewData["Title"] = "Rotas";
+    var rotas = Model.ToList();
+    var ativas = rotas.Count(r => r.Ativo);
 }
 
 <section class="ev-page">
-    <header class="ev-page-heading">
-        <div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Cadastros</p>
             <h1>Rotas</h1>
-            <p>Organize os trajetos cadastrados e consulte seus pontos de origem e destino.</p>
+            <p class="ev-page-head__lead">Organize os trajetos e consulte origem, destino e situação de cada rota.</p>
         </div>
-        <div class="ev-page-actions">
-            <a asp-action="Create" class="btn btn-primary">Nova rota</a>
+        <div class="ev-page-head__actions">
+            <a asp-action="Create" class="btn btn-primary">
+                <partial name="_Icon" model='"plus"' />
+                Nova rota
+            </a>
         </div>
     </header>
 
-    @if (Model.Any())
+    @if (rotas.Any())
     {
-        <section class="ev-panel d-none d-lg-block p-0 overflow-hidden" aria-label="Tabela de rotas">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
+        <div class="ev-results">
+            <p class="mb-0">
+                <strong>@rotas.Count</strong> rotas cadastradas · <strong>@ativas</strong> ativas.
+            </p>
+        </div>
+
+        <section class="ev-panel ev-panel--flush ev-list-desktop" aria-label="Tabela de rotas">
+            <div class="ev-table-scroll">
+                <table class="ev-table">
                     <thead>
                         <tr>
-                            <th scope="col">Rota</th><th scope="col">Origem</th><th scope="col">Destino</th>
-                            <th scope="col">Descrição</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Ações</span></th>
+                            <th scope="col">Rota</th>
+                            <th scope="col">Origem</th>
+                            <th scope="col">Destino</th>
+                            <th scope="col">Descrição</th>
+                            <th scope="col">Status</th>
+                            <th scope="col"><span class="visually-hidden">Ações</span></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var rota in Model)
+                        @foreach (var rota in rotas)
                         {
                             <tr>
-                                <td><strong>@rota.Nome</strong></td>
+                                <td>
+                                    <span class="ev-table__primary">@rota.Nome</span>
+                                    <span class="ev-table__secondary">Rota #@rota.Id</span>
+                                </td>
                                 <td>@rota.Origem</td>
                                 <td>@rota.Destino</td>
-                                <td>@rota.Descricao</td>
-                                <td><span class="badge @(rota.Ativo ? "badge-status-operacional" : "badge-status-outro")">@(rota.Ativo ? "Ativa" : "Inativa")</span></td>
-                                <td class="text-end tabela-acoes">
-                                    <a asp-action="Details" asp-route-id="@rota.Id" class="btn btn-sm btn-outline-primary">Detalhes</a>
-                                    <a asp-action="Edit" asp-route-id="@rota.Id" class="btn btn-sm btn-outline-secondary">Editar</a>
-                                    <a asp-action="Delete" asp-route-id="@rota.Id" class="btn btn-sm btn-outline-danger">Excluir</a>
+                                <td>@(string.IsNullOrWhiteSpace(rota.Descricao) ? "—" : rota.Descricao)</td>
+                                <td><partial name="_StatusBadge" model='rota.Ativo ? "Ativa" : "Inativa"' /></td>
+                                <td class="is-actions">
+                                    <div class="ev-row-actions">
+                                        <a asp-action="Details" asp-route-id="@rota.Id" class="ev-link-action">Detalhes</a>
+                                        <a asp-action="Edit" asp-route-id="@rota.Id" class="ev-link-action">
+                                            <partial name="_Icon" model='"edit"' />
+                                            Editar
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@rota.Id" class="ev-link-action ev-link-action--danger">
+                                            <partial name="_Icon" model='"trash"' />
+                                            Excluir
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -46,23 +73,31 @@
                 </table>
             </div>
         </section>
-        <section class="ev-mobile-vans d-lg-none" aria-label="Lista de rotas">
-            @foreach (var rota in Model)
+
+        <section class="ev-records ev-list-mobile" aria-label="Lista de rotas">
+            @foreach (var rota in rotas)
             {
-                <article class="ev-van-mobile">
-                    <div class="ev-van-mobile__head">
-                        <div class="ev-van-mobile__plate">@rota.Nome</div>
-                        <span class="badge @(rota.Ativo ? "badge-status-operacional" : "badge-status-outro")">@(rota.Ativo ? "Ativa" : "Inativa")</span>
+                <article class="ev-record">
+                    <div class="ev-record__head">
+                        <div>
+                            <h2 class="ev-record__title">@rota.Nome</h2>
+                            <span class="ev-record__meta">Rota #@rota.Id</span>
+                        </div>
+                        <partial name="_StatusBadge" model='rota.Ativo ? "Ativa" : "Inativa"' />
                     </div>
-                    <div class="ev-van-mobile__data">
-                        <div class="ev-van-mobile__item"><span>Origem</span><strong>@rota.Origem</strong></div>
-                        <div class="ev-van-mobile__item"><span>Destino</span><strong>@rota.Destino</strong></div>
-                        <div class="ev-van-mobile__item"><span>Descrição</span><strong>@rota.Descricao</strong></div>
+                    <div class="ev-route-leg" aria-label="Trajeto">
+                        <span class="ev-route-leg__stop">@rota.Origem</span>
+                        <partial name="_Icon" model='"arrow-right"' />
+                        <span class="ev-route-leg__stop ev-route-leg__stop--end">@rota.Destino</span>
                     </div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a asp-action="Details" asp-route-id="@rota.Id" class="btn btn-outline-primary flex-fill">Detalhes</a>
-                        <a asp-action="Edit" asp-route-id="@rota.Id" class="btn btn-outline-secondary flex-fill">Editar</a>
-                        <a asp-action="Delete" asp-route-id="@rota.Id" class="btn btn-outline-danger flex-fill">Excluir</a>
+                    @if (!string.IsNullOrWhiteSpace(rota.Descricao))
+                    {
+                        <p class="mb-0 text-muted small">@rota.Descricao</p>
+                    }
+                    <div class="ev-record__actions">
+                        <a asp-action="Details" asp-route-id="@rota.Id" class="btn btn-outline-primary">Detalhes</a>
+                        <a asp-action="Edit" asp-route-id="@rota.Id" class="btn btn-outline-secondary">Editar</a>
+                        <a asp-action="Delete" asp-route-id="@rota.Id" class="btn btn-outline-danger">Excluir</a>
                     </div>
                 </article>
             }
@@ -71,8 +106,9 @@
     else
     {
         <div class="ev-panel ev-empty">
-            <h2 class="h5 mb-2">Nenhuma rota cadastrada</h2>
-            <p class="mb-3">Crie uma rota para organizar os trajetos do transporte.</p>
+            <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
+            <h2 class="ev-empty__title">Nenhuma rota cadastrada</h2>
+            <p class="ev-empty__text">Crie uma rota para organizar os trajetos e associá-los às viagens.</p>
             <a asp-action="Create" class="btn btn-primary">Cadastrar rota</a>
         </div>
     }

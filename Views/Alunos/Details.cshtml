@@ -1,0 +1,95 @@
+@model EasyVan.Models.Aluno
+
+@{
+    ViewData["Title"] = "Detalhes do aluno";
+}
+
+<section class="ev-page">
+    <a asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para alunos
+    </a>
+
+    <header class="ev-detail-head">
+        <div>
+            <p class="ev-eyebrow">Aluno #@Model.Id</p>
+            <div class="ev-detail-head__identity">
+                <h1>@Model.Nome</h1>
+                <partial name="_StatusBadge" model='Model.Ativo ? "Ativo" : "Inativo"' />
+            </div>
+            <p class="ev-detail-head__meta">
+                <partial name="_Icon" model='"mail"' />
+                @Model.Email
+                @if (!string.IsNullOrWhiteSpace(Model.Telefone))
+                {
+                    <span aria-hidden="true">·</span>
+                    <partial name="_Icon" model='"phone"' />
+                    @Model.Telefone
+                }
+            </p>
+        </div>
+
+        <div class="ev-detail-actions">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                <partial name="_Icon" model='"edit"' />
+                Editar
+            </a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
+                <partial name="_Icon" model='"trash"' />
+                Excluir
+            </a>
+        </div>
+    </header>
+
+    <div class="ev-detail-grid">
+        <section class="ev-panel ev-panel--flush" aria-labelledby="dados-aluno">
+            <div class="ev-panel__head">
+                <div>
+                    <h2 id="dados-aluno">Dados do cadastro</h2>
+                    <p class="ev-panel__hint">Contato e referência de embarque.</p>
+                </div>
+            </div>
+            <dl class="ev-data">
+                <div class="ev-data__item">
+                    <dt>Nome</dt>
+                    <dd>@Model.Nome</dd>
+                </div>
+                <div class="ev-data__item">
+                    <dt>Situação</dt>
+                    <dd>@(Model.Ativo ? "Ativo" : "Inativo")</dd>
+                </div>
+                <div class="ev-data__item">
+                    <dt>E-mail</dt>
+                    <dd>@Model.Email</dd>
+                </div>
+                <div class="ev-data__item">
+                    <dt>Telefone</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(Model.Telefone) ? "Não informado" : Model.Telefone)</dd>
+                </div>
+                <div class="ev-data__item ev-data__item--wide">
+                    <dt>Endereço</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(Model.Endereco) ? "Não informado" : Model.Endereco)</dd>
+                </div>
+            </dl>
+        </section>
+
+        <aside class="ev-form-aside">
+            <section class="ev-panel">
+                <div class="ev-panel__body">
+                    <h2>Participação nas viagens</h2>
+                    <partial name="_StatusBadge" model='Model.Ativo ? "Ativo" : "Inativo"' />
+                    <p class="mt-3 mb-0">
+                        @if (Model.Ativo)
+                        {
+                            <text>O aluno é incluído ao inicializar a lista de presença de uma viagem em andamento.</text>
+                        }
+                        else
+                        {
+                            <text>O cadastro está inativo e não entra em novas listas de presença. Registros anteriores permanecem no histórico.</text>
+                        }
+                    </p>
+                </div>
+            </section>
+        </aside>
+    </div>
+</section>

@@ -1,0 +1,6 @@
+@model string?
+@{
+    var rotulo = EasyVan.Models.StatusUi.Label(Model);
+    var variante = EasyVan.Models.StatusUi.CssClass(Model);
+}
+<span class="ev-badge @variante"><span class="ev-badge__dot" aria-hidden="true"></span>@rotulo</span>

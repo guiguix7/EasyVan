@@ -1,0 +1,95 @@
+@model EasyVan.Models.Rota
+
+@{
+    ViewData["Title"] = "Detalhes da rota";
+}
+
+<section class="ev-page">
+    <a asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para rotas
+    </a>
+
+    <header class="ev-detail-head">
+        <div>
+            <p class="ev-eyebrow">Rota #@Model.Id</p>
+            <div class="ev-detail-head__identity">
+                <h1>@Model.Nome</h1>
+                <partial name="_StatusBadge" model='Model.Ativo ? "Ativa" : "Inativa"' />
+            </div>
+            <p class="ev-detail-head__meta">
+                <partial name="_Icon" model='"pin"' />
+                @Model.Origem
+                <partial name="_Icon" model='"arrow-right"' />
+                @Model.Destino
+            </p>
+        </div>
+
+        <div class="ev-detail-actions">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                <partial name="_Icon" model='"edit"' />
+                Editar
+            </a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
+                <partial name="_Icon" model='"trash"' />
+                Excluir
+            </a>
+        </div>
+    </header>
+
+    <div class="ev-detail-grid">
+        <section class="ev-panel ev-panel--flush" aria-labelledby="dados-rota">
+            <div class="ev-panel__head">
+                <div>
+                    <h2 id="dados-rota">Dados da rota</h2>
+                    <p class="ev-panel__hint">Informações usadas ao montar as viagens.</p>
+                </div>
+            </div>
+            <dl class="ev-data">
+                <div class="ev-data__item">
+                    <dt>Nome</dt>
+                    <dd>@Model.Nome</dd>
+                </div>
+                <div class="ev-data__item">
+                    <dt>Situação</dt>
+                    <dd>@(Model.Ativo ? "Ativa" : "Inativa")</dd>
+                </div>
+                <div class="ev-data__item">
+                    <dt>Origem</dt>
+                    <dd>@Model.Origem</dd>
+                </div>
+                <div class="ev-data__item">
+                    <dt>Destino</dt>
+                    <dd>@Model.Destino</dd>
+                </div>
+                <div class="ev-data__item ev-data__item--wide">
+                    <dt>Descrição</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(Model.Descricao) ? "Nenhuma descrição informada." : Model.Descricao)</dd>
+                </div>
+            </dl>
+        </section>
+
+        <aside class="ev-form-aside">
+            <section class="ev-panel">
+                <div class="ev-panel__body">
+                    <h2>Trajeto</h2>
+                    <div class="ev-route-leg" aria-label="Trajeto da rota">
+                        <span class="ev-route-leg__stop">@Model.Origem</span>
+                        <partial name="_Icon" model='"arrow-right"' />
+                        <span class="ev-route-leg__stop ev-route-leg__stop--end">@Model.Destino</span>
+                    </div>
+                    <p class="mt-3 mb-0">
+                        @if (Model.Ativo)
+                        {
+                            <text>Esta rota pode ser selecionada ao criar novas viagens.</text>
+                        }
+                        else
+                        {
+                            <text>Esta rota está inativa e não aparece na criação de novas viagens. Viagens antigas são preservadas.</text>
+                        }
+                    </p>
+                </div>
+            </section>
+        </aside>
+    </div>
+</section>

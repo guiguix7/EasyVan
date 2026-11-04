@@ -1,58 +1,89 @@
 @model EasyVan.Models.Rota
 
 @{
-    ViewData["Title"] = "Nova Rota";
+    ViewData["Title"] = "Nova rota";
 }
 
-<section class="py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h3">Nova Rota</h1>
-        <a asp-action="Index" class="btn btn-outline-secondary">Voltar à listagem</a>
-    </div>
+<section class="ev-page">
+    <a asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para rotas
+    </a>
 
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form asp-action="Create" method="post">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Cadastros</p>
+            <h1>Nova rota</h1>
+            <p class="ev-page-head__lead">Descreva o trajeto que será vinculado às viagens da frota.</p>
+        </div>
+    </header>
 
-                        <div class="mb-3">
-                            <label asp-for="Nome" class="form-label">Nome da rota</label>
-                            <input asp-for="Nome" class="form-control" placeholder="Ex: Centro - Universidade" />
-                            <span asp-validation-for="Nome" class="text-danger"></span>
-                        </div>
+    <form asp-action="Create" method="post" class="ev-form-layout">
+        <div class="ev-form-main">
+            <div asp-validation-summary="ModelOnly" class="ev-notice ev-notice--danger" role="alert"></div>
 
-                        <div class="mb-3">
-                            <label asp-for="Origem" class="form-label">Origem</label>
-                            <input asp-for="Origem" class="form-control" />
-                            <span asp-validation-for="Origem" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Destino" class="form-label">Destino</label>
-                            <input asp-for="Destino" class="form-control" />
-                            <span asp-validation-for="Destino" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Descricao" class="form-label">Descrição</label>
-                            <textarea asp-for="Descricao" class="form-control" rows="3"></textarea>
-                            <span asp-validation-for="Descricao" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3 form-check">
-                            <input asp-for="Ativo" class="form-check-input" />
-                            <label asp-for="Ativo" class="form-check-label">Rota ativa</label>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">Salvar Rota</button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
-                    </form>
+            <section class="ev-panel ev-form-section" aria-labelledby="trajeto">
+                <div class="ev-form-section__head">
+                    <h2 id="trajeto">Trajeto</h2>
+                    <p>Nome da rota e os pontos de partida e chegada.</p>
                 </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field ev-field--full">
+                        <label asp-for="Nome" class="form-label">Nome da rota <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Nome" class="form-control" placeholder="Ex.: Centro — Universidade" />
+                        <span asp-validation-for="Nome" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="Origem" class="form-label">Origem <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Origem" class="form-control" placeholder="Ex.: Terminal Central" />
+                        <span asp-validation-for="Origem" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="Destino" class="form-label">Destino <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Destino" class="form-control" placeholder="Ex.: Campus Universitário" />
+                        <span asp-validation-for="Destino" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field ev-field--full">
+                        <label asp-for="Descricao" class="form-label">Descrição</label>
+                        <textarea asp-for="Descricao" class="form-control" rows="3"
+                                  placeholder="Pontos de parada, horários de pico ou observações do trajeto."></textarea>
+                        <span asp-validation-for="Descricao" class="ev-form-validation"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="situacao-rota">
+                <div class="ev-form-section__head">
+                    <h2 id="situacao-rota">Situação</h2>
+                    <p>Controla se a rota pode ser usada em novas viagens.</p>
+                </div>
+                <div class="ev-check">
+                    <input asp-for="Ativo" class="form-check-input" />
+                    <div class="ev-check__text">
+                        <label asp-for="Ativo">Rota ativa</label>
+                        <span>Rotas inativas permanecem no histórico, mas não são oferecidas em novas viagens.</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="ev-form-actions">
+                <button type="submit" class="btn btn-primary">Cadastrar rota</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
             </div>
         </div>
-    </div>
+
+        <aside class="ev-form-aside">
+            <section class="ev-panel">
+                <div class="ev-panel__body">
+                    <h2>Como a rota é usada</h2>
+                    <p class="mb-0">A rota define origem e destino da viagem. Ao criar uma viagem, selecione a rota correspondente para manter o histórico consistente.</p>
+                </div>
+            </section>
+        </aside>
+    </form>
 </section>
 
 @section Scripts {

@@ -68,7 +68,7 @@ namespace Gerenciamento_de_Van.Controllers
         [Authorize(Roles = "Administrador")]
         public IActionResult Create()
         {
-            return View();
+            return View(new Van());
         }
 
         [HttpPost]

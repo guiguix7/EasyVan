@@ -1,44 +1,111 @@
 @model EasyVan.Models.Usuarios
 
 @{
-    ViewData["Title"] = "Editar Usuário";
+    ViewData["Title"] = "Editar usuário";
+    var perfis = new[]
+    {
+        new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "Aluno", Text = "Aluno", Selected = Model.RoleManager == "Aluno" },
+        new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "Motorista", Text = "Motorista", Selected = Model.RoleManager == "Motorista" },
+        new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "Administrador", Text = "Administrador", Selected = Model.RoleManager == "Administrador" }
+    };
 }
 
-<h1>Editar Usuário</h1>
+<section class="ev-page">
+    <a asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para usuários
+    </a>
 
-<form asp-action="Edit" method="post">
-    @Html.AntiForgeryToken()
-    <input type="hidden" asp-for="Id" />
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-    <div class="mb-3">
-        <label asp-for="Nome" class="form-label"></label>
-        <input asp-for="Nome" class="form-control" />
-        <span asp-validation-for="Nome" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Email" class="form-label"></label>
-        <input asp-for="Email" class="form-control" type="email" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="RoleManager" class="form-label">Perfil</label>
-        @{ 
-            var roles = new[] {
-                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "Aluno", Text = "Aluno", Selected = Model?.RoleManager == "Aluno" },
-                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "Motorista", Text = "Motorista", Selected = Model?.RoleManager == "Motorista" },
-                new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = "Administrador", Text = "Administrador", Selected = Model?.RoleManager == "Administrador" }
-            };
-        }
-        @Html.DropDownListFor(m => m.RoleManager, roles, new { @class = "form-select" })
-    </div>
-    <div class="mb-3">
-        <label asp-for="PasswordHasher" class="form-label">Senha</label>
-        <input asp-for="PasswordHasher" class="form-control" type="password" />
-        <span asp-validation-for="PasswordHasher" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Salvar</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-</form>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Usuário #@Model.Id</p>
+            <h1>Editar usuário</h1>
+            <p class="ev-page-head__lead">Atualize os dados da conta e defina uma nova senha de acesso.</p>
+        </div>
+    </header>
+
+    <form asp-action="Edit" method="post" class="ev-form-layout">
+        <div class="ev-form-main">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="ev-notice ev-notice--danger" role="alert"></div>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="dados-conta">
+                <div class="ev-form-section__head">
+                    <h2 id="dados-conta">Dados da conta</h2>
+                    <p>Identificação e perfil de acesso do usuário.</p>
+                </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="Nome" class="form-label">Nome completo <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Nome" class="form-control" autocomplete="name" />
+                        <span asp-validation-for="Nome" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="Email" class="form-label">E-mail <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Email" class="form-control" type="email"
+                               autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" />
+                        <span asp-validation-for="Email" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field ev-field--full">
+                        <label asp-for="RoleManager" class="form-label">Perfil de acesso <span class="ev-required" aria-hidden="true">*</span></label>
+                        @Html.DropDownListFor(m => m.RoleManager, perfis, new { @class = "form-select" })
+                        <p class="ev-hint">O perfil define quais áreas da plataforma a pessoa pode acessar.</p>
+                        <span asp-validation-for="RoleManager" class="ev-form-validation"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="seguranca-conta">
+                <div class="ev-form-section__head">
+                    <h2 id="seguranca-conta">Segurança</h2>
+                    <p>Defina uma nova senha para esta conta.</p>
+                </div>
+                <div class="ev-field">
+                    <label asp-for="PasswordHasher" class="form-label">Nova senha <span class="ev-required" aria-hidden="true">*</span></label>
+                    <div class="ev-password">
+                        <input asp-for="PasswordHasher" id="senhaEdicao" class="form-control" type="password"
+                               autocomplete="new-password" placeholder="Mínimo de 6 caracteres" />
+                        <button type="button" class="ev-password__toggle" data-password-toggle
+                                aria-controls="senhaEdicao" aria-pressed="false" aria-label="Mostrar senha">
+                            <partial name="_Icon" model='"eye"' />
+                        </button>
+                    </div>
+                    <p class="ev-hint">A senha atual não é exibida. Ao salvar, a nova senha substitui a anterior e é gravada com hash.</p>
+                    <span asp-validation-for="PasswordHasher" class="ev-form-validation"></span>
+                </div>
+            </section>
+
+            <div class="ev-form-actions">
+                <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </div>
+
+        <aside class="ev-form-aside">
+            <section class="ev-panel">
+                <div class="ev-panel__body">
+                    <h2>Conta atual</h2>
+                    <dl class="ev-data ev-data--stacked">
+                        <div class="ev-data__item">
+                            <dt>Nome</dt>
+                            <dd>@Model.Nome</dd>
+                        </div>
+                        <div class="ev-data__item">
+                            <dt>E-mail</dt>
+                            <dd>@Model.Email</dd>
+                        </div>
+                        <div class="ev-data__item">
+                            <dt>Perfil</dt>
+                            <dd><partial name="_StatusBadge" model="Model.RoleManager" /></dd>
+                        </div>
+                    </dl>
+                </div>
+            </section>
+        </aside>
+    </form>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

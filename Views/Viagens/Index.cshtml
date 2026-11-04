@@ -4,72 +4,124 @@
 @{
     ViewData["Title"] = "Viagens";
     var papel = ViewData["Papel"] as string ?? string.Empty;
+    var ehMotorista = papel == "Motorista";
+    var viagens = Model.ToList();
+    var agendadas = viagens.Count(v => v.Status == "Agendada");
+    var emAndamento = viagens.Count(v => v.Status == "EmAndamento");
+    var finalizadas = viagens.Count(v => v.Status == "Finalizada");
+
+    string Hora(TimeSpan? valor) => valor.HasValue ? valor.Value.ToString(@"hh\:mm") : "—";
 }
 
 <section class="ev-page">
-    <header class="ev-page-heading">
-        <div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Operação</p>
             <h1>Viagens</h1>
-            <p>Consulte as viagens registradas e acompanhe seus horários e situação.</p>
+            <p class="ev-page-head__lead">
+                @if (ehMotorista)
+                {
+                    <text>Acompanhe as viagens atribuídas a você e registre início, fim e presença.</text>
+                }
+                else
+                {
+                    <text>Acompanhe a operação do dia: horários, vans, motoristas e situação de cada viagem.</text>
+                }
+            </p>
         </div>
-        <div class="ev-page-actions">
-            <a asp-action="Create" class="btn btn-primary">Nova viagem</a>
+        <div class="ev-page-head__actions">
+            <a asp-action="Create" class="btn btn-primary">
+                <partial name="_Icon" model='"plus"' />
+                Nova viagem
+            </a>
         </div>
     </header>
 
-    @if (Model.Any())
+    @if (viagens.Any())
     {
-        <section class="ev-panel d-none d-lg-block p-0 overflow-hidden" aria-label="Tabela de viagens">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
+        <div class="ev-metrics">
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Total</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"trip"' /></span>
+                </div>
+                <span class="ev-metric__value">@viagens.Count</span>
+                <span class="ev-metric__hint">viagens registradas</span>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Agendadas</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"calendar"' /></span>
+                </div>
+                <span class="ev-metric__value">@agendadas</span>
+                <span class="ev-metric__hint">aguardando início</span>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Em andamento</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
+                </div>
+                <span class="ev-metric__value">@emAndamento</span>
+                <span class="ev-metric__hint">na estrada agora</span>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Finalizadas</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"check"' /></span>
+                </div>
+                <span class="ev-metric__value">@finalizadas</span>
+                <span class="ev-metric__hint">concluídas</span>
+            </article>
+        </div>
+
+        <section class="ev-panel ev-panel--flush ev-list-desktop" aria-label="Tabela de viagens">
+            <div class="ev-table-scroll">
+                <table class="ev-table">
                     <thead>
                         <tr>
                             <th scope="col">Viagem</th>
                             <th scope="col">Data</th>
+                            <th scope="col">Rota</th>
                             <th scope="col">Van</th>
                             <th scope="col">Motorista</th>
-                            <th scope="col">Rota</th>
-                            <th scope="col">Horários</th>
+                            <th scope="col">Horário</th>
                             <th scope="col">Status</th>
                             <th scope="col"><span class="visually-hidden">Ações</span></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var viagem in Model)
+                        @foreach (var viagem in viagens)
                         {
-                            var statusClass = viagem.Status == "Finalizada"
-                                ? "badge-status-operacional"
-                                : viagem.Status == "EmAndamento" ? "badge bg-info text-dark" : "badge bg-secondary";
                             <tr>
-                                <td><strong>#@viagem.Id</strong></td>
-                                <td>@viagem.Data.ToShortDateString()</td>
-                                <td>@viagem.Van?.Plate</td>
-                                <td>@viagem.Motorista?.Nome</td>
-                                <td>@viagem.Rota?.Nome</td>
+                                <td><span class="ev-table__primary">#@viagem.Id</span></td>
+                                <td>@viagem.Data.ToString("dd/MM/yyyy")</td>
                                 <td>
-                                    @(viagem.HoraInicio.HasValue ? viagem.HoraInicio.Value.ToString(@"hh\:mm") : "—")
-                                    /
-                                    @(viagem.HoraFim.HasValue ? viagem.HoraFim.Value.ToString(@"hh\:mm") : "—")
-                                </td>
-                                <td><span class="badge @statusClass">@viagem.Status</span></td>
-                                <td class="text-end">
-                                    <a asp-action="Details" asp-route-id="@viagem.Id" class="btn btn-sm btn-outline-primary">Detalhes</a>
-                                    @if (papel == "Motorista" || User.IsInRole("Administrador"))
+                                    <span class="ev-table__primary">@(viagem.Rota?.Nome ?? "Rota removida")</span>
+                                    @if (viagem.Rota != null)
                                     {
-                                        if (viagem.Status == "Agendada")
+                                        <span class="ev-table__secondary">@viagem.Rota.Origem → @viagem.Rota.Destino</span>
+                                    }
+                                </td>
+                                <td><span class="ev-plate">@(viagem.Van?.Plate ?? "—")</span></td>
+                                <td>@(viagem.Motorista?.Nome ?? "—")</td>
+                                <td class="text-nowrap">@Hora(viagem.HoraInicio) – @Hora(viagem.HoraFim)</td>
+                                <td><partial name="_StatusBadge" model="viagem.Status" /></td>
+                                <td class="is-actions">
+                                    <div class="ev-row-actions">
+                                        <a asp-action="Details" asp-route-id="@viagem.Id" class="ev-link-action">Detalhes</a>
+                                        @if (viagem.Status == "Agendada")
                                         {
-                                            <form asp-action="Start" asp-route-id="@viagem.Id" method="post" class="d-inline">
-                                                <button type="submit" class="btn btn-sm btn-success">Iniciar</button>
+                                            <form asp-action="Start" asp-route-id="@viagem.Id" method="post" class="ev-inline-form">
+                                                <button type="submit" class="ev-link-action">Iniciar</button>
                                             </form>
                                         }
                                         else if (viagem.Status == "EmAndamento")
                                         {
-                                            <form asp-action="Finish" asp-route-id="@viagem.Id" method="post" class="d-inline">
-                                                <button type="submit" class="btn btn-sm btn-danger">Finalizar</button>
+                                            <form asp-action="Finish" asp-route-id="@viagem.Id" method="post" class="ev-inline-form">
+                                                <button type="submit" class="ev-link-action ev-link-action--danger">Finalizar</button>
                                             </form>
-                                            <a asp-action="Details" asp-route-id="@viagem.Id" class="btn btn-sm btn-outline-secondary">Presença</a>
                                         }
-                                    }
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -78,58 +130,55 @@
             </div>
         </section>
 
-        <section class="ev-mobile-vans d-lg-none" aria-label="Lista de viagens">
-            @foreach (var viagem in Model)
+        <section class="ev-records ev-list-mobile" aria-label="Lista de viagens">
+            @foreach (var viagem in viagens)
             {
-                var statusClass = viagem.Status == "Finalizada"
-                    ? "badge-status-operacional"
-                    : viagem.Status == "EmAndamento" ? "badge bg-info text-dark" : "badge bg-secondary";
-                <article class="ev-van-mobile">
-                    <div class="ev-van-mobile__head">
+                <article class="ev-record">
+                    <div class="ev-record__head">
                         <div>
-                            <div class="ev-van-mobile__plate">Viagem #@viagem.Id</div>
-                            <div class="ev-van-mobile__id">@viagem.Data.ToShortDateString()</div>
+                            <h2 class="ev-record__title">Viagem #@viagem.Id</h2>
+                            <span class="ev-record__meta">@viagem.Data.ToString("dd/MM/yyyy") · @Hora(viagem.HoraInicio) – @Hora(viagem.HoraFim)</span>
                         </div>
-                        <span class="badge @statusClass">@viagem.Status</span>
+                        <partial name="_StatusBadge" model="viagem.Status" />
                     </div>
-                    <div class="ev-van-mobile__data">
-                        <div class="ev-van-mobile__item">
-                            <span>Van</span>
-                            <strong>@viagem.Van?.Plate</strong>
+
+                    @if (viagem.Rota != null)
+                    {
+                        <div class="ev-route-leg" aria-label="Trajeto">
+                            <span class="ev-route-leg__stop">@viagem.Rota.Origem</span>
+                            <partial name="_Icon" model='"arrow-right"' />
+                            <span class="ev-route-leg__stop ev-route-leg__stop--end">@viagem.Rota.Destino</span>
                         </div>
-                        <div class="ev-van-mobile__item">
-                            <span>Motorista</span>
-                            <strong>@viagem.Motorista?.Nome</strong>
+                    }
+
+                    <dl class="ev-record__data">
+                        <div>
+                            <dt>Rota</dt>
+                            <dd>@(viagem.Rota?.Nome ?? "Rota removida")</dd>
                         </div>
-                        <div class="ev-van-mobile__item">
-                            <span>Rota</span>
-                            <strong>@viagem.Rota?.Nome</strong>
+                        <div>
+                            <dt>Van</dt>
+                            <dd class="is-mono">@(viagem.Van?.Plate ?? "—")</dd>
                         </div>
-                        <div class="ev-van-mobile__item">
-                            <span>Horários</span>
-                            <strong>
-                                @(viagem.HoraInicio.HasValue ? viagem.HoraInicio.Value.ToString(@"hh\:mm") : "—")
-                                /
-                                @(viagem.HoraFim.HasValue ? viagem.HoraFim.Value.ToString(@"hh\:mm") : "—")
-                            </strong>
+                        <div>
+                            <dt>Motorista</dt>
+                            <dd>@(viagem.Motorista?.Nome ?? "—")</dd>
                         </div>
-                    </div>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a asp-action="Details" asp-route-id="@viagem.Id" class="btn btn-outline-primary flex-fill">Detalhes</a>
-                        @if (papel == "Motorista" || User.IsInRole("Administrador"))
+                    </dl>
+
+                    <div class="ev-record__actions">
+                        <a asp-action="Details" asp-route-id="@viagem.Id" class="btn btn-outline-primary">Detalhes</a>
+                        @if (viagem.Status == "Agendada")
                         {
-                            if (viagem.Status == "Agendada")
-                            {
-                                <form asp-action="Start" asp-route-id="@viagem.Id" method="post" class="flex-fill">
-                                    <button type="submit" class="btn btn-success w-100">Iniciar</button>
-                                </form>
-                            }
-                            else if (viagem.Status == "EmAndamento")
-                            {
-                                <form asp-action="Finish" asp-route-id="@viagem.Id" method="post" class="flex-fill">
-                                    <button type="submit" class="btn btn-danger w-100">Finalizar</button>
-                                </form>
-                            }
+                            <form asp-action="Start" asp-route-id="@viagem.Id" method="post" class="ev-inline-form">
+                                <button type="submit" class="btn btn-primary">Iniciar</button>
+                            </form>
+                        }
+                        else if (viagem.Status == "EmAndamento")
+                        {
+                            <form asp-action="Finish" asp-route-id="@viagem.Id" method="post" class="ev-inline-form">
+                                <button type="submit" class="btn btn-danger">Finalizar</button>
+                            </form>
                         }
                     </div>
                 </article>
@@ -139,8 +188,18 @@
     else
     {
         <div class="ev-panel ev-empty">
-            <h2 class="h5 mb-2">Nenhuma viagem cadastrada</h2>
-            <p class="mb-3">Quando uma viagem for registrada, ela aparecerá nesta lista.</p>
+            <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"trip"' /></span>
+            <h2 class="ev-empty__title">Nenhuma viagem registrada</h2>
+            <p class="ev-empty__text">
+                @if (ehMotorista)
+                {
+                    <text>Quando uma viagem for atribuída a você, ela aparecerá aqui.</text>
+                }
+                else
+                {
+                    <text>Agende a primeira viagem para começar a acompanhar a operação.</text>
+                }
+            </p>
             <a asp-action="Create" class="btn btn-primary">Cadastrar primeira viagem</a>
         </div>
     }

@@ -1,58 +1,98 @@
 @model EasyVan.Models.Aluno
 
 @{
-    ViewData["Title"] = "Novo Aluno";
+    ViewData["Title"] = "Novo aluno";
 }
 
-<section class="py-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h3">Novo Aluno</h1>
-        <a asp-action="Index" class="btn btn-outline-secondary">Voltar à listagem</a>
-    </div>
+<section class="ev-page">
+    <a asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para alunos
+    </a>
 
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form asp-action="Create" method="post">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Cadastros</p>
+            <h1>Novo aluno</h1>
+            <p class="ev-page-head__lead">Registre o passageiro e os dados de contato usados na operação.</p>
+        </div>
+    </header>
 
-                        <div class="mb-3">
-                            <label asp-for="Nome" class="form-label">Nome</label>
-                            <input asp-for="Nome" class="form-control" placeholder="Nome completo" />
-                            <span asp-validation-for="Nome" class="text-danger"></span>
-                        </div>
+    <form asp-action="Create" method="post" class="ev-form-layout">
+        <div class="ev-form-main">
+            <div asp-validation-summary="ModelOnly" class="ev-notice ev-notice--danger" role="alert"></div>
 
-                        <div class="mb-3">
-                            <label asp-for="Email" class="form-label">Email</label>
-                            <input asp-for="Email" class="form-control" type="email" />
-                            <span asp-validation-for="Email" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Telefone" class="form-label">Telefone</label>
-                            <input asp-for="Telefone" class="form-control" />
-                            <span asp-validation-for="Telefone" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Endereco" class="form-label">Endereço</label>
-                            <input asp-for="Endereco" class="form-control" />
-                            <span asp-validation-for="Endereco" class="text-danger"></span>
-                        </div>
-
-                        <div class="mb-3 form-check">
-                            <input asp-for="Ativo" class="form-check-input" />
-                            <label asp-for="Ativo" class="form-check-label">Aluno ativo</label>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">Salvar Aluno</button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
-                    </form>
+            <section class="ev-panel ev-form-section" aria-labelledby="dados-aluno">
+                <div class="ev-form-section__head">
+                    <h2 id="dados-aluno">Dados do aluno</h2>
+                    <p>Nome e e-mail do passageiro.</p>
                 </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="Nome" class="form-label">Nome completo <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Nome" class="form-control" placeholder="Nome completo" autocomplete="name" />
+                        <span asp-validation-for="Nome" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="Email" class="form-label">E-mail <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Email" class="form-control" type="email" placeholder="aluno@exemplo.com"
+                               autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" />
+                        <span asp-validation-for="Email" class="ev-form-validation"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="contato-aluno">
+                <div class="ev-form-section__head">
+                    <h2 id="contato-aluno">Contato e embarque</h2>
+                    <p>Telefone e endereço ajudam a localizar o ponto de embarque.</p>
+                </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="Telefone" class="form-label">Telefone</label>
+                        <input asp-for="Telefone" class="form-control" type="tel" placeholder="(11) 98888-0000"
+                               autocomplete="tel" inputmode="tel" />
+                        <span asp-validation-for="Telefone" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field ev-span-2">
+                        <label asp-for="Endereco" class="form-label">Endereço</label>
+                        <input asp-for="Endereco" class="form-control" placeholder="Rua, número e bairro" autocomplete="street-address" />
+                        <span asp-validation-for="Endereco" class="ev-form-validation"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="situacao-aluno">
+                <div class="ev-form-section__head">
+                    <h2 id="situacao-aluno">Situação</h2>
+                    <p>Define se o aluno entra nas listas de presença das viagens.</p>
+                </div>
+                <div class="ev-check">
+                    <input asp-for="Ativo" class="form-check-input" />
+                    <div class="ev-check__text">
+                        <label asp-for="Ativo">Aluno ativo</label>
+                        <span>Somente alunos ativos são incluídos ao inicializar a lista de presença.</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="ev-form-actions">
+                <button type="submit" class="btn btn-primary">Cadastrar aluno</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
             </div>
         </div>
-    </div>
+
+        <aside class="ev-form-aside">
+            <section class="ev-panel">
+                <div class="ev-panel__body">
+                    <h2>Dados pessoais</h2>
+                    <p class="mb-0">Informe apenas o necessário para a operação de transporte. O endereço é usado como referência de embarque, não como geolocalização.</p>
+                </div>
+            </section>
+        </aside>
+    </form>
 </section>
 
 @section Scripts {
