@@ -20,7 +20,7 @@ namespace EasyVan.Data
             var hasher = senha ?? new PasswordService();
 
             // Vans (referência da spec de filtros e busca).
-            if (!context.Vans.Any())
+            if (seedDemoUsers && !context.Vans.Any())
             {
                 context.Vans.AddRange(
                     new Van
@@ -90,10 +90,11 @@ namespace EasyVan.Data
 
             // Em produção, cria o primeiro administrador apenas com credenciais fornecidas
             // por variáveis de ambiente privadas (nunca usa senha padrão).
-            if (!seedDemoUsers && !context.Usuarios.Any()
-                && !string.IsNullOrWhiteSpace(adminEmail)
-                && !string.IsNullOrWhiteSpace(adminPassword))
+            if (!seedDemoUsers && !context.Usuarios.Any())
             {
+                if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+                    throw new InvalidOperationException("Configure EASYVAN_ADMIN_EMAIL e EASYVAN_ADMIN_PASSWORD nas variáveis privadas da Railway para criar o primeiro administrador.");
+
                 if (adminPassword.Length < 12 || adminPassword.Length > 128)
                     throw new InvalidOperationException("EASYVAN_ADMIN_PASSWORD deve ter entre 12 e 128 caracteres.");
 
@@ -107,7 +108,7 @@ namespace EasyVan.Data
             }
 
             // Motoristas.
-            if (!context.Motoristas.Any())
+            if (seedDemoUsers && !context.Motoristas.Any())
             {
                 context.Motoristas.AddRange(
                     new Motorista
@@ -138,7 +139,7 @@ namespace EasyVan.Data
             }
 
             // Alunos.
-            if (!context.Alunos.Any())
+            if (seedDemoUsers && !context.Alunos.Any())
             {
                 context.Alunos.AddRange(
                     new Aluno
@@ -169,7 +170,7 @@ namespace EasyVan.Data
             }
 
             // Rotas.
-            if (!context.Rotas.Any())
+            if (seedDemoUsers && !context.Rotas.Any())
             {
                 context.Rotas.AddRange(
                     new Rota
