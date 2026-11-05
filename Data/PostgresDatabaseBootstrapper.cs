@@ -47,7 +47,7 @@ public static class PostgresDatabaseBootstrapper
         // O EasyVan autentica usuários por cookies ASP.NET, não pelo Supabase Auth.
         // Nenhum cliente público deve consultar diretamente as tabelas operacionais.
         db.Database.ExecuteSqlRaw("""
-            DO $
+            DO $body$
             DECLARE app_table record;
             BEGIN
                 FOR app_table IN
@@ -58,7 +58,7 @@ public static class PostgresDatabaseBootstrapper
                 LOOP
                     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', app_table.tablename);
                 END LOOP;
-            END $;
+            END $body$;
 
             REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
             REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
