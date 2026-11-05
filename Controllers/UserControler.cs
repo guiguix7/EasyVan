@@ -49,11 +49,17 @@ namespace EasyVan.Controllers
             else
                 usuario.RoleManager = Usuarios.NormalizeRole(usuario.RoleManager);
 
-            if (!ModelState.IsValid) return View(usuario);
+            if (!ModelState.IsValid)
+            {
+                ModelState.Remove(nameof(usuario.PasswordHasher));
+                usuario.PasswordHasher = string.Empty;
+                return View(usuario);
+            }
 
             if (await _db.Usuarios.AnyAsync(u => u.Email == usuario.Email))
             {
                 ModelState.AddModelError(nameof(usuario.Email), "Este e-mail já está cadastrado.");
+                ModelState.Remove(nameof(usuario.PasswordHasher));
                 usuario.PasswordHasher = string.Empty;
                 return View(usuario);
             }
@@ -69,6 +75,7 @@ namespace EasyVan.Controllers
             catch (DbUpdateException)
             {
                 ModelState.AddModelError(nameof(usuario.Email), "Não foi possível cadastrar este e-mail. Verifique se ele já está em uso.");
+                ModelState.Remove(nameof(usuario.PasswordHasher));
                 usuario.PasswordHasher = string.Empty;
                 return View(usuario);
             }
@@ -128,6 +135,7 @@ namespace EasyVan.Controllers
 
             if (!ModelState.IsValid)
             {
+                ModelState.Remove(nameof(usuario.PasswordHasher));
                 usuario.PasswordHasher = string.Empty;
                 return View(usuario);
             }
@@ -176,13 +184,19 @@ namespace EasyVan.Controllers
         public async Task<IActionResult> Login(LoginViewModel model)
         {
             if (!ModelState.IsValid)
+            {
+                ModelState.Remove(nameof(model.Password));
+                model.Password = string.Empty;
                 return View("~/Views/Home/Index.cshtml", model);
+            }
 
             var email = Usuarios.NormalizeEmail(model.Email);
             var user = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null || !_senha.Verificar(model.Password, user.PasswordHasher))
             {
                 ModelState.AddModelError(string.Empty, "E-mail ou senha inválidos.");
+                ModelState.Remove(nameof(model.Password));
+                model.Password = string.Empty;
                 return View("~/Views/Home/Index.cshtml", model);
             }
 
