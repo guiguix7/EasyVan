@@ -3,9 +3,9 @@
 @{
     ViewData["Title"] = "Usuários";
     var usuarios = Model.ToList();
-    var administradores = usuarios.Count(u => u.RoleManager == "Administrador");
-    var motoristas = usuarios.Count(u => u.RoleManager == "Motorista");
-    var alunos = usuarios.Count(u => u.RoleManager == "Aluno");
+    var administradores = usuarios.Count(u => EasyVan.Models.Usuarios.NormalizeRole(u.RoleManager) == "Administrador");
+    var motoristas = usuarios.Count(u => EasyVan.Models.Usuarios.NormalizeRole(u.RoleManager) == "Motorista");
+    var alunos = usuarios.Count(u => EasyVan.Models.Usuarios.NormalizeRole(u.RoleManager) == "Aluno");
     var usuarioLogadoId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 }
 
@@ -63,7 +63,7 @@
                                     <span class="ev-table__secondary">Usuário #@usuario.Id</span>
                                 </td>
                                 <td>@usuario.Email</td>
-                                <td><partial name="_StatusBadge" model="usuario.RoleManager" /></td>
+                                <td><partial name="_StatusBadge" model="EasyVan.Models.Usuarios.NormalizeRole(usuario.RoleManager)" /></td>
                                 <td class="is-actions">
                                     <div class="ev-row-actions">
                                         <a asp-action="Details" asp-route-id="@usuario.Id" class="ev-link-action">Detalhes</a>
