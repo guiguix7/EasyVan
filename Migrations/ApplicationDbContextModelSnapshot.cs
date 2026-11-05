@@ -134,11 +134,13 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
+                        .HasMaxLength(254)
                         .UseCollation("NOCASE")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
                         .IsRequired()
+                        .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHasher")
