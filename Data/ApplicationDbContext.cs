@@ -18,11 +18,13 @@ namespace EasyVan.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<Usuarios>()
-                .HasIndex(usuario => usuario.Email)
-                .IsUnique()
-                .HasDatabaseName("IX_Usuarios_Email")
-                .UseCollation("NOCASE");
+            modelBuilder.Entity<Usuarios>(entity =>
+            {
+                entity.Property(usuario => usuario.Email).UseCollation("NOCASE");
+                entity.HasIndex(usuario => usuario.Email)
+                    .IsUnique()
+                    .HasDatabaseName("IX_Usuarios_Email");
+            });
         }
     }
 }
