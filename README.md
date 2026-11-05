@@ -76,13 +76,13 @@ A conexão padrão é definida em `appsettings.json`:
 }
 ```
 
-Em produção, prefira variáveis de ambiente:
+Em produção no Railway, anexe um Volume ao serviço com Mount Path exatamente `/data`. O banco e as chaves de autenticação ficam nesse volume. A aplicação falha ao iniciar no Railway se o volume não estiver montado corretamente.\n\nEm produção, prefira variáveis de ambiente:
 
 ```powershell
 $env:ASPNETCORE_ENVIRONMENT = "Production"
 $env:ConnectionStrings__DefaultConnection = "Data Source=/data/easyvan.db"
 $env:EASYVAN_ADMIN_EMAIL = "admin@exemplo.com"
-$env:EASYVAN_ADMIN_PASSWORD = "defina-uma-senha-forte"
+$env:EASYVAN_ADMIN_PASSWORD = "use-uma-senha-forte-com-12-ou-mais-caracteres"
 ```
 
 Quando o banco de produção estiver vazio, `EASYVAN_ADMIN_EMAIL` e `EASYVAN_ADMIN_PASSWORD` permitem criar o primeiro administrador. A aplicação não cria senha padrão em produção.
