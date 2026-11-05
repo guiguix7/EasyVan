@@ -1,5 +1,3 @@
-// Pega os dados do usuário e valida as informações, como nome, email e senha.
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace EasyVan.Models
@@ -9,51 +7,45 @@ namespace EasyVan.Models
         public int Id { get; set; }
 
         [Required(ErrorMessage = "O nome é obrigatório.")]
+        [StringLength(120)]
         public string Nome { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "O email é obrigatório.")]
-        [EmailAddress(ErrorMessage = "Informe um email válido.")]
+        [Required(ErrorMessage = "O e-mail é obrigatório.")]
+        [EmailAddress(ErrorMessage = "Informe um e-mail válido.")]
+        [StringLength(254)]
         public string Email { get; set; } = string.Empty;
 
         public string RoleManager { get; set; } = "Aluno";
 
         [Required(ErrorMessage = "A senha é obrigatória.")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "A senha deve ter ao menos 6 caracteres.")]
+        [StringLength(128, MinimumLength = 12, ErrorMessage = "A senha deve ter entre 12 e 128 caracteres.")]
         [DataType(DataType.Password)]
         public string PasswordHasher { get; set; } = string.Empty;
 
         public static string NormalizeRole(string? role)
         {
-            if (string.IsNullOrWhiteSpace(role))
-            {
-                return "Aluno";
-            }
-
+            if (string.IsNullOrWhiteSpace(role)) return "Aluno";
             var normalized = role.Trim();
 
             if (normalized.Equals("Admin", StringComparison.OrdinalIgnoreCase)
                 || normalized.Equals("Administrador", StringComparison.OrdinalIgnoreCase)
                 || normalized.Equals("Adminstrador", StringComparison.OrdinalIgnoreCase))
-            {
                 return "Administrador";
-            }
 
             if (normalized.Equals("Driver", StringComparison.OrdinalIgnoreCase)
                 || normalized.Equals("Motorista", StringComparison.OrdinalIgnoreCase)
                 || normalized.Equals("Motorisa", StringComparison.OrdinalIgnoreCase))
-            {
                 return "Motorista";
-            }
 
             if (normalized.Equals("User", StringComparison.OrdinalIgnoreCase)
                 || normalized.Equals("Aluno", StringComparison.OrdinalIgnoreCase)
                 || normalized.Equals("Usuario", StringComparison.OrdinalIgnoreCase)
                 || normalized.Equals("Usuario Comum", StringComparison.OrdinalIgnoreCase))
-            {
                 return "Aluno";
-            }
 
             return "Aluno";
         }
+
+        public static string NormalizeEmail(string? email) => (email ?? string.Empty).Trim().ToLowerInvariant();
     }
 }
