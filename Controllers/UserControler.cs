@@ -1,18 +1,17 @@
-// Controlador para gerenciar usuários e autenticação.
 using System.Security.Claims;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using EasyVan.Data;
 using EasyVan.Models;
 using EasyVan.Services;
-using Microsoft.EntityFrameworkCore;
 
 namespace EasyVan.Controllers
 {
+    [Authorize(Roles = "Administrador")]
     public class UsuariosController : Controller
     {
         private readonly ApplicationDbContext _db;
@@ -24,14 +23,12 @@ namespace EasyVan.Controllers
             _senha = senha;
         }
 
-        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Index()
         {
-            var usuarios = await _db.Usuarios.ToListAsync();
+            var usuarios = await _db.Usuarios.OrderBy(u => u.Nome).ToListAsync();
             return View(usuarios);
         }
 
-        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Details(int id)
         {
             var usuario = await _db.Usuarios.FindAsync(id);
@@ -39,28 +36,32 @@ namespace EasyVan.Controllers
             return View(usuario);
         }
 
-        public IActionResult Create() => View();
+        public IActionResult Create() => View(new Usuarios());
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Usuarios usuario)
         {
-            // Atribuição de perfil é confiável somente quando feita por um administrador autenticado.
-            usuario.RoleManager = User.IsInRole("Administrador")
-                ? Usuarios.NormalizeRole(usuario.RoleManager)
-                : "Aluno";
             usuario.Email = Usuarios.NormalizeEmail(usuario.Email);
+
+            if (!Usuarios.IsSupportedRole(usuario.RoleManager))
+                ModelState.AddModelError(nameof(usuario.RoleManager), "Selecione um perfil de acesso válido.");
+            else
+                usuario.RoleManager = Usuarios.NormalizeRole(usuario.RoleManager);
 
             if (!ModelState.IsValid) return View(usuario);
 
-            if (await _db.Usuarios.AnyAsync(u => u.Email.ToLower() == usuario.Email))
+            if (await _db.Usuarios.AnyAsync(u => u.Email == usuario.Email))
             {
                 ModelState.AddModelError(nameof(usuario.Email), "Este e-mail já está cadastrado.");
+                usuario.PasswordHasher = string.Empty;
                 return View(usuario);
             }
 
+            usuario.Nome = usuario.Nome.Trim();
             usuario.PasswordHasher = _senha.Hash(usuario.PasswordHasher);
             _db.Usuarios.Add(usuario);
+
             try
             {
                 await _db.SaveChangesAsync();
@@ -72,41 +73,68 @@ namespace EasyVan.Controllers
                 return View(usuario);
             }
 
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Edit(int id)
         {
             var usuario = await _db.Usuarios.FindAsync(id);
             if (usuario == null) return NotFound();
+            usuario.PasswordHasher = string.Empty;
             return View(usuario);
         }
 
-        [Authorize(Roles = "Administrador")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Usuarios usuario)
+        public async Task<IActionResult> Edit(int id, Usuarios usuario)
         {
-            // A senha é opcional na edição: vazia mantém o hash existente.
+            if (id != usuario.Id) return NotFound();
+
             if (string.IsNullOrWhiteSpace(usuario.PasswordHasher))
                 ModelState.Remove(nameof(usuario.PasswordHasher));
 
-            if (!ModelState.IsValid) return View(usuario);
+            if (!Usuarios.IsSupportedRole(usuario.RoleManager))
+                ModelState.AddModelError(nameof(usuario.RoleManager), "Selecione um perfil de acesso válido.");
 
-            var existente = await _db.Usuarios.FindAsync(usuario.Id);
+            var existente = await _db.Usuarios.FindAsync(id);
             if (existente == null) return NotFound();
 
-            var emailNormalizado = Usuarios.NormalizeEmail(usuario.Email);
-            if (await _db.Usuarios.AnyAsync(u => u.Id != usuario.Id && u.Email.ToLower() == emailNormalizado))
-            {
+            var novoEmail = Usuarios.NormalizeEmail(usuario.Email);
+            if (await _db.Usuarios.AnyAsync(u => u.Id != id && u.Email == novoEmail))
                 ModelState.AddModelError(nameof(usuario.Email), "Este e-mail já está cadastrado.");
+
+            var papelAtual = Usuarios.NormalizeRole(existente.RoleManager);
+            var novoPapel = Usuarios.IsSupportedRole(usuario.RoleManager)
+                ? Usuarios.NormalizeRole(usuario.RoleManager)
+                : papelAtual;
+
+            if (papelAtual == "Administrador" && novoPapel != "Administrador")
+            {
+                if (UsuarioAtual(id))
+                {
+                    ModelState.AddModelError(nameof(usuario.RoleManager), "Você não pode remover o próprio acesso de administrador.");
+                }
+                else
+                {
+                    var outrosAdministradores = await _db.Usuarios
+                        .Where(u => u.Id != id)
+                        .ToListAsync();
+
+                    if (!outrosAdministradores.Any(u => Usuarios.NormalizeRole(u.RoleManager) == "Administrador"))
+                        ModelState.AddModelError(nameof(usuario.RoleManager), "Não é possível remover o último administrador do sistema.");
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                usuario.PasswordHasher = string.Empty;
                 return View(usuario);
             }
 
             existente.Nome = usuario.Nome.Trim();
-            existente.Email = emailNormalizado;
-            existente.RoleManager = Usuarios.NormalizeRole(usuario.RoleManager);
+            existente.Email = novoEmail;
+            existente.RoleManager = novoPapel;
+
             if (!string.IsNullOrWhiteSpace(usuario.PasswordHasher))
                 existente.PasswordHasher = _senha.Hash(usuario.PasswordHasher);
 
@@ -114,28 +142,33 @@ namespace EasyVan.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             var usuario = await _db.Usuarios.FindAsync(id);
             if (usuario == null) return NotFound();
+
+            if (UsuarioAtual(id) || Usuarios.NormalizeRole(usuario.RoleManager) == "Administrador")
+                return Forbid();
+
             return View(usuario);
         }
 
-        [Authorize(Roles = "Administrador")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var usuario = await _db.Usuarios.FindAsync(id);
-            if (usuario != null)
-            {
-                _db.Usuarios.Remove(usuario);
-                await _db.SaveChangesAsync();
-            }
+            if (usuario == null) return NotFound();
+
+            if (UsuarioAtual(id) || Usuarios.NormalizeRole(usuario.RoleManager) == "Administrador")
+                return Forbid();
+
+            _db.Usuarios.Remove(usuario);
+            await _db.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         [EnableRateLimiting("login")]
@@ -168,19 +201,33 @@ namespace EasyVan.Controllers
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var properties = new AuthenticationProperties
+            {
+                IsPersistent = model.RememberMe,
+                ExpiresUtc = model.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : null
+            };
+
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(identity));
+                new ClaimsPrincipal(identity),
+                properties);
 
             return RedirectToAction(user.RoleManager, "Home");
         }
 
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Index", "Home");
+        }
+
+        private bool UsuarioAtual(int id)
+        {
+            return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var usuarioId)
+                && usuarioId == id;
         }
     }
 }
