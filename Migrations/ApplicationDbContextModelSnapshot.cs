@@ -15,7 +15,7 @@ namespace Gerenciamento_de_Van.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
             modelBuilder.Entity("EasyVan.Models.Aluno", b =>
                 {
@@ -28,7 +28,6 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .UseCollation("NOCASE")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Endereco")
@@ -135,7 +134,6 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(254)
-                        .UseCollation("NOCASE")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
