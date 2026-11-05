@@ -94,10 +94,13 @@ namespace EasyVan.Data
                 && !string.IsNullOrWhiteSpace(adminEmail)
                 && !string.IsNullOrWhiteSpace(adminPassword))
             {
+                if (adminPassword.Length < 12)
+                    throw new InvalidOperationException("EASYVAN_ADMIN_PASSWORD deve ter no mínimo 12 caracteres.");
+
                 context.Usuarios.Add(new Usuarios
                 {
                     Nome = "Administrador",
-                    Email = adminEmail.Trim(),
+                    Email = Usuarios.NormalizeEmail(adminEmail),
                     RoleManager = "Administrador",
                     PasswordHasher = hasher.Hash(adminPassword)
                 });
