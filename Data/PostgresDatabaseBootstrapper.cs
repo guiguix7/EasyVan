@@ -18,18 +18,28 @@ public static class PostgresDatabaseBootstrapper
         }
 
         // GetAppliedMigrations creates __EFMigrationsHistory when it does not exist.
-        // EnsureCreated treats that history table as an existing application schema and
-        // then skips creating every application table. Exclude the history table when
-        // deciding whether the application schema is empty.
+        // Keep the history separate from the application schema when detecting an empty DB.
         var appliedMigrations = db.Database.GetAppliedMigrations().ToArray();
         var applicationTableCount = GetPublicApplicationTableCount(db);
 
         if (applicationTableCount == 0)
         {
-            // This also repairs a previous interrupted bootstrap where only the EF
-            // history table was created. No application tables or user data are removed.
+            // Repair an interrupted bootstrap where only the EF history table exists.
+            // No application tables or user data are removed.
             db.Database.ExecuteSqlRaw("""DROP TABLE IF EXISTS "__EFMigrationsHistory";""");
-            db.Database.EnsureCreated();
+
+            // EnsureCreated() can decide not to create the model when PostgreSQL reports
+            // any relation in the schema (including non-table relations). Execute the
+            // provider-generated model DDL directly so every EF entity is materialized.
+            var createModelSql = db.Database.GenerateCreateScript();
+            if (string.IsNullOrWhiteSpace(createModelSql))
+                throw new InvalidOperationException("O EF Core gerou um script vazio para criar o schema PostgreSQL.");
+
+            db.Database.ExecuteSqlRaw(createModelSql);
+
+            var createdTableCount = GetPublicApplicationTableCount(db);
+            if (createdTableCount == 0)
+                throw new InvalidOperationException("O script de criação do EF Core foi executado, mas nenhuma tabela da aplicação foi encontrada no schema public.");
 
             db.Database.ExecuteSqlRaw("""
                 CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
@@ -41,7 +51,7 @@ public static class PostgresDatabaseBootstrapper
 
             // On a fresh database, baseline the existing SQLite migrations. If a prior
             // bootstrap recorded them but failed before creating app tables, preserve
-            // that same baseline after EnsureCreated has recreated the schema.
+            // that same baseline after the schema has been recreated.
             var migrationsToBaseline = appliedMigrations.Length == 0
                 ? db.Database.GetMigrations()
                 : appliedMigrations;
