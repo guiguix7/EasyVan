@@ -9,13 +9,6 @@ namespace EasyVan.Data;
 /// </summary>
 public static class PostgresDatabaseBootstrapper
 {
-    private static readonly string[] ExistingMigrationIds =
-    [
-        "20261103174311_InitialCreate",
-        "20261103175128_RenamePassageirosToAlunos",
-        "20261103181822_ViagensEPresencas"
-    ];
-
     public static void Initialize(ApplicationDbContext db)
     {
         if (db.Database.ProviderName != "Npgsql.EntityFrameworkCore.PostgreSQL")
@@ -38,11 +31,11 @@ public static class PostgresDatabaseBootstrapper
                 );
                 """);
 
-            foreach (var migrationId in ExistingMigrationIds)
+            foreach (var migrationId in db.Database.GetMigrations())
             {
                 db.Database.ExecuteSqlInterpolated($"""
                     INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-                    VALUES ({migrationId}, {"8.0.0"})
+                    VALUES ({migrationId}, {"10.0.13"})
                     ON CONFLICT ("MigrationId") DO NOTHING;
                     """);
             }
@@ -54,17 +47,18 @@ public static class PostgresDatabaseBootstrapper
         // O EasyVan autentica usuários por cookies ASP.NET, não pelo Supabase Auth.
         // Nenhum cliente público deve consultar diretamente as tabelas operacionais.
         db.Database.ExecuteSqlRaw("""
-            DO $$
-            DECLARE table_name text;
+            DO $
+            DECLARE app_table record;
             BEGIN
-                FOREACH table_name IN ARRAY ARRAY[
-                    'Usuarios', 'Vans', 'Motoristas', 'Alunos',
-                    'Rotas', 'Viagens', 'PresencasViagem'
-                ]
+                FOR app_table IN
+                    SELECT tablename
+                    FROM pg_tables
+                    WHERE schemaname = 'public'
+                      AND tablename <> '__EFMigrationsHistory'
                 LOOP
-                    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', table_name);
+                    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', app_table.tablename);
                 END LOOP;
-            END $$;
+            END $;
 
             REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
             REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
