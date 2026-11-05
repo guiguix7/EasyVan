@@ -8,15 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Update="wwwroot\\**\\*">
+    <Content Update="wwwroot\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="tests\\**\\*.cs" />
-    <Content Remove="tests\\**\\*" />
-    <None Remove="tests\\**\\*" />
+    <Compile Remove="tests\**\*.cs" />
+    <Content Remove="tests\**\*" />
+    <None Remove="tests\**\*" />
   </ItemGroup>
 
   <ItemGroup>
