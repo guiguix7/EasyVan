@@ -1,11 +1,11 @@
 @model EasyVan.Models.Usuarios
 
 @{
-    var autenticado = User.Identity?.IsAuthenticated == true;
-    ViewData["Title"] = autenticado ? "Novo usuário" : "Criar cadastro";
+    var administrador = User.IsInRole("Administrador");
+    ViewData["Title"] = administrador ? "Novo usuário" : "Criar cadastro";
 }
 
-@if (autenticado)
+@if (administrador)
 {
     <section class="ev-page">
         <header class="ev-page-head">

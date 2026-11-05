@@ -14,10 +14,13 @@
             <p class="ev-page-head__lead">Consulte os passageiros cadastrados e mantenha os dados de contato organizados.</p>
         </div>
         <div class="ev-page-head__actions">
-            <a asp-action="Create" class="btn btn-primary">
-                <partial name="_Icon" model='"plus"' />
-                Novo aluno
-            </a>
+            @if (User.IsInRole("Administrador"))
+            {
+                <a asp-action="Create" class="btn btn-primary">
+                    <partial name="_Icon" model='"plus"' />
+                    Novo aluno
+                </a>
+            }
         </div>
     </header>
 
@@ -57,14 +60,17 @@
                                 <td class="is-actions">
                                     <div class="ev-row-actions">
                                         <a asp-action="Details" asp-route-id="@aluno.Id" class="ev-link-action">Detalhes</a>
-                                        <a asp-action="Edit" asp-route-id="@aluno.Id" class="ev-link-action">
-                                            <partial name="_Icon" model='"edit"' />
-                                            Editar
-                                        </a>
-                                        <a asp-action="Delete" asp-route-id="@aluno.Id" class="ev-link-action ev-link-action--danger">
-                                            <partial name="_Icon" model='"trash"' />
-                                            Excluir
-                                        </a>
+                                        @if (User.IsInRole("Administrador"))
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@aluno.Id" class="ev-link-action">
+                                                <partial name="_Icon" model='"edit"' />
+                                                Editar
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@aluno.Id" class="ev-link-action ev-link-action--danger">
+                                                <partial name="_Icon" model='"trash"' />
+                                                Excluir
+                                            </a>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -101,8 +107,11 @@
                     </dl>
                     <div class="ev-record__actions">
                         <a asp-action="Details" asp-route-id="@aluno.Id" class="btn btn-outline-primary">Detalhes</a>
-                        <a asp-action="Edit" asp-route-id="@aluno.Id" class="btn btn-outline-secondary">Editar</a>
-                        <a asp-action="Delete" asp-route-id="@aluno.Id" class="btn btn-outline-danger">Excluir</a>
+                        @if (User.IsInRole("Administrador"))
+                        {
+                            <a asp-action="Edit" asp-route-id="@aluno.Id" class="btn btn-outline-secondary">Editar</a>
+                            <a asp-action="Delete" asp-route-id="@aluno.Id" class="btn btn-outline-danger">Excluir</a>
+                        }
                     </div>
                 </article>
             }
@@ -114,7 +123,10 @@
             <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
             <h2 class="ev-empty__title">Nenhum aluno cadastrado</h2>
             <p class="ev-empty__text">Cadastre os alunos para organizar as informações de transporte e a presença nas viagens.</p>
-            <a asp-action="Create" class="btn btn-primary">Cadastrar aluno</a>
+            @if (User.IsInRole("Administrador"))
+            {
+                <a asp-action="Create" class="btn btn-primary">Cadastrar aluno</a>
+            }
         </div>
     }
 </section>

@@ -73,6 +73,7 @@ namespace Gerenciamento_de_Van.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Create(Van van)
         {
             if (!ModelState.IsValid) return View(van);

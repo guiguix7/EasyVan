@@ -25,16 +25,19 @@
             </p>
         </div>
 
-        <div class="ev-detail-actions">
-            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
-                <partial name="_Icon" model='"edit"' />
-                Editar
-            </a>
-            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
-                <partial name="_Icon" model='"trash"' />
-                Excluir
-            </a>
-        </div>
+        @if (User.IsInRole("Administrador"))
+        {
+            <div class="ev-detail-actions">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                    <partial name="_Icon" model='"edit"' />
+                    Editar
+                </a>
+                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
+                    <partial name="_Icon" model='"trash"' />
+                    Excluir
+                </a>
+            </div>
+        }
     </header>
 
     <div class="ev-detail-grid">

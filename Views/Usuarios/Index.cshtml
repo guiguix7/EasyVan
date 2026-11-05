@@ -13,13 +13,20 @@
         <div class="ev-page-head__text">
             <p class="ev-eyebrow">Administração</p>
             <h1>Usuários</h1>
-            <p class="ev-page-head__lead">Gerencie as contas e os perfis de acesso à plataforma.</p>
+            <p class="ev-page-head__lead">
+                @(User.IsInRole("Administrador")
+                    ? "Gerencie as contas e os perfis de acesso à plataforma."
+                    : "Consulte as contas e os perfis de acesso à plataforma.")
+            </p>
         </div>
         <div class="ev-page-head__actions">
-            <a asp-action="Create" class="btn btn-primary">
-                <partial name="_Icon" model='"plus"' />
-                Novo usuário
-            </a>
+            @if (User.IsInRole("Administrador"))
+            {
+                <a asp-action="Create" class="btn btn-primary">
+                    <partial name="_Icon" model='"plus"' />
+                    Novo usuário
+                </a>
+            }
         </div>
     </header>
 
@@ -56,14 +63,17 @@
                                 <td class="is-actions">
                                     <div class="ev-row-actions">
                                         <a asp-action="Details" asp-route-id="@usuario.Id" class="ev-link-action">Detalhes</a>
-                                        <a asp-action="Edit" asp-route-id="@usuario.Id" class="ev-link-action">
-                                            <partial name="_Icon" model='"edit"' />
-                                            Editar
-                                        </a>
-                                        <a asp-action="Delete" asp-route-id="@usuario.Id" class="ev-link-action ev-link-action--danger">
-                                            <partial name="_Icon" model='"trash"' />
-                                            Excluir
-                                        </a>
+                                        @if (User.IsInRole("Administrador"))
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@usuario.Id" class="ev-link-action">
+                                                <partial name="_Icon" model='"edit"' />
+                                                Editar
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@usuario.Id" class="ev-link-action ev-link-action--danger">
+                                                <partial name="_Icon" model='"trash"' />
+                                                Excluir
+                                            </a>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -92,8 +102,11 @@
                     </dl>
                     <div class="ev-record__actions">
                         <a asp-action="Details" asp-route-id="@usuario.Id" class="btn btn-outline-primary">Detalhes</a>
-                        <a asp-action="Edit" asp-route-id="@usuario.Id" class="btn btn-outline-secondary">Editar</a>
-                        <a asp-action="Delete" asp-route-id="@usuario.Id" class="btn btn-outline-danger">Excluir</a>
+                        @if (User.IsInRole("Administrador"))
+                        {
+                            <a asp-action="Edit" asp-route-id="@usuario.Id" class="btn btn-outline-secondary">Editar</a>
+                            <a asp-action="Delete" asp-route-id="@usuario.Id" class="btn btn-outline-danger">Excluir</a>
+                        }
                     </div>
                 </article>
             }
@@ -105,7 +118,10 @@
             <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"users"' /></span>
             <h2 class="ev-empty__title">Nenhum usuário cadastrado</h2>
             <p class="ev-empty__text">Cadastre um usuário para disponibilizar acesso à plataforma.</p>
-            <a asp-action="Create" class="btn btn-primary">Cadastrar usuário</a>
+            @if (User.IsInRole("Administrador"))
+            {
+                <a asp-action="Create" class="btn btn-primary">Cadastrar usuário</a>
+            }
         </div>
     }
 </section>
