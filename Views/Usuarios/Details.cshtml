@@ -3,8 +3,9 @@
 @{
     ViewData["Title"] = "Detalhes do usuário";
     var usuarioLogadoId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    var podeExcluir = User.IsInRole("Administrador") && Model.RoleManager != "Administrador" && usuarioLogadoId != Model.Id.ToString();
-    var descricaoPerfil = Model.RoleManager switch
+    var papelNormalizado = EasyVan.Models.Usuarios.NormalizeRole(Model.RoleManager);
+    var podeExcluir = User.IsInRole("Administrador") && papelNormalizado != "Administrador" && usuarioLogadoId != Model.Id.ToString();
+    var descricaoPerfil = papelNormalizado switch
     {
         "Administrador" => "Gerencia cadastros, contas e a operação da frota.",
         "Motorista" => "Acompanha e opera as viagens atribuídas ao seu usuário.",
@@ -23,7 +24,7 @@
             <p class="ev-eyebrow">Administração · Usuário #@Model.Id</p>
             <div class="ev-detail-head__identity">
                 <h1>@Model.Nome</h1>
-                <partial name="_StatusBadge" model="Model.RoleManager" />
+                <partial name="_StatusBadge" model="papelNormalizado" />
             </div>
             <p class="ev-detail-head__meta">
                 <partial name="_Icon" model='"mail"' />
@@ -64,7 +65,7 @@
                 </div>
                 <div class="ev-data__item">
                     <dt>Perfil</dt>
-                    <dd>@Model.RoleManager</dd>
+                    <dd>@papelNormalizado</dd>
                 </div>
                 <div class="ev-data__item">
                     <dt>E-mail</dt>
