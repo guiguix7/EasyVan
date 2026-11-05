@@ -18,9 +18,18 @@ namespace EasyVan.Models
         public string RoleManager { get; set; } = "Aluno";
 
         [Required(ErrorMessage = "A senha é obrigatória.")]
-        [StringLength(128, MinimumLength = 12, ErrorMessage = "A senha deve ter entre 12 e 128 caracteres.")]
+        [StringLength(20, MinimumLength = 6, ErrorMessage = "A senha deve ter entre 6 e 20 caracteres.")]
         [DataType(DataType.Password)]
         public string PasswordHasher { get; set; } = string.Empty;
+
+        public static bool IsSupportedRole(string? role)
+        {
+            if (string.IsNullOrWhiteSpace(role)) return false;
+
+            return role.Trim().Equals("Administrador", StringComparison.OrdinalIgnoreCase)
+                || role.Trim().Equals("Motorista", StringComparison.OrdinalIgnoreCase)
+                || role.Trim().Equals("Aluno", StringComparison.OrdinalIgnoreCase);
+        }
 
         public static string NormalizeRole(string? role)
         {
