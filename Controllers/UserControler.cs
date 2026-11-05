@@ -1,10 +1,11 @@
-// Controlador para gerenciar os usuários (Controller)
+// Controlador para gerenciar usuários e autenticação.
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using EasyVan.Data;
 using EasyVan.Models;
 using EasyVan.Services;
@@ -23,17 +24,9 @@ namespace EasyVan.Controllers
             _senha = senha;
         }
 
-        // Lista de usuários: só administradores. Se ainda não houver nenhum usuário cadastrado,
-        // redireciona para o cadastro (primeiro cadastro é livre, para criar o primeiro Admin).
         [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Index()
         {
-            var temUsuario = await _db.Usuarios.AnyAsync();
-            if (!temUsuario)
-            {
-                return RedirectToAction(nameof(Create));
-            }
-
             var usuarios = await _db.Usuarios.ToListAsync();
             return View(usuarios);
         }
@@ -46,38 +39,39 @@ namespace EasyVan.Controllers
             return View(usuario);
         }
 
-        // Cadastro livre (sem [Authorize]) para permitir criar o primeiro usuário/Admin do sistema.
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        private static string ObterRotaPorPerfil(string? role)
-        {
-            var perfil = Usuarios.NormalizeRole(role);
-
-            return perfil switch
-            {
-                "Administrador" => "Administrador",
-                "Motorista" => "Motorista",
-                _ => "Aluno"
-            };
-        }
+        public IActionResult Create() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Usuarios usuario)
         {
-            if (!ModelState.IsValid)
+            // Atribuição de perfil é confiável somente quando feita por um administrador autenticado.
+            usuario.RoleManager = User.IsInRole("Administrador")
+                ? Usuarios.NormalizeRole(usuario.RoleManager)
+                : "Aluno";
+            usuario.Email = Usuarios.NormalizeEmail(usuario.Email);
+
+            if (!ModelState.IsValid) return View(usuario);
+
+            if (await _db.Usuarios.AnyAsync(u => u.Email.ToLower() == usuario.Email))
             {
+                ModelState.AddModelError(nameof(usuario.Email), "Este e-mail já está cadastrado.");
                 return View(usuario);
             }
 
-            usuario.RoleManager = Usuarios.NormalizeRole(usuario.RoleManager);
             usuario.PasswordHasher = _senha.Hash(usuario.PasswordHasher);
-
             _db.Usuarios.Add(usuario);
-            await _db.SaveChangesAsync();
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                ModelState.AddModelError(nameof(usuario.Email), "Não foi possível cadastrar este e-mail. Verifique se ele já está em uso.");
+                usuario.PasswordHasher = string.Empty;
+                return View(usuario);
+            }
+
             return RedirectToAction("Index", "Home");
         }
 
@@ -99,13 +93,18 @@ namespace EasyVan.Controllers
             var existente = await _db.Usuarios.FindAsync(usuario.Id);
             if (existente == null) return NotFound();
 
-            existente.Nome = usuario.Nome;
-            existente.Email = usuario.Email;
-            existente.RoleManager = usuario.RoleManager;
-            if (!string.IsNullOrWhiteSpace(usuario.PasswordHasher))
+            var emailNormalizado = Usuarios.NormalizeEmail(usuario.Email);
+            if (await _db.Usuarios.AnyAsync(u => u.Id != usuario.Id && u.Email.ToLower() == emailNormalizado))
             {
-                existente.PasswordHasher = _senha.Hash(usuario.PasswordHasher);
+                ModelState.AddModelError(nameof(usuario.Email), "Este e-mail já está cadastrado.");
+                return View(usuario);
             }
+
+            existente.Nome = usuario.Nome.Trim();
+            existente.Email = emailNormalizado;
+            existente.RoleManager = Usuarios.NormalizeRole(usuario.RoleManager);
+            if (!string.IsNullOrWhiteSpace(usuario.PasswordHasher))
+                existente.PasswordHasher = _senha.Hash(usuario.PasswordHasher);
 
             await _db.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
@@ -130,46 +129,50 @@ namespace EasyVan.Controllers
                 _db.Usuarios.Remove(usuario);
                 await _db.SaveChangesAsync();
             }
-
             return RedirectToAction(nameof(Index));
         }
 
-        // Login simples com autenticação por cookie.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [EnableRateLimiting("login")]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
             if (!ModelState.IsValid)
+                return View("~/Views/Home/Index.cshtml", model);
+
+            var email = Usuarios.NormalizeEmail(model.Email);
+            var user = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null || !_senha.Verificar(model.Password, user.PasswordHasher))
             {
+                ModelState.AddModelError(string.Empty, "E-mail ou senha inválidos.");
                 return View("~/Views/Home/Index.cshtml", model);
             }
 
-            var user = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email == model.Email);
-            if (user == null || !_senha.Verificar(model.Password, user.PasswordHasher))
+            if (_senha.PrecisaAtualizar(user.PasswordHasher))
             {
-                ModelState.AddModelError(string.Empty, "Credenciais inválidas.");
-                return View("~/Views/Home/Index.cshtml", model);
+                user.PasswordHasher = _senha.Hash(model.Password);
+                await _db.SaveChangesAsync();
             }
 
             user.RoleManager = Usuarios.NormalizeRole(user.RoleManager);
-            var perfil = ObterRotaPorPerfil(user.RoleManager);
-
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Nome),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, perfil),
+                new Claim(ClaimTypes.Role, user.RoleManager),
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity));
 
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-
-            return RedirectToAction(perfil, "Home");
+            return RedirectToAction(user.RoleManager, "Home");
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

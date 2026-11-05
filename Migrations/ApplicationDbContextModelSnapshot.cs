@@ -28,6 +28,7 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
+                        .UseCollation("NOCASE")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Endereco")
@@ -133,15 +134,18 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
+                        .HasMaxLength(254)
+                        .UseCollation("NOCASE")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
                         .IsRequired()
+                        .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHasher")
                         .IsRequired()
-                        .HasMaxLength(100)
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RoleManager")
@@ -149,6 +153,10 @@ namespace Gerenciamento_de_Van.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Usuarios_Email");
 
                     b.ToTable("Usuarios");
                 });

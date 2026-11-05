@@ -66,13 +66,13 @@
                     <label asp-for="PasswordHasher" class="form-label">Nova senha <span class="ev-required" aria-hidden="true">*</span></label>
                     <div class="ev-password">
                         <input asp-for="PasswordHasher" id="senhaEdicao" class="form-control" type="password"
-                               autocomplete="new-password" placeholder="Mínimo de 6 caracteres" />
+                               autocomplete="new-password" placeholder="Mínimo de 12 caracteres" />
                         <button type="button" class="ev-password__toggle" data-password-toggle
                                 aria-controls="senhaEdicao" aria-pressed="false" aria-label="Mostrar senha">
                             <partial name="_Icon" model='"eye"' />
                         </button>
                     </div>
-                    <p class="ev-hint">A senha atual não é exibida. Ao salvar, a nova senha substitui a anterior e é gravada com hash.</p>
+                    <p class="ev-hint">A senha atual não é exibida. Informe uma nova senha com pelo menos 12 caracteres para substituí-la.</p>
                     <span asp-validation-for="PasswordHasher" class="ev-form-validation"></span>
                 </div>
             </section>
