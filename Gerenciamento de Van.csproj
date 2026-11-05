@@ -8,15 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Update="wwwroot\**\*">
+    <Content Update="wwwroot\\**\\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="tests\**\*.cs" />
-    <Content Remove="tests\**\*" />
-    <None Remove="tests\**\*" />
+    <Compile Remove="tests\\**\\*.cs" />
+    <Content Remove="tests\\**\\*" />
+    <None Remove="tests\\**\\*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +26,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
   </ItemGroup>
 
 </Project>
