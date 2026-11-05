@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
@@ -81,6 +82,42 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Events = new CookieAuthenticationEvents
+        {
+            OnValidatePrincipal = async context =>
+            {
+                var userIdValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!int.TryParse(userIdValue, out var userId))
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return;
+                }
+
+                var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                var usuario = await db.Usuarios.AsNoTracking()
+                    .SingleOrDefaultAsync(u => u.Id == userId);
+
+                if (usuario == null)
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return;
+                }
+
+                var identity = context.Principal?.Identity as ClaimsIdentity;
+                if (identity == null)
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return;
+                }
+
+                AtualizarClaim(identity, ClaimTypes.Name, usuario.Nome, context);
+                AtualizarClaim(identity, ClaimTypes.Email, usuario.Email, context);
+                AtualizarClaim(identity, ClaimTypes.Role, EasyVan.Models.Usuarios.NormalizeRole(usuario.RoleManager), context);
+            }
+        };
     });
 
 var app = builder.Build();
