@@ -6,6 +6,7 @@
     var administradores = usuarios.Count(u => u.RoleManager == "Administrador");
     var motoristas = usuarios.Count(u => u.RoleManager == "Motorista");
     var alunos = usuarios.Count(u => u.RoleManager == "Aluno");
+    var usuarioLogadoId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 }
 
 <section class="ev-page">
@@ -53,6 +54,9 @@
                     <tbody>
                         @foreach (var usuario in usuarios)
                         {
+                            var podeExcluir = User.IsInRole("Administrador")
+                                && EasyVan.Models.Usuarios.NormalizeRole(usuario.RoleManager) != "Administrador"
+                                && usuario.Id.ToString() != usuarioLogadoId;
                             <tr>
                                 <td>
                                     <span class="ev-table__primary">@usuario.Nome</span>
@@ -69,10 +73,13 @@
                                                 <partial name="_Icon" model='"edit"' />
                                                 Editar
                                             </a>
-                                            <a asp-action="Delete" asp-route-id="@usuario.Id" class="ev-link-action ev-link-action--danger">
-                                                <partial name="_Icon" model='"trash"' />
-                                                Excluir
-                                            </a>
+                                            @if (podeExcluir)
+                                            {
+                                                <a asp-action="Delete" asp-route-id="@usuario.Id" class="ev-link-action ev-link-action--danger">
+                                                    <partial name="_Icon" model='"trash"' />
+                                                    Excluir
+                                                </a>
+                                            }
                                         }
                                     </div>
                                 </td>
@@ -86,6 +93,9 @@
         <section class="ev-records ev-list-mobile" aria-label="Lista de usuários">
             @foreach (var usuario in usuarios)
             {
+                var podeExcluir = User.IsInRole("Administrador")
+                    && EasyVan.Models.Usuarios.NormalizeRole(usuario.RoleManager) != "Administrador"
+                    && usuario.Id.ToString() != usuarioLogadoId;
                 <article class="ev-record">
                     <div class="ev-record__head">
                         <div>
@@ -105,7 +115,10 @@
                         @if (User.IsInRole("Administrador"))
                         {
                             <a asp-action="Edit" asp-route-id="@usuario.Id" class="btn btn-outline-secondary">Editar</a>
-                            <a asp-action="Delete" asp-route-id="@usuario.Id" class="btn btn-outline-danger">Excluir</a>
+                            @if (podeExcluir)
+                            {
+                                <a asp-action="Delete" asp-route-id="@usuario.Id" class="btn btn-outline-danger">Excluir</a>
+                            }
                         }
                     </div>
                 </article>
