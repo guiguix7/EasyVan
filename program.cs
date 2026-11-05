@@ -154,6 +154,15 @@ app.MapControllerRoute(
 
 app.Run();
 
+static void AtualizarClaim(ClaimsIdentity identity, string tipo, string valor, CookieValidatePrincipalContext context)
+{
+    var claimAtual = identity.FindFirst(tipo);
+    if (claimAtual?.Value == valor) return;
+    if (claimAtual != null) identity.RemoveClaim(claimAtual);
+    identity.AddClaim(new Claim(tipo, valor));
+    context.ShouldRenew = true;
+}
+
 static string NormalizePostgresConnectionString(string value)
 {
     if (!Uri.TryCreate(value, UriKind.Absolute, out var uri)
