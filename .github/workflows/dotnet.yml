@@ -1,0 +1,28 @@
+name: .NET build and tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, security/railway-persistent-db]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore application
+        run: dotnet restore "Gerenciamento de Van.csproj"
+
+      - name: Build application
+        run: dotnet build "Gerenciamento de Van.csproj" --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test "tests/EasyVan.Tests/EasyVan.Tests.csproj" --configuration Release
