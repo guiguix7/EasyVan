@@ -59,14 +59,12 @@ public static class PostgresDatabaseBootstrapper
                     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', app_table.tablename);
                 END LOOP;
             END $body$;
-
-            REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
-            REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
-            ALTER DEFAULT PRIVILEGES IN SCHEMA public
-                REVOKE ALL ON TABLES FROM anon, authenticated;
-            ALTER DEFAULT PRIVILEGES IN SCHEMA public
-                REVOKE ALL ON SEQUENCES FROM anon, authenticated;
             """);
+
+        db.Database.ExecuteSqlRaw("REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon, authenticated;");
+        db.Database.ExecuteSqlRaw("REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;");
+        db.Database.ExecuteSqlRaw("ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;");
+        db.Database.ExecuteSqlRaw("ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;");
     }
 
     private static void EnsurePublicSchemaIsEmpty(ApplicationDbContext db)
