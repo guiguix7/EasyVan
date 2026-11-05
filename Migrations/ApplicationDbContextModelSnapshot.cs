@@ -28,7 +28,6 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .UseCollation("NOCASE")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Endereco")
@@ -135,7 +134,6 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(254)
-                        .UseCollation("NOCASE")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
