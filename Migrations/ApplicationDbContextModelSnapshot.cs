@@ -134,6 +134,7 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
+                        .UseCollation("NOCASE")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
@@ -142,7 +143,7 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.Property<string>("PasswordHasher")
                         .IsRequired()
-                        .HasMaxLength(100)
+                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RoleManager")
