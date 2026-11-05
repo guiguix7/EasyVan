@@ -80,6 +80,7 @@ namespace EasyVan.Controllers
         {
             var usuario = await _db.Usuarios.FindAsync(id);
             if (usuario == null) return NotFound();
+            usuario.RoleManager = Usuarios.NormalizeRole(usuario.RoleManager);
             usuario.PasswordHasher = string.Empty;
             return View(usuario);
         }
