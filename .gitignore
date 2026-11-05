@@ -24,6 +24,10 @@ package.json
 .vscode/
 .idea/
 
+# Agent skills installed locally
+.agents/
+skills-lock.json
+
 # OS generated files
 .DS_Store
 .DS_Store?

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using EasyVan.Data;
 using EasyVan.Services;
+using Supabase.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +41,13 @@ if (isProduction)
 
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connectionString));
 builder.Services.AddScoped<IPasswordService, PasswordService>();
+
+var supabaseUrl = builder.Configuration["Supabase:Url"];
+var supabaseKey = builder.Configuration["Supabase:Key"];
+if (!string.IsNullOrWhiteSpace(supabaseUrl) && !string.IsNullOrWhiteSpace(supabaseKey))
+{
+    builder.Services.AddSupabase(supabaseUrl, supabaseKey);
+}
 
 builder.Services.AddRateLimiter(options =>
 {
