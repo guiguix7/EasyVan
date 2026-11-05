@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Detalhes do usuário";
+    var usuarioLogadoId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var podeExcluir = User.IsInRole("Administrador") && Model.RoleManager != "Administrador" && usuarioLogadoId != Model.Id.ToString();
     var descricaoPerfil = Model.RoleManager switch
     {
         "Administrador" => "Gerencia cadastros, contas e a operação da frota.",
@@ -36,10 +38,13 @@
                     <partial name="_Icon" model='"edit"' />
                     Editar
                 </a>
-                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
-                    <partial name="_Icon" model='"trash"' />
-                    Excluir
-                </a>
+                @if (podeExcluir)
+                {
+                    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
+                        <partial name="_Icon" model='"trash"' />
+                        Excluir
+                    </a>
+                }
             </div>
         }
     </header>
