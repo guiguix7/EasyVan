@@ -53,13 +53,13 @@ public class HomeController : Controller
     }
 
     // ----- Aluno -----
-    [Authorize]
+    [Authorize(Roles = "Aluno,Administrador")]
     public IActionResult Aluno()
     {
         return View();
     }
 
-    [Authorize]
+    [Authorize(Roles = "Aluno,Administrador")]
     public async Task<IActionResult> Detalhes()
     {
         // "Minha van" do aluno: exibe a primeira van operacional (sem FK aluno-van no MVP,
