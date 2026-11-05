@@ -88,6 +88,10 @@ namespace EasyVan.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Usuarios usuario)
         {
+            // A senha é opcional na edição: vazia mantém o hash existente.
+            if (string.IsNullOrWhiteSpace(usuario.PasswordHasher))
+                ModelState.Remove(nameof(usuario.PasswordHasher));
+
             if (!ModelState.IsValid) return View(usuario);
 
             var existente = await _db.Usuarios.FindAsync(usuario.Id);
