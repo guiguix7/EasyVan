@@ -95,8 +95,8 @@ namespace EasyVan.Data
                 if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
                     throw new InvalidOperationException("Configure EASYVAN_ADMIN_EMAIL e EASYVAN_ADMIN_PASSWORD nas variáveis privadas da Railway para criar o primeiro administrador.");
 
-                if (adminPassword.Length < 12 || adminPassword.Length > 128)
-                    throw new InvalidOperationException("EASYVAN_ADMIN_PASSWORD deve ter entre 12 e 128 caracteres.");
+                if (adminPassword.Length < 6 || adminPassword.Length > 20)
+                    throw new InvalidOperationException("EASYVAN_ADMIN_PASSWORD deve ter entre 6 e 20 caracteres.");
 
                 context.Usuarios.Add(new Usuarios
                 {

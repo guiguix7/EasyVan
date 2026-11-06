@@ -12,7 +12,7 @@ namespace EasyVan.Models
         public string Email { get; } = string.Empty;
 
         [Required(ErrorMessage = "A senha é obrigatória.")]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "A senha deve ter ao menos 6 caracteres.")]
+        [StringLength(20, MinimumLength = 6, ErrorMessage = "A senha deve ter entre 6 e 20 caracteres.")]
         [DataType(DataType.Password)]
         public string Password { get; } = string.Empty;
     }

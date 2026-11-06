@@ -1,8 +1,11 @@
 using System.Threading.RateLimiting;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using EasyVan.Data;
 using EasyVan.Services;
 using Supabase.Extensions.DependencyInjection;
@@ -14,7 +17,7 @@ var railwayVolumePath = builder.Configuration["RAILWAY_VOLUME_MOUNT_PATH"];
 if (isProduction && !string.IsNullOrWhiteSpace(builder.Configuration["RAILWAY_PROJECT_ID"]))
 {
     if (!string.Equals(railwayVolumePath, "/data", StringComparison.Ordinal))
-        throw new InvalidOperationException("Anexe um Railway Volume ao serviço com Mount Path /data antes de iniciar o EasyVan.");
+        throw new InvalidOperationException("Anexe um Railway Volume ao serviço com Mount Path /data para persistir as chaves de proteção dos cookies.");
 }
 
 if (isProduction)
@@ -27,19 +30,32 @@ if (isProduction)
 builder.Services.AddControllersWithViews();
 
 var configuredConnection = builder.Configuration.GetConnectionString("DefaultConnection");
-var connectionString = isProduction
-    ? (Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") ?? "Data Source=/data/easyvan.db")
-    : (configuredConnection ?? "Data Source=easyvan.db");
+var rawConnectionString = configuredConnection;
+var isPostgres = !string.IsNullOrWhiteSpace(rawConnectionString)
+    && (rawConnectionString.StartsWith("Host=", StringComparison.OrdinalIgnoreCase)
+        || rawConnectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase)
+        || rawConnectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase));
 
-if (isProduction)
+if (isProduction && !isPostgres)
 {
-    var dataSource = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(connectionString).DataSource;
-    if (!Path.IsPathRooted(dataSource) || !dataSource.StartsWith("/data/", StringComparison.Ordinal))
-        throw new InvalidOperationException("Em produção, o SQLite deve ficar dentro do volume persistente /data.");
-    Directory.CreateDirectory(Path.GetDirectoryName(dataSource)!);
+    throw new InvalidOperationException("Configure ConnectionStrings__DefaultConnection na Railway com a connection string PostgreSQL do Supabase. O SQLite não é permitido em produção.");
 }
 
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connectionString));
+if (isPostgres && rawConnectionString is not null)
+{
+    rawConnectionString = NormalizePostgresConnectionString(rawConnectionString);
+}
+
+var connectionString = rawConnectionString ?? "Data Source=easyvan.db";
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    if (isPostgres)
+        options.UseNpgsql(connectionString);
+    else
+        options.UseSqlite(connectionString);
+});
+
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 
 var supabaseUrl = builder.Configuration["Supabase:Url"];
@@ -75,6 +91,42 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Events = new CookieAuthenticationEvents
+        {
+            OnValidatePrincipal = async context =>
+            {
+                var userIdValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!int.TryParse(userIdValue, out var userId))
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return;
+                }
+
+                var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                var usuario = await db.Usuarios.AsNoTracking()
+                    .SingleOrDefaultAsync(u => u.Id == userId);
+
+                if (usuario == null)
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return;
+                }
+
+                var identity = context.Principal?.Identity as ClaimsIdentity;
+                if (identity == null)
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return;
+                }
+
+                AtualizarClaim(identity, ClaimTypes.Name, usuario.Nome, context);
+                AtualizarClaim(identity, ClaimTypes.Email, usuario.Email, context);
+                AtualizarClaim(identity, ClaimTypes.Role, EasyVan.Models.Usuarios.NormalizeRole(usuario.RoleManager), context);
+            }
+        };
     });
 
 var app = builder.Build();
@@ -83,7 +135,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var senha = scope.ServiceProvider.GetRequiredService<IPasswordService>();
-    db.Database.Migrate();
+    PostgresDatabaseBootstrapper.Initialize(db);
     DbInitializer.Initialize(
         db,
         senha,
@@ -110,3 +162,35 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+static void AtualizarClaim(ClaimsIdentity identity, string tipo, string valor, CookieValidatePrincipalContext context)
+{
+    var claimAtual = identity.FindFirst(tipo);
+    if (claimAtual?.Value == valor) return;
+    if (claimAtual != null) identity.RemoveClaim(claimAtual);
+    identity.AddClaim(new Claim(tipo, valor));
+    context.ShouldRenew = true;
+}
+
+static string NormalizePostgresConnectionString(string value)
+{
+    if (!Uri.TryCreate(value, UriKind.Absolute, out var uri)
+        || (uri.Scheme != "postgres" && uri.Scheme != "postgresql"))
+        return value;
+
+    var credentials = uri.UserInfo.Split(':', 2);
+    if (credentials.Length != 2)
+        throw new InvalidOperationException("A URL PostgreSQL precisa conter usuário e senha.");
+
+    var builder = new NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.IsDefaultPort ? 5432 : uri.Port,
+        Database = uri.AbsolutePath.Trim('/'),
+        Username = Uri.UnescapeDataString(credentials[0]),
+        Password = Uri.UnescapeDataString(credentials[1]),
+        SslMode = SslMode.Require
+    };
+
+    return builder.ConnectionString;
+}

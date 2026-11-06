@@ -53,13 +53,13 @@ public class HomeController : Controller
     }
 
     // ----- Aluno -----
-    [Authorize]
+    [Authorize(Roles = "Aluno,Administrador")]
     public IActionResult Aluno()
     {
         return View();
     }
 
-    [Authorize]
+    [Authorize(Roles = "Aluno,Administrador")]
     public async Task<IActionResult> Detalhes()
     {
         // "Minha van" do aluno: exibe a primeira van operacional (sem FK aluno-van no MVP,
@@ -93,6 +93,19 @@ public class HomeController : Controller
         });
     }
 
+    private static (DateTime InicioUtc, DateTime FimUtc) ObterIntervaloDoDiaNoFusoDeSaoPaulo()
+    {
+        var fuso = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        var hojeLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, fuso).Date;
+        var inicioLocal = DateTime.SpecifyKind(hojeLocal, DateTimeKind.Unspecified);
+        var fimLocal = inicioLocal.AddDays(1);
+
+        return (
+            TimeZoneInfo.ConvertTimeToUtc(inicioLocal, fuso),
+            TimeZoneInfo.ConvertTimeToUtc(fimLocal, fuso)
+        );
+    }
+
     // ----- Administrador -----
     [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Administrador()
@@ -104,8 +117,7 @@ public class HomeController : Controller
         var totalAlunos = await _db.Alunos.CountAsync(a => a.Ativo);
         var totalRotas = await _db.Rotas.CountAsync(r => r.Ativo);
 
-        var inicioDoDia = DateTime.Today;
-        var fimDoDia = inicioDoDia.AddDays(1);
+        var (inicioDoDia, fimDoDia) = ObterIntervaloDoDiaNoFusoDeSaoPaulo();
         var viagensHoje = await _db.Viagens.CountAsync(v => v.Data >= inicioDoDia && v.Data < fimDoDia);
         var viagensEmAndamento = await _db.Viagens.CountAsync(v => v.Status == "EmAndamento");
         var viagensAgendadas = await _db.Viagens.CountAsync(v => v.Status == "Agendada");

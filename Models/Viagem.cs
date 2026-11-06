@@ -16,7 +16,7 @@ namespace EasyVan.Models
         public int RotaId { get; set; }
 
         [Required(ErrorMessage = "A data é obrigatória.")]
-        public DateTime Data { get; set; } = DateTime.Today;
+        public DateTime Data { get; set; } = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified);
 
         public TimeSpan? HoraInicio { get; set; }
 
@@ -28,7 +28,7 @@ namespace EasyVan.Models
 
         public string? Observacao { get; set; }
 
-        public DateTime DataCriacao { get; set; } = DateTime.Now;
+        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         // Propriedades de navegação
         public Van? Van { get; set; }

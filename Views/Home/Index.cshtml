@@ -31,7 +31,6 @@
             <p class="ev-auth__lead">Entre com o e-mail cadastrado para continuar.</p>
 
             <form asp-controller="Usuarios" asp-action="Login" method="post" class="ev-auth__form">
-                <input type="hidden" asp-for="RememberMe" value="false" />
 
                 <div asp-validation-summary="ModelOnly" class="ev-auth__error" role="alert"></div>
 
@@ -56,12 +55,16 @@
                     <span asp-validation-for="Password" class="ev-form-validation"></span>
                 </div>
 
+                <div class="form-check">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label">Manter conectado</label>
+                </div>
+
                 <button type="submit" class="btn btn-primary w-100">Entrar</button>
             </form>
 
             <div class="ev-auth__links">
-                <span>Ainda não tem acesso?</span>
-                <a asp-controller="Home" asp-action="Pages" asp-route-id="cadastro">Criar cadastro</a>
+                <span>Não tem acesso? Solicite ao administrador.</span>
             </div>
         </div>
     </div>

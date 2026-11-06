@@ -2,7 +2,10 @@
 
 @{
     ViewData["Title"] = "Detalhes do usuário";
-    var descricaoPerfil = Model.RoleManager switch
+    var usuarioLogadoId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var papelNormalizado = EasyVan.Models.Usuarios.NormalizeRole(Model.RoleManager);
+    var podeExcluir = User.IsInRole("Administrador") && papelNormalizado != "Administrador" && usuarioLogadoId != Model.Id.ToString();
+    var descricaoPerfil = papelNormalizado switch
     {
         "Administrador" => "Gerencia cadastros, contas e a operação da frota.",
         "Motorista" => "Acompanha e opera as viagens atribuídas ao seu usuário.",
@@ -21,7 +24,7 @@
             <p class="ev-eyebrow">Administração · Usuário #@Model.Id</p>
             <div class="ev-detail-head__identity">
                 <h1>@Model.Nome</h1>
-                <partial name="_StatusBadge" model="Model.RoleManager" />
+                <partial name="_StatusBadge" model="papelNormalizado" />
             </div>
             <p class="ev-detail-head__meta">
                 <partial name="_Icon" model='"mail"' />
@@ -36,10 +39,13 @@
                     <partial name="_Icon" model='"edit"' />
                     Editar
                 </a>
-                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
-                    <partial name="_Icon" model='"trash"' />
-                    Excluir
-                </a>
+                @if (podeExcluir)
+                {
+                    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
+                        <partial name="_Icon" model='"trash"' />
+                        Excluir
+                    </a>
+                }
             </div>
         }
     </header>
@@ -59,7 +65,7 @@
                 </div>
                 <div class="ev-data__item">
                     <dt>Perfil</dt>
-                    <dd>@Model.RoleManager</dd>
+                    <dd>@papelNormalizado</dd>
                 </div>
                 <div class="ev-data__item">
                     <dt>E-mail</dt>

@@ -110,6 +110,13 @@ namespace EasyVan.Controllers
                 return View(viagem);
             }
 
+            // A data informada no formulário representa meia-noite no horário de São Paulo.
+            // Convertemos explicitamente para UTC antes de persistir em timestamptz no PostgreSQL.
+            var fusoBrasil = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+            var dataLocal = DateTime.SpecifyKind(viagem.Data.Date, DateTimeKind.Unspecified);
+            viagem.Data = TimeZoneInfo.ConvertTimeToUtc(dataLocal, fusoBrasil);
+            viagem.DataCriacao = DateTime.UtcNow;
+
             _db.Viagens.Add(viagem);
             await _db.SaveChangesAsync();
             return RedirectToAction(nameof(Index));

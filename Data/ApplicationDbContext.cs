@@ -20,7 +20,8 @@ namespace EasyVan.Data
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<Usuarios>(entity =>
             {
-                entity.Property(usuario => usuario.Email).UseCollation("NOCASE");
+                // E-mails são normalizados para minúsculas pela aplicação antes de salvar.
+                // Evita depender da collation NOCASE, que existe no SQLite, mas não no PostgreSQL.
                 entity.HasIndex(usuario => usuario.Email)
                     .IsUnique()
                     .HasDatabaseName("IX_Usuarios_Email");
