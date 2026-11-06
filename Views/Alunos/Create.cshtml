@@ -1,4 +1,4 @@
-@model EasyVan.Models.Aluno
+@model EasyVan.Models.AlunoFormViewModel
 
 @{
     ViewData["Title"] = "Novo aluno";
@@ -14,7 +14,7 @@
         <div class="ev-page-head__text">
             <p class="ev-eyebrow">Cadastros</p>
             <h1>Novo aluno</h1>
-            <p class="ev-page-head__lead">Registre o passageiro e os dados de contato usados na operação.</p>
+            <p class="ev-page-head__lead">Cadastre o passageiro e a conta que ele usará para confirmar presença.</p>
         </div>
     </header>
 
@@ -25,7 +25,7 @@
             <section class="ev-panel ev-form-section" aria-labelledby="dados-aluno">
                 <div class="ev-form-section__head">
                     <h2 id="dados-aluno">Dados do aluno</h2>
-                    <p>Nome e e-mail do passageiro.</p>
+                    <p>Nome e e-mail do passageiro e da conta de acesso.</p>
                 </div>
                 <div class="ev-form-grid">
                     <div class="ev-field">
@@ -43,6 +43,41 @@
                 </div>
             </section>
 
+            <section class="ev-panel ev-form-section" aria-labelledby="conta-aluno">
+                <div class="ev-form-section__head">
+                    <h2 id="conta-aluno">Conta de acesso</h2>
+                    <p>O aluno entra com este e-mail e senha para ver apenas as próprias viagens.</p>
+                </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="Senha" class="form-label">Senha</label>
+                        <div class="ev-password">
+                            <input asp-for="Senha" id="senhaAluno" class="form-control" type="password"
+                                   autocomplete="new-password" placeholder="De 6 a 20 caracteres" />
+                            <button type="button" class="ev-password__toggle" data-password-toggle
+                                    aria-controls="senhaAluno" aria-pressed="false" aria-label="Mostrar senha">
+                                <partial name="_Icon" model='"eye"' />
+                            </button>
+                        </div>
+                        <span asp-validation-for="Senha" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="ConfirmarSenha" class="form-label">Confirmar senha</label>
+                        <div class="ev-password">
+                            <input asp-for="ConfirmarSenha" id="senhaAlunoConfirmacao" class="form-control" type="password"
+                                   autocomplete="new-password" placeholder="Repita a senha" />
+                            <button type="button" class="ev-password__toggle" data-password-toggle
+                                    aria-controls="senhaAlunoConfirmacao" aria-pressed="false" aria-label="Mostrar senha">
+                                <partial name="_Icon" model='"eye"' />
+                            </button>
+                        </div>
+                        <span asp-validation-for="ConfirmarSenha" class="ev-form-validation"></span>
+                    </div>
+                </div>
+                <p class="ev-hint">Se já existir uma conta de aluno com este e-mail e sem vínculo, o cadastro será associado a ela. Nesse caso a senha pode ficar vazia.</p>
+            </section>
+
             <section class="ev-panel ev-form-section" aria-labelledby="contato-aluno">
                 <div class="ev-form-section__head">
                     <h2 id="contato-aluno">Contato e embarque</h2>
@@ -52,13 +87,14 @@
                     <div class="ev-field">
                         <label asp-for="Telefone" class="form-label">Telefone</label>
                         <input asp-for="Telefone" class="form-control" type="tel" placeholder="(11) 98888-0000"
-                               autocomplete="tel" inputmode="tel" />
+                               autocomplete="tel" inputmode="tel" data-telefone-brasil maxlength="15" />
+                        <p class="ev-hint">DDD + número, com 10 ou 11 dígitos.</p>
                         <span asp-validation-for="Telefone" class="ev-form-validation"></span>
                     </div>
 
                     <div class="ev-field ev-span-2">
                         <label asp-for="Endereco" class="form-label">Endereço</label>
-                        <input asp-for="Endereco" class="form-control" placeholder="Rua, número e bairro" autocomplete="street-address" />
+                        <input asp-for="Endereco" class="form-control" placeholder="Rua, número e bairro" autocomplete="street-address" maxlength="200" />
                         <span asp-validation-for="Endereco" class="ev-form-validation"></span>
                     </div>
                 </div>

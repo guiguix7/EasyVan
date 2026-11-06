@@ -34,5 +34,6 @@ namespace EasyVan.Models
         public Van? Van { get; set; }
         public Motorista? Motorista { get; set; }
         public Rota? Rota { get; set; }
+        public ICollection<PresencaViagem> Presencas { get; set; } = new List<PresencaViagem>();
     }
 }

@@ -1,10 +1,8 @@
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using EasyVan.Data;
 using EasyVan.Models;
@@ -60,57 +58,111 @@ namespace Gerenciamento_de_Van.Controllers
         [Authorize]
         public async Task<IActionResult> Details(int id)
         {
-            var van = await _db.Vans.FirstOrDefaultAsync(v => v.Id == id);
+            var van = await _db.Vans
+                .Include(v => v.Motorista)
+                .Include(v => v.Rota)
+                .FirstOrDefaultAsync(v => v.Id == id);
             if (van == null) return NotFound();
             return View(van);
         }
 
         [Authorize(Roles = "Administrador")]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            return View(new Van());
+            var model = new VanFormViewModel { Horarios = new List<string> { "07:00" } };
+            return View(await PrepararFormularioAsync(model));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Administrador")]
-        public async Task<IActionResult> Create(Van van)
+        public async Task<IActionResult> Create(VanFormViewModel model)
         {
-            if (!ModelState.IsValid) return View(van);
+            await PrepararFormularioAsync(model);
+            if (!ModelState.IsValid) return View(model);
 
+            var motorista = await _db.Motoristas.FindAsync(model.MotoristaId);
+            var rota = await _db.Rotas.FindAsync(model.RotaId);
+            if (motorista == null)
+                ModelState.AddModelError(nameof(model.MotoristaId), "Selecione um motorista cadastrado.");
+            if (rota == null)
+                ModelState.AddModelError(nameof(model.RotaId), "Selecione uma rota cadastrada.");
+            if (!ModelState.IsValid) return View(model);
+
+            var van = new Van();
+            AplicarFormulario(van, model, motorista!, rota!);
             _db.Vans.Add(van);
             await _db.SaveChangesAsync();
+
+            TempData["Sucesso"] = "Van cadastrada com sucesso.";
             return RedirectToAction(nameof(Index));
         }
 
         [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Edit(int id)
         {
-            var van = await _db.Vans.FindAsync(id);
+            var van = await _db.Vans
+                .Include(v => v.Motorista)
+                .Include(v => v.Rota)
+                .FirstOrDefaultAsync(v => v.Id == id);
             if (van == null) return NotFound();
-            return View(van);
+
+            var model = new VanFormViewModel
+            {
+                Id = van.Id,
+                Plate = van.Plate,
+                Capacity = van.Capacity,
+                Status = van.Status,
+                Description = van.Description,
+                MotoristaId = van.MotoristaId,
+                RotaId = van.RotaId,
+                Horarios = ExtrairHorarios(van.Schedule)
+            };
+
+            // Registros antigos guardavam apenas o nome. Quando possível, sugerimos o vínculo real.
+            if (!model.MotoristaId.HasValue && !string.IsNullOrWhiteSpace(van.Driver))
+            {
+                model.MotoristaId = await _db.Motoristas
+                    .Where(m => m.Nome == van.Driver)
+                    .Select(m => (int?)m.Id)
+                    .FirstOrDefaultAsync();
+            }
+
+            if (!model.RotaId.HasValue && !string.IsNullOrWhiteSpace(van.Route))
+            {
+                model.RotaId = await _db.Rotas
+                    .Where(r => r.Nome == van.Route)
+                    .Select(r => (int?)r.Id)
+                    .FirstOrDefaultAsync();
+            }
+
+            return View(await PrepararFormularioAsync(model));
         }
 
         [Authorize(Roles = "Administrador")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Van van)
+        public async Task<IActionResult> Edit(int id, VanFormViewModel model)
         {
-            if (id != van.Id) return NotFound();
-            if (!ModelState.IsValid) return View(van);
+            if (id != model.Id) return NotFound();
+            await PrepararFormularioAsync(model);
+            if (!ModelState.IsValid) return View(model);
 
             var existente = await _db.Vans.FindAsync(id);
             if (existente == null) return NotFound();
 
-            existente.Plate = van.Plate;
-            existente.Driver = van.Driver;
-            existente.Capacity = van.Capacity;
-            existente.Route = van.Route;
-            existente.Schedule = van.Schedule;
-            existente.Status = van.Status;
-            existente.Description = van.Description;
+            var motorista = await _db.Motoristas.FindAsync(model.MotoristaId);
+            var rota = await _db.Rotas.FindAsync(model.RotaId);
+            if (motorista == null)
+                ModelState.AddModelError(nameof(model.MotoristaId), "Selecione um motorista cadastrado.");
+            if (rota == null)
+                ModelState.AddModelError(nameof(model.RotaId), "Selecione uma rota cadastrada.");
+            if (!ModelState.IsValid) return View(model);
 
+            AplicarFormulario(existente, model, motorista!, rota!);
             await _db.SaveChangesAsync();
+
+            TempData["Sucesso"] = "Van atualizada com sucesso.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -130,11 +182,81 @@ namespace Gerenciamento_de_Van.Controllers
             var van = await _db.Vans.FindAsync(id);
             if (van != null)
             {
+                if (await _db.Viagens.AnyAsync(v => v.VanId == id))
+                {
+                    TempData["Erro"] = "Esta van possui viagens registradas e não pode ser excluída. Altere o status para Manutenção ou mantenha o histórico.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 _db.Vans.Remove(van);
                 await _db.SaveChangesAsync();
+                TempData["Sucesso"] = "Van excluída.";
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task<VanFormViewModel> PrepararFormularioAsync(VanFormViewModel model)
+        {
+            var motoristas = await _db.Motoristas
+                .Where(m => m.Ativo || m.Id == model.MotoristaId)
+                .OrderBy(m => m.Nome)
+                .ToListAsync();
+
+            var rotas = await _db.Rotas
+                .Where(r => r.Ativo || r.Id == model.RotaId)
+                .OrderBy(r => r.Nome)
+                .ToListAsync();
+
+            model.Motoristas = new SelectList(motoristas, "Id", "Nome", model.MotoristaId);
+            model.Rotas = new SelectList(
+                rotas.Select(r => new { r.Id, Nome = $"{r.Nome} ({r.Origem} → {r.Destino})" }),
+                "Id",
+                "Nome",
+                model.RotaId);
+
+            if (model.Horarios.Count == 0)
+            {
+                model.Horarios.Add(string.Empty);
+            }
+
+            return model;
+        }
+
+        private static void AplicarFormulario(Van van, VanFormViewModel model, Motorista motorista, Rota rota)
+        {
+            var horarios = model.Horarios
+                .Where(h => !string.IsNullOrWhiteSpace(h))
+                .Select(h => h.Trim())
+                .Distinct()
+                .OrderBy(h => TimeSpan.ParseExact(h, @"hh\:mm", CultureInfo.InvariantCulture))
+                .ToList();
+
+            van.Plate = model.Plate.Trim().ToUpperInvariant();
+            van.Capacity = model.Capacity;
+            van.Status = model.Status;
+            van.Description = model.Description?.Trim() ?? string.Empty;
+            van.MotoristaId = motorista.Id;
+            van.RotaId = rota.Id;
+            van.Driver = motorista.Nome;
+            van.Route = rota.Nome;
+            van.Schedule = string.Join(" / ", horarios);
+        }
+
+        private static List<string> ExtrairHorarios(string? schedule)
+        {
+            if (string.IsNullOrWhiteSpace(schedule))
+            {
+                return new List<string> { string.Empty };
+            }
+
+            var horarios = schedule
+                .Split(new[] { '/', ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(h => h.Trim())
+                .Where(h => h.Length > 0)
+                .ToList();
+
+            return horarios.Count > 0 ? horarios : new List<string> { string.Empty };
         }
 
         private void ValidarFiltro(VanFiltro filtro, IReadOnlyCollection<string> statusDisponiveis)

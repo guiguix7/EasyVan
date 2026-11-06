@@ -1,0 +1,119 @@
+@model EasyVan.Models.ConfiguracoesViewModel
+
+@{
+    ViewData["Title"] = "Configurações";
+}
+
+<section class="ev-page">
+    <a asp-controller="Home" asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para o início
+    </a>
+
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Minha conta</p>
+            <h1>Configurações</h1>
+            <p class="ev-page-head__lead">Escolha como o EasyVan aparece para você. A preferência fica salva na sua conta e é restaurada ao entrar.</p>
+        </div>
+    </header>
+
+    @if (TempData["Sucesso"] is string sucesso)
+    {
+        <div class="ev-notice ev-notice--success" role="status">
+            <partial name="_Icon" model='"check"' />
+            <div class="ev-notice__body"><p class="mb-0">@sucesso</p></div>
+        </div>
+    }
+
+    <div class="ev-form-layout">
+        <div class="ev-form-main">
+            <form asp-action="Configuracoes" method="post" class="ev-panel ev-form-section">
+                <div class="ev-form-section__head">
+                    <h2 id="tema-titulo">Aparência</h2>
+                    <p>O tema escuro mantém o mesmo contraste e a mesma hierarquia do tema claro.</p>
+                </div>
+
+                <div asp-validation-summary="ModelOnly" class="ev-notice ev-notice--danger" role="alert"></div>
+
+                <fieldset class="ev-theme-options" aria-labelledby="tema-titulo">
+                    <legend class="visually-hidden">Escolha o tema</legend>
+
+                    <label class="ev-theme-option">
+                        <input asp-for="Tema" type="radio" value="claro" />
+                        <span class="ev-theme-option__preview ev-theme-option__preview--claro" aria-hidden="true">
+                            <span class="ev-theme-option__bar"></span>
+                            <span class="ev-theme-option__line"></span>
+                            <span class="ev-theme-option__line ev-theme-option__line--short"></span>
+                        </span>
+                        <span class="ev-theme-option__text">
+                            <span class="ev-theme-option__title">
+                                <partial name="_Icon" model='"sun"' />
+                                Tema claro
+                            </span>
+                            <span class="ev-theme-option__hint">Superfícies claras e texto escuro.</span>
+                        </span>
+                    </label>
+
+                    <label class="ev-theme-option">
+                        <input asp-for="Tema" type="radio" value="escuro" />
+                        <span class="ev-theme-option__preview ev-theme-option__preview--escuro" aria-hidden="true">
+                            <span class="ev-theme-option__bar"></span>
+                            <span class="ev-theme-option__line"></span>
+                            <span class="ev-theme-option__line ev-theme-option__line--short"></span>
+                        </span>
+                        <span class="ev-theme-option__text">
+                            <span class="ev-theme-option__title">
+                                <partial name="_Icon" model='"moon"' />
+                                Tema escuro
+                            </span>
+                            <span class="ev-theme-option__hint">Superfícies escuras e texto claro.</span>
+                        </span>
+                    </label>
+                </fieldset>
+                <span asp-validation-for="Tema" class="ev-form-validation"></span>
+
+                <div class="ev-form-actions">
+                    <button type="submit" class="btn btn-primary">Salvar preferências</button>
+                    <a asp-action="Editar" class="btn btn-outline-secondary">Editar perfil</a>
+                </div>
+            </form>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="conta-titulo">
+                <div class="ev-form-section__head">
+                    <h2 id="conta-titulo">Conta</h2>
+                    <p>Dados usados para entrar e para identificar você no sistema.</p>
+                </div>
+                <dl class="ev-data">
+                    <div class="ev-data__item">
+                        <dt>Nome</dt>
+                        <dd>@Model.Nome</dd>
+                    </div>
+                    <div class="ev-data__item">
+                        <dt>E-mail</dt>
+                        <dd>@Model.Email</dd>
+                    </div>
+                </dl>
+                <div class="ev-form-actions">
+                    <a asp-action="Editar" class="btn btn-outline-secondary">
+                        <partial name="_Icon" model='"user"' />
+                        Editar dados e foto
+                    </a>
+                </div>
+            </section>
+        </div>
+
+        <aside class="ev-form-aside">
+            <section class="ev-panel">
+                <div class="ev-panel__body">
+                    <h2>Preferência salva</h2>
+                    <p class="mb-0">O tema é gravado na sua conta e também em um cookie neste navegador. Ao entrar em outro dispositivo, a preferência salva é aplicada novamente.</p>
+                </div>
+            </section>
+        </aside>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

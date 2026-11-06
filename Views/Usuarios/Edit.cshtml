@@ -1,4 +1,4 @@
-@model EasyVan.Models.Usuarios
+@model EasyVan.Models.UsuarioEditViewModel
 
 @{
     ViewData["Title"] = "Editar usuário";
@@ -20,7 +20,7 @@
         <div class="ev-page-head__text">
             <p class="ev-eyebrow">Usuário #@Model.Id</p>
             <h1>Editar usuário</h1>
-            <p class="ev-page-head__lead">Atualize os dados da conta e defina uma nova senha de acesso.</p>
+            <p class="ev-page-head__lead">Atualize os dados da conta. A senha só muda se você informar uma nova.</p>
         </div>
     </header>
 
@@ -51,7 +51,7 @@
                     <div class="ev-field ev-field--full">
                         <label asp-for="RoleManager" class="form-label">Perfil de acesso <span class="ev-required" aria-hidden="true">*</span></label>
                         @Html.DropDownListFor(m => m.RoleManager, perfis, new { @class = "form-select" })
-                        <p class="ev-hint">O perfil define quais áreas da plataforma a pessoa pode acessar.</p>
+                        <p class="ev-hint">Contas vinculadas a um aluno ou motorista não podem trocar de perfil sem antes ajustar o vínculo.</p>
                         <span asp-validation-for="RoleManager" class="ev-form-validation"></span>
                     </div>
                 </div>
@@ -60,21 +60,36 @@
             <section class="ev-panel ev-form-section" aria-labelledby="seguranca-conta">
                 <div class="ev-form-section__head">
                     <h2 id="seguranca-conta">Segurança</h2>
-                    <p>Defina uma nova senha para esta conta.</p>
+                    <p>Opcional. Deixe os dois campos vazios para manter a senha atual.</p>
                 </div>
-                <div class="ev-field">
-                    <label asp-for="PasswordHasher" class="form-label">Nova senha <span class="ev-required" aria-hidden="true">*</span></label>
-                    <div class="ev-password">
-                        <input asp-for="PasswordHasher" id="senhaEdicao" class="form-control" type="password"
-                               autocomplete="new-password" placeholder="De 6 a 20 caracteres" />
-                        <button type="button" class="ev-password__toggle" data-password-toggle
-                                aria-controls="senhaEdicao" aria-pressed="false" aria-label="Mostrar senha">
-                            <partial name="_Icon" model='"eye"' />
-                        </button>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="NovaSenha" class="form-label">Nova senha</label>
+                        <div class="ev-password">
+                            <input asp-for="NovaSenha" id="senhaEdicao" class="form-control" type="password"
+                                   autocomplete="new-password" placeholder="De 6 a 20 caracteres" />
+                            <button type="button" class="ev-password__toggle" data-password-toggle
+                                    aria-controls="senhaEdicao" aria-pressed="false" aria-label="Mostrar senha">
+                                <partial name="_Icon" model='"eye"' />
+                            </button>
+                        </div>
+                        <span asp-validation-for="NovaSenha" class="ev-form-validation"></span>
                     </div>
-                    <p class="ev-hint">A senha atual não é exibida. Informe uma nova senha entre 6 e 20 caracteres para substituí-la.</p>
-                    <span asp-validation-for="PasswordHasher" class="ev-form-validation"></span>
+
+                    <div class="ev-field">
+                        <label asp-for="ConfirmarSenha" class="form-label">Confirmar nova senha</label>
+                        <div class="ev-password">
+                            <input asp-for="ConfirmarSenha" id="senhaEdicaoConfirmacao" class="form-control" type="password"
+                                   autocomplete="new-password" placeholder="Repita a nova senha" />
+                            <button type="button" class="ev-password__toggle" data-password-toggle
+                                    aria-controls="senhaEdicaoConfirmacao" aria-pressed="false" aria-label="Mostrar senha">
+                                <partial name="_Icon" model='"eye"' />
+                            </button>
+                        </div>
+                        <span asp-validation-for="ConfirmarSenha" class="ev-form-validation"></span>
+                    </div>
                 </div>
+                <p class="ev-hint">A senha atual nunca é exibida. Se os campos ficarem vazios, o hash existente é preservado.</p>
             </section>
 
             <div class="ev-form-actions">

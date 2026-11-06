@@ -1,4 +1,4 @@
-@model EasyVan.Models.Motorista
+@model EasyVan.Models.MotoristaFormViewModel
 
 @{
     ViewData["Title"] = "Novo motorista";
@@ -14,7 +14,7 @@
         <div class="ev-page-head__text">
             <p class="ev-eyebrow">Cadastros</p>
             <h1>Novo motorista</h1>
-            <p class="ev-page-head__lead">Registre os dados do profissional que vai operar as viagens.</p>
+            <p class="ev-page-head__lead">Cadastre o profissional e a conta que ele usará para acessar as próprias viagens.</p>
         </div>
     </header>
 
@@ -25,7 +25,7 @@
             <section class="ev-panel ev-form-section" aria-labelledby="dados-motorista">
                 <div class="ev-form-section__head">
                     <h2 id="dados-motorista">Dados do motorista</h2>
-                    <p>Nome e e-mail usados nos registros da operação.</p>
+                    <p>Nome e e-mail usados nos registros da operação e no acesso ao sistema.</p>
                 </div>
                 <div class="ev-form-grid">
                     <div class="ev-field">
@@ -44,16 +44,54 @@
                     <div class="ev-field">
                         <label asp-for="Telefone" class="form-label">Telefone</label>
                         <input asp-for="Telefone" class="form-control" type="tel" placeholder="(11) 99999-0000"
-                               autocomplete="tel" inputmode="tel" />
+                               autocomplete="tel" inputmode="tel" data-telefone-brasil maxlength="15" />
+                        <p class="ev-hint">DDD + número, com 10 ou 11 dígitos.</p>
                         <span asp-validation-for="Telefone" class="ev-form-validation"></span>
                     </div>
 
                     <div class="ev-field">
                         <label asp-for="CNH" class="form-label">CNH</label>
-                        <input asp-for="CNH" class="form-control" placeholder="Número da CNH" autocomplete="off" />
+                        <input asp-for="CNH" class="form-control" placeholder="11 dígitos" autocomplete="off"
+                               inputmode="numeric" data-cnh-brasil maxlength="11" />
+                        <p class="ev-hint">Somente números. O dígito verificador é conferido no servidor.</p>
                         <span asp-validation-for="CNH" class="ev-form-validation"></span>
                     </div>
                 </div>
+            </section>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="conta-motorista">
+                <div class="ev-form-section__head">
+                    <h2 id="conta-motorista">Conta de acesso</h2>
+                    <p>O motorista entra com este e-mail e senha para ver apenas as próprias viagens.</p>
+                </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="Senha" class="form-label">Senha</label>
+                        <div class="ev-password">
+                            <input asp-for="Senha" id="senhaMotorista" class="form-control" type="password"
+                                   autocomplete="new-password" placeholder="De 6 a 20 caracteres" />
+                            <button type="button" class="ev-password__toggle" data-password-toggle
+                                    aria-controls="senhaMotorista" aria-pressed="false" aria-label="Mostrar senha">
+                                <partial name="_Icon" model='"eye"' />
+                            </button>
+                        </div>
+                        <span asp-validation-for="Senha" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="ConfirmarSenha" class="form-label">Confirmar senha</label>
+                        <div class="ev-password">
+                            <input asp-for="ConfirmarSenha" id="senhaMotoristaConfirmacao" class="form-control" type="password"
+                                   autocomplete="new-password" placeholder="Repita a senha" />
+                            <button type="button" class="ev-password__toggle" data-password-toggle
+                                    aria-controls="senhaMotoristaConfirmacao" aria-pressed="false" aria-label="Mostrar senha">
+                                <partial name="_Icon" model='"eye"' />
+                            </button>
+                        </div>
+                        <span asp-validation-for="ConfirmarSenha" class="ev-form-validation"></span>
+                    </div>
+                </div>
+                <p class="ev-hint">Se já existir uma conta de motorista com este e-mail e sem vínculo, o cadastro será associado a ela. Nesse caso a senha pode ficar vazia.</p>
             </section>
 
             <section class="ev-panel ev-form-section" aria-labelledby="situacao-motorista">

@@ -28,19 +28,29 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
+                        .HasMaxLength(254)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Endereco")
+                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
                         .IsRequired()
+                        .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Telefone")
+                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId")
+                        .IsUnique();
 
                     b.ToTable("Alunos");
                 });
@@ -55,20 +65,30 @@ namespace Gerenciamento_de_Van.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("CNH")
+                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
                         .IsRequired()
+                        .HasMaxLength(254)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
                         .IsRequired()
+                        .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Telefone")
+                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId")
+                        .IsUnique();
 
                     b.ToTable("Motoristas");
                 });
@@ -82,16 +102,27 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<int>("AlunoId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("ConfirmadoEm")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Observacao")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("Presente")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool?>("StatusConfirmacao")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ViagemId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AlunoId");
+
+                    b.HasIndex("ViagemId", "AlunoId")
+                        .IsUnique();
 
                     b.ToTable("PresencasViagem");
                 });
@@ -136,6 +167,10 @@ namespace Gerenciamento_de_Van.Migrations
                         .HasMaxLength(254)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("FotoPerfil")
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -143,11 +178,16 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.Property<string>("PasswordHasher")
                         .IsRequired()
-                        .HasMaxLength(128)
+                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RoleManager")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Tema")
+                        .IsRequired()
+                        .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -170,29 +210,45 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Driver")
                         .IsRequired()
+                        .HasMaxLength(120)
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("MotoristaId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Plate")
                         .IsRequired()
+                        .HasMaxLength(10)
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("RotaId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Route")
                         .IsRequired()
+                        .HasMaxLength(160)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Schedule")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Status")
                         .IsRequired()
+                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MotoristaId");
+
+                    b.HasIndex("RotaId");
 
                     b.ToTable("Vans");
                 });
@@ -234,7 +290,101 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MotoristaId");
+
+                    b.HasIndex("RotaId");
+
+                    b.HasIndex("VanId");
+
                     b.ToTable("Viagens");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.Aluno", b =>
+                {
+                    b.HasOne("EasyVan.Models.Usuarios", "Usuario")
+                        .WithOne()
+                        .HasForeignKey("EasyVan.Models.Aluno", "UsuarioId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.Motorista", b =>
+                {
+                    b.HasOne("EasyVan.Models.Usuarios", "Usuario")
+                        .WithOne()
+                        .HasForeignKey("EasyVan.Models.Motorista", "UsuarioId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.PresencaViagem", b =>
+                {
+                    b.HasOne("EasyVan.Models.Aluno", "Aluno")
+                        .WithMany()
+                        .HasForeignKey("AlunoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EasyVan.Models.Viagem", "Viagem")
+                        .WithMany("Presencas")
+                        .HasForeignKey("ViagemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Aluno");
+
+                    b.Navigation("Viagem");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.Van", b =>
+                {
+                    b.HasOne("EasyVan.Models.Motorista", "Motorista")
+                        .WithMany()
+                        .HasForeignKey("MotoristaId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("EasyVan.Models.Rota", "Rota")
+                        .WithMany()
+                        .HasForeignKey("RotaId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Motorista");
+
+                    b.Navigation("Rota");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.Viagem", b =>
+                {
+                    b.HasOne("EasyVan.Models.Motorista", "Motorista")
+                        .WithMany()
+                        .HasForeignKey("MotoristaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EasyVan.Models.Rota", "Rota")
+                        .WithMany()
+                        .HasForeignKey("RotaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EasyVan.Models.Van", "Van")
+                        .WithMany()
+                        .HasForeignKey("VanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Motorista");
+
+                    b.Navigation("Rota");
+
+                    b.Navigation("Van");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.Viagem", b =>
+                {
+                    b.Navigation("Presencas");
                 });
 #pragma warning restore 612, 618
         }

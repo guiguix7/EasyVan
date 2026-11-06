@@ -25,6 +25,9 @@ public static class StatusUi
             var v when Igual(v, "Inativo") => "Inativo",
             var v when Igual(v, "Ativa") => "Ativa",
             var v when Igual(v, "Inativa") => "Inativa",
+            var v when Igual(v, "Confirmou") || Igual(v, "Confirmado") => "Confirmou presença",
+            var v when Igual(v, "Não vai") || Igual(v, "Nao vai") => "Não vai",
+            var v when Igual(v, "Sem resposta") => "Sem resposta",
             _ => valor.Trim()
         };
     }
@@ -44,6 +47,9 @@ public static class StatusUi
             var v when Igual(v, "Cancelada") || Igual(v, "Inativo") || Igual(v, "Inativa") || Igual(v, "Ausente") => "ev-badge--neutral",
             var v when Igual(v, "Administrador") => "ev-badge--brand",
             var v when Igual(v, "Motorista") => "ev-badge--info",
+            var v when Igual(v, "Confirmou") || Igual(v, "Confirmado") => "ev-badge--success",
+            var v when Igual(v, "Não vai") || Igual(v, "Nao vai") => "ev-badge--neutral",
+            var v when Igual(v, "Sem resposta") => "ev-badge--warning",
             _ => "ev-badge--neutral"
         };
     }

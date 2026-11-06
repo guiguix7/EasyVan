@@ -1,4 +1,4 @@
-@model EasyVan.Models.Van
+@model EasyVan.Models.VanFormViewModel
 
 @{
     ViewData["Title"] = "Nova van";
@@ -16,7 +16,7 @@
         <div class="ev-page-head__text">
             <p class="ev-eyebrow">Cadastros</p>
             <h1>Nova van</h1>
-            <p class="ev-page-head__lead">Registre o veículo, a operação e a situação inicial da frota.</p>
+            <p class="ev-page-head__lead">Registre o veículo, o motorista, a rota e os horários da operação.</p>
         </div>
     </header>
 
@@ -39,33 +39,19 @@
 
                     <div class="ev-field">
                         <label asp-for="Capacity" class="form-label">Capacidade (lugares) <span class="ev-required" aria-hidden="true">*</span></label>
-                        <input asp-for="Capacity" class="form-control" type="number" min="0" step="1" inputmode="numeric" />
+                        <input asp-for="Capacity" class="form-control" type="number" min="1" max="1000" step="1" inputmode="numeric" />
                         <span asp-validation-for="Capacity" class="ev-form-validation"></span>
                     </div>
 
                     <div class="ev-field ev-span-2">
-                        <label asp-for="Status" class="form-label">Status</label>
+                        <label asp-for="Status" class="form-label">Status <span class="ev-required" aria-hidden="true">*</span></label>
                         <select asp-for="Status" class="form-select">
                             @if (!statusConhecido)
                             {
                                 <option value="@statusAtual" selected>@statusAtual</option>
                             }
-                            @if (statusAtual == "Operacional")
-                            {
-                                <option value="Operacional" selected>Operacional</option>
-                            }
-                            else
-                            {
-                                <option value="Operacional">Operacional</option>
-                            }
-                            @if (statusAtual == "Manutenção")
-                            {
-                                <option value="Manutenção" selected>Manutenção</option>
-                            }
-                            else
-                            {
-                                <option value="Manutenção">Manutenção</option>
-                            }
+                            <option value="Operacional" selected="@(statusAtual == "Operacional")">Operacional</option>
+                            <option value="Manutenção" selected="@(statusAtual == "Manutenção")">Manutenção</option>
                         </select>
                         <p class="ev-hint">Veículos em manutenção aparecem como atenção no painel.</p>
                         <span asp-validation-for="Status" class="ev-form-validation"></span>
@@ -76,25 +62,44 @@
             <section class="ev-panel ev-form-section" aria-labelledby="operacao-van">
                 <div class="ev-form-section__head">
                     <h2 id="operacao-van">Operação</h2>
-                    <p>Motorista, trajeto e horários exibidos na listagem.</p>
+                    <p>Vínculos reais usados nas viagens e na listagem.</p>
                 </div>
                 <div class="ev-form-grid">
                     <div class="ev-field">
-                        <label asp-for="Driver" class="form-label">Motorista</label>
-                        <input asp-for="Driver" class="form-control" placeholder="Nome do motorista" autocomplete="off" />
-                        <span asp-validation-for="Driver" class="ev-form-validation"></span>
+                        <label asp-for="MotoristaId" class="form-label">Motorista <span class="ev-required" aria-hidden="true">*</span></label>
+                        <select asp-for="MotoristaId" asp-items="Model.Motoristas" class="form-select">
+                            <option value="">Selecione o motorista</option>
+                        </select>
+                        <span asp-validation-for="MotoristaId" class="ev-form-validation"></span>
                     </div>
 
                     <div class="ev-field">
-                        <label asp-for="Schedule" class="form-label">Horários</label>
-                        <input asp-for="Schedule" class="form-control" placeholder="07:00 / 17:30" autocomplete="off" />
-                        <span asp-validation-for="Schedule" class="ev-form-validation"></span>
+                        <label asp-for="RotaId" class="form-label">Rota <span class="ev-required" aria-hidden="true">*</span></label>
+                        <select asp-for="RotaId" asp-items="Model.Rotas" class="form-select">
+                            <option value="">Selecione a rota</option>
+                        </select>
+                        <span asp-validation-for="RotaId" class="ev-form-validation"></span>
                     </div>
 
                     <div class="ev-field ev-span-2">
-                        <label asp-for="Route" class="form-label">Rota</label>
-                        <input asp-for="Route" class="form-control" placeholder="Ex.: Centro - Universidade" autocomplete="off" />
-                        <span asp-validation-for="Route" class="ev-form-validation"></span>
+                        <span class="form-label" id="rotulo-horarios">Horários <span class="ev-required" aria-hidden="true">*</span></span>
+                        <div class="ev-schedule" data-horarios aria-labelledby="rotulo-horarios">
+                            @for (var i = 0; i < Model.Horarios.Count; i++)
+                            {
+                                <div class="ev-schedule__row">
+                                    <input type="time" class="form-control" name="Horarios" value="@Model.Horarios[i]" aria-label="Horário @(i + 1)" />
+                                    <button type="button" class="btn btn-outline-secondary" data-horario-remove aria-label="Remover horário @(i + 1)">
+                                        <partial name="_Icon" model='"trash"' />
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary ev-schedule__add" data-horario-add>
+                            <partial name="_Icon" model='"plus"' />
+                            Adicionar horário
+                        </button>
+                        <p class="ev-hint">Informe de 1 a 10 horários. O mesmo horário não pode ser repetido.</p>
+                        <span asp-validation-for="Horarios" class="ev-form-validation"></span>
                     </div>
                 </div>
             </section>
@@ -102,11 +107,11 @@
             <section class="ev-panel ev-form-section" aria-labelledby="observacoes-van">
                 <div class="ev-form-section__head">
                     <h2 id="observacoes-van">Observações</h2>
-                    <p>Informações úteis para quem consulta a frota.</p>
+                    <p>Campo opcional, útil para quem consulta a frota.</p>
                 </div>
                 <div class="ev-field">
                     <label asp-for="Description" class="form-label">Descrição</label>
-                    <textarea asp-for="Description" class="form-control" rows="4"
+                    <textarea asp-for="Description" class="form-control" rows="4" maxlength="500"
                               placeholder="Ex.: van usada no turno da manhã."></textarea>
                     <span asp-validation-for="Description" class="ev-form-validation"></span>
                 </div>
@@ -123,9 +128,10 @@
                 <div class="ev-panel__body">
                     <h2>Antes de salvar</h2>
                     <ul>
-                        <li>Use a placa no formato exibido na operação, com ou sem hífen.</li>
+                        <li>Motorista e rota vêm dos cadastros reais do sistema.</li>
                         <li>A capacidade é o número de lugares disponíveis para passageiros.</li>
-                        <li>O status <strong>Manutenção</strong> sinaliza o veículo para atenção no painel.</li>
+                        <li>Cadastre pelo menos um horário; a lista é salva no formato <span class="is-mono">07:00 / 17:30</span>.</li>
+                        <li>A descrição é opcional.</li>
                     </ul>
                 </div>
             </section>

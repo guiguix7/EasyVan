@@ -1,12 +1,8 @@
-@model EasyVan.Models.Viagem
-@using EasyVan.Models
+@model EasyVan.Models.ViagemFormViewModel
 
 @{
     ViewData["Title"] = "Nova viagem";
-    var vans = ViewData["Vans"] as IEnumerable<Van> ?? Enumerable.Empty<Van>();
-    var motoristas = ViewData["Motoristas"] as IEnumerable<Motorista> ?? Enumerable.Empty<Motorista>();
-    var rotas = ViewData["Rotas"] as IEnumerable<Rota> ?? Enumerable.Empty<Rota>();
-    var semCadastros = !vans.Any() || !motoristas.Any() || !rotas.Any();
+    var semCadastros = !Model.Vans.Any() || !Model.Motoristas.Any() || !Model.Rotas.Any();
 }
 
 <section class="ev-page">
@@ -19,7 +15,7 @@
         <div class="ev-page-head__text">
             <p class="ev-eyebrow">Operação</p>
             <h1>Nova viagem</h1>
-            <p class="ev-page-head__lead">Selecione van, motorista e rota para agendar uma viagem.</p>
+            <p class="ev-page-head__lead">Selecione van, motorista, rota e horários para agendar a viagem.</p>
         </div>
     </header>
 
@@ -46,36 +42,29 @@
                 <div class="ev-form-grid">
                     <div class="ev-field">
                         <label asp-for="VanId" class="form-label">Van <span class="ev-required" aria-hidden="true">*</span></label>
-                        <select asp-for="VanId" class="form-select">
+                        <select asp-for="VanId" asp-items="Model.Vans" class="form-select">
                             <option value="">Selecione a van</option>
-                            @foreach (var van in vans)
-                            {
-                                <option value="@van.Id">@van.Plate · @van.Capacity lugares</option>
-                            }
                         </select>
                         <span asp-validation-for="VanId" class="ev-form-validation"></span>
                     </div>
 
                     <div class="ev-field">
                         <label asp-for="MotoristaId" class="form-label">Motorista <span class="ev-required" aria-hidden="true">*</span></label>
-                        <select asp-for="MotoristaId" class="form-select">
+                        <select asp-for="MotoristaId" asp-items="Model.Motoristas" class="form-select" disabled="@(User.IsInRole("Motorista"))">
                             <option value="">Selecione o motorista</option>
-                            @foreach (var motorista in motoristas)
-                            {
-                                <option value="@motorista.Id">@motorista.Nome</option>
-                            }
                         </select>
+                        @if (User.IsInRole("Motorista"))
+                        {
+                            <input type="hidden" asp-for="MotoristaId" />
+                            <p class="ev-hint">A viagem será vinculada ao seu perfil de motorista.</p>
+                        }
                         <span asp-validation-for="MotoristaId" class="ev-form-validation"></span>
                     </div>
 
                     <div class="ev-field ev-field--full">
                         <label asp-for="RotaId" class="form-label">Rota <span class="ev-required" aria-hidden="true">*</span></label>
-                        <select asp-for="RotaId" class="form-select">
+                        <select asp-for="RotaId" asp-items="Model.Rotas" class="form-select">
                             <option value="">Selecione a rota</option>
-                            @foreach (var rota in rotas)
-                            {
-                                <option value="@rota.Id">@rota.Nome (@rota.Origem → @rota.Destino)</option>
-                            }
                         </select>
                         <span asp-validation-for="RotaId" class="ev-form-validation"></span>
                     </div>
@@ -94,9 +83,21 @@
                         <span asp-validation-for="Data" class="ev-form-validation"></span>
                     </div>
 
+                    <div class="ev-field">
+                        <label asp-for="HoraInicio" class="form-label">Início</label>
+                        <input asp-for="HoraInicio" class="form-control" type="time" />
+                        <span asp-validation-for="HoraInicio" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="HoraFim" class="form-label">Término</label>
+                        <input asp-for="HoraFim" class="form-control" type="time" />
+                        <span asp-validation-for="HoraFim" class="ev-form-validation"></span>
+                    </div>
+
                     <div class="ev-field ev-field--full">
                         <label asp-for="Observacao" class="form-label">Observação</label>
-                        <textarea asp-for="Observacao" class="form-control" rows="3"
+                        <textarea asp-for="Observacao" class="form-control" rows="3" maxlength="500"
                                   placeholder="Informações úteis para o motorista, como ponto de encontro ou passageiros especiais."></textarea>
                         <span asp-validation-for="Observacao" class="ev-form-validation"></span>
                     </div>
@@ -114,7 +115,7 @@
                 <div class="ev-panel__body">
                     <h2>Próximos passos</h2>
                     <p>Depois de criar a viagem, use <strong>Iniciar</strong> para registrar o horário de saída. A lista de presença fica disponível durante a viagem.</p>
-                    <p class="mb-0 text-muted small">Apenas vans, motoristas e rotas ativos aparecem nas opções.</p>
+                    <p class="mb-0 text-muted small">Apenas vans, motoristas e rotas ativos aparecem nas opções. Os alunos ativos são incluídos na lista de presença.</p>
                 </div>
             </section>
         </aside>

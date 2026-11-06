@@ -63,8 +63,16 @@
                 <button type="submit" class="btn btn-primary w-100">Entrar</button>
             </form>
 
+            @if (TempData["Sucesso"] is string sucesso)
+            {
+                <div class="ev-notice ev-notice--success" role="status">
+                    <partial name="_Icon" model='"check"' />
+                    <div class="ev-notice__body"><p class="mb-0">@sucesso</p></div>
+                </div>
+            }
+
             <div class="ev-auth__links">
-                <span>Não tem acesso? Solicite ao administrador.</span>
+                <span>Não tem acesso? <a asp-controller="Usuarios" asp-action="Registrar">Crie sua conta de aluno</a> ou solicite ao administrador.</span>
             </div>
         </div>
     </div>

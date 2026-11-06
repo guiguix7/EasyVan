@@ -1,3 +1,4 @@
+@inject EasyVan.Services.GoogleMapsOptions GoogleMaps
 @{
     var autenticado = User.Identity?.IsAuthenticated == true;
     var controllerAtual = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
@@ -6,12 +7,19 @@
     var papelUsuario = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Conta";
     var inicialUsuario = string.IsNullOrWhiteSpace(nomeUsuario) ? "E" : nomeUsuario.Trim().Substring(0, 1).ToUpperInvariant();
     var tituloPagina = ViewData["Title"]?.ToString() ?? "EasyVan";
+    var temaAtual = EasyVan.Services.TemaUi.Normalizar(Context.Request.Cookies[EasyVan.Services.TemaUi.Cookie]);
+    var usuarioId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var fotoUrl = !string.IsNullOrWhiteSpace(User.FindFirst("FotoPerfil")?.Value)
+        && int.TryParse(usuarioId, out var idFoto)
+        ? Url.Action("Foto", "Perfil", new { id = idFoto })
+        : null;
 
     var secaoAtual = controllerAtual switch
     {
         "Vans" or "Motoristas" or "Alunos" or "Rotas" => "Cadastros",
         "Viagens" => "Operação",
         "Usuarios" => "Administração",
+        "Perfil" => "Minha conta",
         _ => papelUsuario == "Administrador" ? "Operação" : "Minha área"
     };
 
@@ -23,13 +31,17 @@
     };
 }
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="@temaAtual">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#0F4C5C" />
     <meta name="description" content="EasyVan — gestão de transporte por vans: frota, rotas, horários e viagens em um só lugar." />
+    @if (GoogleMaps.Configurado)
+    {
+        <meta name="google-maps-key" content="@GoogleMaps.ApiKey" />
+    }
     <title>@tituloPagina · EasyVan</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -152,13 +164,22 @@
                     </nav>
 
                     <div class="ev-sidebar__bottom">
-                        <div class="ev-account">
-                            <span class="ev-account__avatar" aria-hidden="true">@inicialUsuario</span>
+                        <a class="ev-account" asp-controller="Perfil" asp-action="Editar" aria-label="Editar perfil de @nomeUsuario">
+                            <span class="ev-account__avatar" aria-hidden="true">
+                                @if (fotoUrl != null)
+                                {
+                                    <img src="@fotoUrl" alt="" width="36" height="36" />
+                                }
+                                else
+                                {
+                                    @inicialUsuario
+                                }
+                            </span>
                             <span class="ev-account__meta">
                                 <span class="ev-account__name">@nomeUsuario</span>
                                 <span class="ev-account__role">@papelUsuario</span>
                             </span>
-                        </div>
+                        </a>
                         <form asp-controller="Usuarios" asp-action="Logout" method="post">
                             <button type="submit" class="ev-logout">
                                 <partial name="_Icon" model='"logout"' />
@@ -187,7 +208,73 @@
                         </nav>
                     </div>
 
-                    <span class="ev-topbar__date">@DateTime.Today.ToString("dd/MM/yyyy")</span>
+                    <div class="ev-topbar__actions">
+                        <form asp-controller="Perfil" asp-action="AlternarTema" method="post" class="ev-theme-toggle" data-tema-form>
+                            <input type="hidden" name="retornoUrl" value="@($"{Context.Request.Path}{Context.Request.QueryString}")" />
+                            <button type="submit" class="ev-icon-button ev-theme-toggle__button"
+                                    data-tema-toggle
+                                    data-tema-atual="@temaAtual"
+                                    aria-label="@(temaAtual == "escuro" ? "Ativar tema claro" : "Ativar tema escuro")"
+                                    title="@(temaAtual == "escuro" ? "Ativar tema claro" : "Ativar tema escuro")">
+                                <partial name="_Icon" model='temaAtual == "escuro" ? "sun" : "moon"' />
+                            </button>
+                        </form>
+
+                        <div class="dropdown">
+                            <button class="ev-profile-button" type="button" data-bs-toggle="dropdown"
+                                    aria-expanded="false" aria-label="Abrir menu da conta de @nomeUsuario">
+                                <span class="ev-profile-button__avatar" aria-hidden="true">
+                                    @if (fotoUrl != null)
+                                    {
+                                        <img src="@fotoUrl" alt="" width="32" height="32" />
+                                    }
+                                    else
+                                    {
+                                        @inicialUsuario
+                                    }
+                                </span>
+                                <span class="ev-profile-button__name">@nomeUsuario</span>
+                                <partial name="_Icon" model='"chevron-right"' />
+                            </button>
+
+                            <div class="dropdown-menu dropdown-menu-end ev-profile-menu">
+                                <div class="ev-profile-menu__head">
+                                    <span class="ev-profile-menu__avatar" aria-hidden="true">
+                                        @if (fotoUrl != null)
+                                        {
+                                            <img src="@fotoUrl" alt="" width="44" height="44" />
+                                        }
+                                        else
+                                        {
+                                            @inicialUsuario
+                                        }
+                                    </span>
+                                    <span class="ev-profile-menu__meta">
+                                        <span class="ev-profile-menu__name">@nomeUsuario</span>
+                                        <span class="ev-profile-menu__role">@papelUsuario</span>
+                                    </span>
+                                </div>
+
+                                <a class="dropdown-item ev-profile-menu__item" asp-controller="Perfil" asp-action="Editar">
+                                    <partial name="_Icon" model='"user"' />
+                                    Editar perfil
+                                </a>
+                                <a class="dropdown-item ev-profile-menu__item" asp-controller="Perfil" asp-action="Configuracoes">
+                                    <partial name="_Icon" model='"settings"' />
+                                    Configurações
+                                </a>
+
+                                <div class="dropdown-divider"></div>
+
+                                <form asp-controller="Usuarios" asp-action="Logout" method="post">
+                                    <button type="submit" class="dropdown-item ev-profile-menu__item ev-profile-menu__item--sair">
+                                        <partial name="_Icon" model='"logout"' />
+                                        Sair
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </header>
 
                 <main id="conteudo" class="ev-content" role="main" tabindex="-1">
@@ -211,6 +298,10 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (GoogleMaps.Configurado)
+    {
+        <script src="~/js/maps.js" asp-append-version="true" defer></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -2,6 +2,12 @@
 
 @{
     ViewData["Title"] = "Detalhes da rota";
+    var mapa = new EasyVan.Models.MapaRotaViewModel
+    {
+        Origem = Model.Origem,
+        Destino = Model.Destino,
+        Titulo = "Trajeto da rota"
+    };
 }
 
 <section class="ev-page">
@@ -95,4 +101,6 @@
             </section>
         </aside>
     </div>
+
+    <partial name="_MapaRota" model="mapa" />
 </section>

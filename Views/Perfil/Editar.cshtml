@@ -1,0 +1,130 @@
+@model EasyVan.Models.PerfilViewModel
+
+@{
+    ViewData["Title"] = "Editar perfil";
+    var fotoUrl = string.IsNullOrWhiteSpace(Model.FotoAtual)
+        ? null
+        : Url.Action("Foto", "Perfil", new { id = Model.Id });
+
+    string Iniciais(string? nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome)) return "?";
+        var partes = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return partes.Length == 1
+            ? partes[0].Substring(0, 1).ToUpperInvariant()
+            : (partes[0].Substring(0, 1) + partes[^1].Substring(0, 1)).ToUpperInvariant();
+    }
+}
+
+<section class="ev-page">
+    <a asp-controller="Home" asp-action="Index" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para o início
+    </a>
+
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Minha conta</p>
+            <h1>Editar perfil</h1>
+            <p class="ev-page-head__lead">Atualize seu nome, e-mail e foto. A foto é privada e só aparece para você e para a administração.</p>
+        </div>
+    </header>
+
+    @if (TempData["Sucesso"] is string sucesso)
+    {
+        <div class="ev-notice ev-notice--success" role="status">
+            <partial name="_Icon" model='"check"' />
+            <div class="ev-notice__body"><p class="mb-0">@sucesso</p></div>
+        </div>
+    }
+
+    <form asp-action="Editar" method="post" enctype="multipart/form-data" class="ev-form-layout">
+        <div class="ev-form-main">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="FotoAtual" />
+            <div asp-validation-summary="ModelOnly" class="ev-notice ev-notice--danger" role="alert"></div>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="foto-perfil">
+                <div class="ev-form-section__head">
+                    <h2 id="foto-perfil">Foto do perfil</h2>
+                    <p>JPG, PNG ou WebP, com até 2 MB. A imagem é armazenada fora do acesso público.</p>
+                </div>
+
+                <div class="ev-profile-editor">
+                    <div class="ev-profile-editor__preview">
+                        @if (fotoUrl != null)
+                        {
+                            <img src="@fotoUrl" alt="Foto atual de @Model.Nome" width="96" height="96" />
+                        }
+                        else
+                        {
+                            <span class="ev-profile-editor__initials" aria-hidden="true">@Iniciais(Model.Nome)</span>
+                        }
+                    </div>
+
+                    <div class="ev-profile-editor__fields">
+                        <label asp-for="Foto" class="form-label">Nova foto</label>
+                        <input asp-for="Foto" class="form-control" type="file"
+                               accept="image/jpeg,image/png,image/webp" />
+                        <p class="ev-hint">Envie uma imagem quadrada para melhor resultado. Formatos aceitos: JPG, PNG e WebP.</p>
+                        <span asp-validation-for="Foto" class="ev-form-validation"></span>
+
+                        @if (fotoUrl != null)
+                        {
+                            <div class="ev-check">
+                                <input asp-for="RemoverFoto" class="form-check-input" />
+                                <div class="ev-check__text">
+                                    <label asp-for="RemoverFoto">Remover foto atual</label>
+                                    <span>O avatar com suas iniciais volta a ser exibido.</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </section>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="dados-perfil">
+                <div class="ev-form-section__head">
+                    <h2 id="dados-perfil">Dados da conta</h2>
+                    <p>O nome e o e-mail também são usados nos seus registros de aluno ou motorista.</p>
+                </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="Nome" class="form-label">Nome completo <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Nome" class="form-control" autocomplete="name" />
+                        <span asp-validation-for="Nome" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="Email" class="form-label">E-mail <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Email" class="form-control" type="email" autocomplete="email"
+                               inputmode="email" autocapitalize="none" spellcheck="false" />
+                        <span asp-validation-for="Email" class="ev-form-validation"></span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="ev-form-actions">
+                <button type="submit" class="btn btn-primary">Salvar perfil</button>
+                <a asp-action="Configuracoes" class="btn btn-outline-secondary">
+                    <partial name="_Icon" model='"settings"' />
+                    Configurações
+                </a>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </div>
+
+        <aside class="ev-form-aside">
+            <section class="ev-panel">
+                <div class="ev-panel__body">
+                    <h2>Privacidade</h2>
+                    <p class="mb-0">Sua foto não fica em pasta pública. O acesso é restrito à sua conta e à administração do EasyVan. Saiba mais na <a asp-controller="Home" asp-action="Privacy">política de privacidade</a>.</p>
+                </div>
+            </section>
+        </aside>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,75 +1,228 @@
+@model EasyVan.Models.PainelAlunoViewModel
+
 @{
-    ViewData["Title"] = "Início";
+    ViewData["Title"] = "Meu transporte";
+    var proximas = Model.Presencas
+        .Where(p => p.Viagem != null && p.Viagem.Data >= Model.Hoje && p.Viagem.Status != "Finalizada")
+        .ToList();
+    var pendentes = proximas.Count(p => p.StatusConfirmacao == null);
+    var confirmadas = proximas.Count(p => p.StatusConfirmacao == true);
 }
 
 <section class="ev-page">
     <header class="ev-page-head">
         <div class="ev-page-head__text">
             <p class="ev-eyebrow">Área do aluno</p>
-            <h1>Olá, @User.Identity?.Name</h1>
-            <p class="ev-page-head__lead">Consulte os dados do transporte e encontre as informações da van disponíveis no sistema.</p>
+            <h1>Olá, @(Model.Aluno?.Nome ?? User.Identity?.Name)</h1>
+            <p class="ev-page-head__lead">Confirme sua presença nas próximas viagens e consulte os dados do seu transporte.</p>
+        </div>
+        <div class="ev-page-head__actions">
+            <a asp-controller="Home" asp-action="Detalhes" class="btn btn-outline-secondary">
+                <partial name="_Icon" model='"van"' />
+                Minha van
+            </a>
         </div>
     </header>
 
-    <section class="ev-panel ev-hero" aria-labelledby="transporte-titulo">
-        <div class="ev-hero__content">
-            <p class="ev-eyebrow">Consulta de transporte</p>
-            <h2 id="transporte-titulo">Minha van</h2>
-            <p>Veja placa, rota, horários, capacidade e motorista responsável pelo veículo.</p>
-            <a asp-controller="Home" asp-action="Detalhes" class="btn btn-primary">
-                <partial name="_Icon" model='"van"' />
-                Consultar minha van
-            </a>
+    @if (TempData["Sucesso"] is string sucesso)
+    {
+        <div class="ev-notice ev-notice--success" role="status">
+            <partial name="_Icon" model='"check"' />
+            <div class="ev-notice__body"><p class="mb-0">@sucesso</p></div>
         </div>
-        <div class="ev-hero__art" aria-hidden="true">
-            <partial name="_Icon" model='"route"' />
+    }
+    @if (TempData["Erro"] is string erro)
+    {
+        <div class="ev-notice ev-notice--danger" role="alert">
+            <partial name="_Icon" model='"alert"' />
+            <div class="ev-notice__body"><p class="mb-0">@erro</p></div>
         </div>
-    </section>
+    }
 
-    <div class="ev-detail-grid">
-        <section class="ev-panel" aria-labelledby="como-consultar">
-            <div class="ev-panel__head">
-                <div>
-                    <h2 id="como-consultar">Como consultar</h2>
-                    <p class="ev-panel__hint">As informações vêm do cadastro atual da frota.</p>
-                </div>
-            </div>
-            <ol class="ev-steps">
-                <li class="ev-step">
-                    <span class="ev-step__number" aria-hidden="true">1</span>
-                    <div>
-                        <h3>Acesse “Minha van”</h3>
-                        <p>Abra a consulta pelo botão acima ou pelo menu lateral.</p>
-                    </div>
-                </li>
-                <li class="ev-step">
-                    <span class="ev-step__number" aria-hidden="true">2</span>
-                    <div>
-                        <h3>Confira o veículo</h3>
-                        <p>Placa, capacidade, rota, horários e situação são exibidos na mesma tela.</p>
-                    </div>
-                </li>
-                <li class="ev-step">
-                    <span class="ev-step__number" aria-hidden="true">3</span>
-                    <div>
-                        <h3>Fale com a operação</h3>
-                        <p>Em caso de dúvida sobre horário ou trajeto, procure o responsável pelo transporte.</p>
-                    </div>
-                </li>
-            </ol>
+    @if (Model.SemVinculo)
+    {
+        <section class="ev-panel ev-empty">
+            <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
+            <h2 class="ev-empty__title">Sua conta ainda não está vinculada</h2>
+            <p class="ev-empty__text">Peça à administração para associar seu usuário ao cadastro de aluno. Enquanto isso, você pode consultar os dados gerais da frota.</p>
+            <a asp-controller="Home" asp-action="Detalhes" class="btn btn-primary">Consultar minha van</a>
         </section>
-
-        <aside class="ev-form-aside">
-            <section class="ev-panel">
-                <div class="ev-panel__body">
-                    <h2>Precisa de ajuda?</h2>
-                    <p>Se a van exibida não corresponder ao seu transporte, entre em contato com a administração para corrigir o cadastro.</p>
-                    <a asp-controller="Home" asp-action="Privacy" class="ev-link-action">
-                        <partial name="_Icon" model='"shield"' />
-                        Como tratamos seus dados
-                    </a>
+    }
+    else
+    {
+        <div class="ev-metrics ev-metrics--three" aria-label="Resumo das viagens">
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Próximas viagens</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"calendar"' /></span>
                 </div>
+                <strong class="ev-metric__value">@proximas.Count</strong>
+                <span class="ev-metric__hint">agendadas ou em andamento</span>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Presenças confirmadas</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"check"' /></span>
+                </div>
+                <strong class="ev-metric__value">@confirmadas</strong>
+                <span class="ev-metric__hint">você marcou “Vou”</span>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Aguardando resposta</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"clock"' /></span>
+                </div>
+                <strong class="ev-metric__value">@pendentes</strong>
+                <span class="ev-metric__hint">confirme sua presença</span>
+            </article>
+        </div>
+
+        <div class="ev-detail-grid">
+            <section class="ev-panel ev-panel--flush" aria-labelledby="minhas-viagens">
+                <div class="ev-panel__head">
+                    <div>
+                        <h2 id="minhas-viagens">Minhas viagens</h2>
+                        <p class="ev-panel__hint">Próximas viagens e as últimas já realizadas.</p>
+                    </div>
+                    <span class="ev-count">@Model.Presencas.Count</span>
+                </div>
+
+                @if (Model.Presencas.Any())
+                {
+                    <ul class="ev-attendance">
+                        @foreach (var presenca in Model.Presencas)
+                        {
+                            var viagem = presenca.Viagem!;
+                            var passada = viagem.Data < Model.Hoje;
+                            var encerrada = passada || viagem.Status is "Finalizada" or "Cancelada";
+
+                            <li class="ev-attendance__item">
+                                <div class="ev-attendance__note">
+                                    <div class="ev-trip-line">
+                                        <span class="ev-trip-line__date">@viagem.Data.ToString("dd/MM/yyyy")</span>
+                                        <partial name="_StatusBadge" model="viagem.Status" />
+                                        @if (viagem.Data == Model.Hoje)
+                                        {
+                                            <span class="ev-badge ev-badge--brand">Hoje</span>
+                                        }
+                                    </div>
+
+                                    <span class="ev-person__name">
+                                        @(viagem.Rota?.Nome ?? "Rota não informada")
+                                    </span>
+
+                                    @if (viagem.Rota != null)
+                                    {
+                                        <div class="ev-route-leg mt-1">
+                                            <span class="ev-route-leg__stop">@viagem.Rota.Origem</span>
+                                            <partial name="_Icon" model='"arrow-right"' />
+                                            <span class="ev-route-leg__stop ev-route-leg__stop--end">@viagem.Rota.Destino</span>
+                                        </div>
+                                    }
+
+                                    <p class="ev-person__sub mb-0">
+                                        <partial name="_Icon" model='"clock"' />
+                                        @(viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Horário não informado")
+                                        @if (viagem.HoraFim.HasValue)
+                                        {
+                                            <text>–@viagem.HoraFim.Value.ToString(@"hh\:mm")</text>
+                                        }
+                                        <span aria-hidden="true">·</span>
+                                        <partial name="_Icon" model='"van"' />
+                                        @(viagem.Van?.Plate ?? "Van não informada")
+                                        <span aria-hidden="true">·</span>
+                                        <partial name="_Icon" model='"driver"' />
+                                        @(viagem.Motorista?.Nome ?? "Motorista não informado")
+                                    </p>
+                                </div>
+
+                                <div class="ev-attendance__actions">
+                                    @if (presenca.StatusConfirmacao == true)
+                                    {
+                                        <span class="ev-badge ev-badge--success"><span class="ev-badge__dot" aria-hidden="true"></span>Você vai</span>
+                                    }
+                                    else if (presenca.StatusConfirmacao == false)
+                                    {
+                                        <span class="ev-badge ev-badge--neutral"><span class="ev-badge__dot" aria-hidden="true"></span>Você não vai</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="ev-badge ev-badge--warning"><span class="ev-badge__dot" aria-hidden="true"></span>Sem resposta</span>
+                                    }
+
+                                    @if (!encerrada)
+                                    {
+                                        <div class="ev-confirm-actions">
+                                            <form asp-controller="Home" asp-action="ConfirmarPresenca" method="post">
+                                                <input type="hidden" name="viagemId" value="@viagem.Id" />
+                                                <input type="hidden" name="vou" value="true" />
+                                                <button type="submit" class="btn btn-primary btn-sm" aria-label="Confirmar presença na viagem de @viagem.Data.ToString("dd/MM/yyyy")">
+                                                    Vou
+                                                </button>
+                                            </form>
+                                            <form asp-controller="Home" asp-action="ConfirmarPresenca" method="post">
+                                                <input type="hidden" name="viagemId" value="@viagem.Id" />
+                                                <input type="hidden" name="vou" value="false" />
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm" aria-label="Informar que não vai na viagem de @viagem.Data.ToString("dd/MM/yyyy")">
+                                                    Não vou
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="ev-empty ev-empty--compact">
+                        <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"trip"' /></span>
+                        <p class="ev-empty__title">Nenhuma viagem registrada</p>
+                        <p class="ev-empty__text">Quando a operação incluir você em uma viagem, ela aparecerá aqui para confirmação.</p>
+                    </div>
+                }
             </section>
-        </aside>
-    </div>
+
+            <aside class="ev-form-aside">
+                <section class="ev-panel">
+                    <div class="ev-panel__head">
+                        <div>
+                            <h2>Meus dados</h2>
+                            <p class="ev-panel__hint">Somente você vê estas informações.</p>
+                        </div>
+                    </div>
+                    <dl class="ev-data ev-data--stacked">
+                        <div class="ev-data__item">
+                            <dt>Nome</dt>
+                            <dd>@Model.Aluno!.Nome</dd>
+                        </div>
+                        <div class="ev-data__item">
+                            <dt>E-mail</dt>
+                            <dd>@Model.Aluno.Email</dd>
+                        </div>
+                        <div class="ev-data__item">
+                            <dt>Telefone</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(Model.Aluno.Telefone) ? "Não informado" : Model.Aluno.Telefone)</dd>
+                        </div>
+                        <div class="ev-data__item">
+                            <dt>Endereço</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(Model.Aluno.Endereco) ? "Não informado" : Model.Aluno.Endereco)</dd>
+                        </div>
+                    </dl>
+                </section>
+
+                <section class="ev-panel">
+                    <div class="ev-panel__body">
+                        <h2>Precisa de ajuda?</h2>
+                        <p>Se uma viagem não corresponder ao seu transporte, procure a administração da operação.</p>
+                        <a asp-controller="Home" asp-action="Privacy" class="ev-link-action">
+                            <partial name="_Icon" model='"shield"' />
+                            Como tratamos seus dados
+                        </a>
+                    </div>
+                </section>
+            </aside>
+        </div>
+    }
 </section>

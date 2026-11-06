@@ -6,7 +6,15 @@
     var alunos = ViewData["AlunosDaViagem"] as IEnumerable<PresencaViagem> ?? Enumerable.Empty<PresencaViagem>();
     var listaAlunos = alunos.ToList();
     var presentes = listaAlunos.Count(a => a.Presente);
+    var confirmados = listaAlunos.Count(a => a.StatusConfirmacao == true);
     var erro = TempData["Erro"] as string;
+
+    var mapaViagem = Model.Rota == null ? null : new MapaRotaViewModel
+    {
+        Origem = Model.Rota.Origem,
+        Destino = Model.Rota.Destino,
+        Titulo = "Trajeto da viagem"
+    };
 
     var etapaAtual = Model.Status switch
     {
@@ -174,6 +182,11 @@
                 </dl>
             </section>
 
+            @if (mapaViagem != null)
+            {
+                <partial name="_MapaRota" model="mapaViagem" />
+            }
+
             @if (!string.IsNullOrWhiteSpace(Model.Observacao))
             {
                 <section class="ev-panel" aria-labelledby="observacao-viagem">
@@ -217,13 +230,17 @@
             <div>
                 <h2 id="presenca-viagem">Lista de presença</h2>
                 <p class="ev-panel__hint">
-                    @if (Model.Status == "EmAndamento")
+                    @if (Model.Status == "Agendada")
+                    {
+                        <text>@confirmados de @listaAlunos.Count alunos confirmaram presença.</text>
+                    }
+                    else if (Model.Status == "EmAndamento" || Model.Status == "Finalizada")
                     {
                         <text>@presentes de @listaAlunos.Count alunos presentes.</text>
                     }
                     else
                     {
-                        <text>Disponível durante a viagem.</text>
+                        <text>Lista de presença registrada nesta viagem.</text>
                     }
                 </p>
             </div>
@@ -238,21 +255,17 @@
             }
         </div>
 
-        @if (Model.Status == "Agendada")
-        {
-            <div class="ev-empty ev-empty--compact">
-                <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"clock"' /></span>
-                <h3 class="ev-empty__title">A viagem ainda não começou</h3>
-                <p class="ev-empty__text">Inicie a viagem para carregar os alunos e marcar a presença.</p>
-            </div>
-        }
-        else if (!listaAlunos.Any())
+        @if (!listaAlunos.Any())
         {
             <div class="ev-empty ev-empty--compact">
                 <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
-                <h3 class="ev-empty__title">Nenhum aluno na lista</h3>
+                <h3 class="ev-empty__title">@(Model.Status == "Agendada" ? "Nenhuma confirmação registrada" : "Nenhum aluno na lista")</h3>
                 <p class="ev-empty__text">
-                    @if (Model.Status == "EmAndamento")
+                    @if (Model.Status == "Agendada")
+                    {
+                        <text>Os alunos ainda não responderam à confirmação de presença. As respostas aparecem aqui.</text>
+                    }
+                    else if (Model.Status == "EmAndamento")
                     {
                         <text>Use “Carregar alunos ativos” para montar a lista desta viagem.</text>
                     }
@@ -283,7 +296,15 @@
                         }
 
                         <div class="ev-attendance__actions">
-                            <partial name="_StatusBadge" model='presenca.Presente ? "Presente" : "Ausente"' />
+                            @if (Model.Status == "Agendada")
+                            {
+                                <partial name="_StatusBadge" model='presenca.StatusConfirmacao == true ? "Confirmou" : presenca.StatusConfirmacao == false ? "Não vai" : "Sem resposta"' />
+                            }
+                            else
+                            {
+                                <partial name="_StatusBadge" model='presenca.Presente ? "Presente" : "Ausente"' />
+                                <partial name="_StatusBadge" model='presenca.StatusConfirmacao == true ? "Confirmou" : presenca.StatusConfirmacao == false ? "Não vai" : "Sem resposta"' />
+                            }
                             @if (Model.Status == "EmAndamento")
                             {
                                 <form asp-action="MarcarPresenca" method="post" class="ev-inline-form">

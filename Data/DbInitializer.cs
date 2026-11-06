@@ -201,6 +201,117 @@ namespace EasyVan.Data
             }
 
             context.SaveChanges();
+
+            VincularPerfis(context, hasher, seedDemoUsers);
+            context.SaveChanges();
+        }
+
+        /// <summary>
+        /// Garante que cada motorista/aluno tenha uma conta de acesso.
+        /// Em desenvolvimento, cria contas de demonstração com a senha padrão; em produção,
+        /// apenas vincula contas existentes com o mesmo e-mail (o administrador cria as demais pelo CRUD).
+        /// </summary>
+        private static void VincularPerfis(ApplicationDbContext context, IPasswordService hasher, bool seedDemoUsers)
+        {
+            var usuarios = context.Usuarios.ToList();
+            var contasPorEmail = usuarios
+                .GroupBy(u => Usuarios.NormalizeEmail(u.Email))
+                .ToDictionary(g => g.Key, g => g.First());
+
+            var motoristas = context.Motoristas.ToList();
+            var alunos = context.Alunos.ToList();
+
+            // Contas recém-criadas ainda têm Id = 0 até o próximo SaveChanges,
+            // então o vínculo é controlado também por referência.
+            var idsVinculados = motoristas
+                .Where(m => m.UsuarioId.HasValue)
+                .Select(m => m.UsuarioId!.Value)
+                .Concat(alunos.Where(a => a.UsuarioId.HasValue).Select(a => a.UsuarioId!.Value))
+                .ToHashSet();
+            var contasVinculadas = new HashSet<Usuarios>();
+
+            bool JaVinculada(Usuarios conta) =>
+                contasVinculadas.Contains(conta) || (conta.Id != 0 && idsVinculados.Contains(conta.Id));
+
+            string? demoHash = null;
+
+            Usuarios? ObterOuCriarConta(string nome, string email, string papel)
+            {
+                var normalizado = Usuarios.NormalizeEmail(email);
+                if (contasPorEmail.TryGetValue(normalizado, out var existente))
+                    return existente;
+                if (!seedDemoUsers)
+                    return null;
+
+                demoHash ??= hasher.Hash("123456");
+                var nova = new Usuarios
+                {
+                    Nome = nome,
+                    Email = normalizado,
+                    RoleManager = papel,
+                    PasswordHasher = demoHash,
+                    Tema = "claro"
+                };
+                context.Usuarios.Add(nova);
+                contasPorEmail[normalizado] = nova;
+                return nova;
+            }
+
+            // As contas demo usam um e-mail genérico; associe-as aos primeiros perfis do seed.
+            if (seedDemoUsers)
+            {
+                var contaDemoMotorista = contasPorEmail.GetValueOrDefault("motorista@easyvan.com");
+                var joao = motoristas.FirstOrDefault(m =>
+                    m.UsuarioId == null
+                    && string.Equals(Usuarios.NormalizeEmail(m.Email), "joao.silva@easyvan.com", StringComparison.Ordinal)
+                    && contaDemoMotorista != null
+                    && Usuarios.NormalizeRole(contaDemoMotorista.RoleManager) == "Motorista"
+                    && !JaVinculada(contaDemoMotorista));
+
+                if (joao != null && contaDemoMotorista != null)
+                {
+                    joao.Usuario = contaDemoMotorista;
+                    contasVinculadas.Add(contaDemoMotorista);
+                }
+
+                var contaDemoAluno = contasPorEmail.GetValueOrDefault("aluno@easyvan.com");
+                var ana = alunos.FirstOrDefault(a =>
+                    a.UsuarioId == null
+                    && string.Equals(Usuarios.NormalizeEmail(a.Email), "ana.pereira@email.com", StringComparison.Ordinal)
+                    && contaDemoAluno != null
+                    && Usuarios.NormalizeRole(contaDemoAluno.RoleManager) == "Aluno"
+                    && !JaVinculada(contaDemoAluno));
+
+                if (ana != null && contaDemoAluno != null)
+                {
+                    ana.Usuario = contaDemoAluno;
+                    contasVinculadas.Add(contaDemoAluno);
+                }
+            }
+
+            foreach (var motorista in motoristas.Where(m => m.UsuarioId == null))
+            {
+                var conta = ObterOuCriarConta(motorista.Nome, motorista.Email, "Motorista");
+                if (conta == null
+                    || Usuarios.NormalizeRole(conta.RoleManager) != "Motorista"
+                    || JaVinculada(conta))
+                    continue;
+
+                motorista.Usuario = conta;
+                contasVinculadas.Add(conta);
+            }
+
+            foreach (var aluno in alunos.Where(a => a.UsuarioId == null))
+            {
+                var conta = ObterOuCriarConta(aluno.Nome, aluno.Email, "Aluno");
+                if (conta == null
+                    || Usuarios.NormalizeRole(conta.RoleManager) != "Aluno"
+                    || JaVinculada(conta))
+                    continue;
+
+                aluno.Usuario = conta;
+                contasVinculadas.Add(conta);
+            }
         }
     }
 }

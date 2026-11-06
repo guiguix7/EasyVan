@@ -2,6 +2,13 @@
 
 @{
     ViewData["Title"] = "Minha van";
+    var rota = Model.Rota as EasyVan.Models.Rota;
+    var mapaVan = rota == null ? null : new EasyVan.Models.MapaRotaViewModel
+    {
+        Origem = rota.Origem,
+        Destino = rota.Destino,
+        Titulo = "Trajeto da van"
+    };
 }
 
 <section class="ev-page">
@@ -86,6 +93,11 @@
                 </div>
             </aside>
         </div>
+
+        @if (mapaVan != null)
+        {
+            <partial name="_MapaRota" model="mapaVan" />
+        }
     }
     else
     {

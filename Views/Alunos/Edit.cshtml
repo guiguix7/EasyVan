@@ -1,4 +1,4 @@
-@model EasyVan.Models.Aluno
+@model EasyVan.Models.AlunoFormViewModel
 
 @{
     ViewData["Title"] = "Editar aluno";
@@ -14,7 +14,7 @@
         <div class="ev-page-head__text">
             <p class="ev-eyebrow">Aluno #@Model.Id</p>
             <h1>Editar aluno</h1>
-            <p class="ev-page-head__lead">Atualize os dados de contato e a situação do cadastro.</p>
+            <p class="ev-page-head__lead">Atualize os dados de contato, a conta de acesso e a situação do cadastro.</p>
         </div>
         <div class="ev-page-head__actions">
             <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Ver detalhes</a>
@@ -29,7 +29,7 @@
             <section class="ev-panel ev-form-section" aria-labelledby="dados-aluno">
                 <div class="ev-form-section__head">
                     <h2 id="dados-aluno">Dados do aluno</h2>
-                    <p>Nome e e-mail do passageiro.</p>
+                    <p>Nome e e-mail do passageiro e da conta.</p>
                 </div>
                 <div class="ev-form-grid">
                     <div class="ev-field">
@@ -47,6 +47,50 @@
                 </div>
             </section>
 
+            <section class="ev-panel ev-form-section" aria-labelledby="conta-aluno">
+                <div class="ev-form-section__head">
+                    <h2 id="conta-aluno">Conta de acesso</h2>
+                    <p>
+                        @if (Model.ContaVinculada)
+                        {
+                            <text>Conta vinculada: <strong>@Model.EmailConta</strong>. A senha atual não é exibida.</text>
+                        }
+                        else
+                        {
+                            <text>Este cadastro ainda não tem conta. Informe uma senha para criá-la.</text>
+                        }
+                    </p>
+                </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="Senha" class="form-label">@(Model.ContaVinculada ? "Nova senha (opcional)" : "Senha")</label>
+                        <div class="ev-password">
+                            <input asp-for="Senha" id="senhaAluno" class="form-control" type="password"
+                                   autocomplete="new-password" placeholder="Deixe vazio para manter" />
+                            <button type="button" class="ev-password__toggle" data-password-toggle
+                                    aria-controls="senhaAluno" aria-pressed="false" aria-label="Mostrar senha">
+                                <partial name="_Icon" model='"eye"' />
+                            </button>
+                        </div>
+                        <span asp-validation-for="Senha" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="ConfirmarSenha" class="form-label">Confirmar senha</label>
+                        <div class="ev-password">
+                            <input asp-for="ConfirmarSenha" id="senhaAlunoConfirmacao" class="form-control" type="password"
+                                   autocomplete="new-password" placeholder="Repita a nova senha" />
+                            <button type="button" class="ev-password__toggle" data-password-toggle
+                                    aria-controls="senhaAlunoConfirmacao" aria-pressed="false" aria-label="Mostrar senha">
+                                <partial name="_Icon" model='"eye"' />
+                            </button>
+                        </div>
+                        <span asp-validation-for="ConfirmarSenha" class="ev-form-validation"></span>
+                    </div>
+                </div>
+                <p class="ev-hint">Deixe os campos vazios para preservar a senha atual. Uma conta vinculada não pode ser trocada por outro e-mail sem validação.</p>
+            </section>
+
             <section class="ev-panel ev-form-section" aria-labelledby="contato-aluno">
                 <div class="ev-form-section__head">
                     <h2 id="contato-aluno">Contato e embarque</h2>
@@ -55,13 +99,15 @@
                 <div class="ev-form-grid">
                     <div class="ev-field">
                         <label asp-for="Telefone" class="form-label">Telefone</label>
-                        <input asp-for="Telefone" class="form-control" type="tel" autocomplete="tel" inputmode="tel" />
+                        <input asp-for="Telefone" class="form-control" type="tel" autocomplete="tel" inputmode="tel"
+                               data-telefone-brasil maxlength="15" />
+                        <p class="ev-hint">DDD + número, com 10 ou 11 dígitos.</p>
                         <span asp-validation-for="Telefone" class="ev-form-validation"></span>
                     </div>
 
                     <div class="ev-field ev-span-2">
                         <label asp-for="Endereco" class="form-label">Endereço</label>
-                        <input asp-for="Endereco" class="form-control" autocomplete="street-address" />
+                        <input asp-for="Endereco" class="form-control" autocomplete="street-address" maxlength="200" />
                         <span asp-validation-for="Endereco" class="ev-form-validation"></span>
                     </div>
                 </div>
@@ -95,8 +141,8 @@
         <aside class="ev-form-aside">
             <section class="ev-panel">
                 <div class="ev-panel__body">
-                    <h2>Histórico de presença</h2>
-                    <p class="mb-0">Registros de presença já lançados permanecem no histórico. Inativar o aluno impede novas inclusões em listas.</p>
+                    <h2>Vínculo e histórico</h2>
+                    <p class="mb-0">A conta e o perfil de aluno são vinculados por um identificador único. Inativar o aluno preserva as presenças já registradas.</p>
                 </div>
             </section>
         </aside>

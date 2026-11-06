@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Gerenciamento_de_Van.Models;
@@ -21,9 +22,9 @@ public class HomeController : Controller
     // GET / — Login sem header. Se já estiver logado, redireciona pelo papel.
     public IActionResult Index()
     {
-        if (User.Identity.IsAuthenticated)
+        if (User.Identity?.IsAuthenticated == true)
         {
-            var papel = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? string.Empty;
+            var papel = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
             return papel switch
             {
                 "Administrador" => RedirectToAction(nameof(Administrador)),
@@ -54,25 +55,129 @@ public class HomeController : Controller
 
     // ----- Aluno -----
     [Authorize(Roles = "Aluno,Administrador")]
-    public IActionResult Aluno()
+    public async Task<IActionResult> Aluno()
     {
-        return View();
+        var aluno = await ObterAlunoAtualAsync();
+        if (aluno == null)
+            return View(new PainelAlunoViewModel());
+
+        var (inicioDoDia, _) = ObterIntervaloDoDiaNoFusoDeSaoPaulo();
+        var presencas = await _db.PresencasViagem
+            .Include(p => p.Viagem)!.ThenInclude(v => v!.Rota)
+            .Include(p => p.Viagem)!.ThenInclude(v => v!.Van)
+            .Include(p => p.Viagem)!.ThenInclude(v => v!.Motorista)
+            .Where(p => p.AlunoId == aluno.Id && p.Viagem != null && p.Viagem.Status != "Cancelada")
+            .ToListAsync();
+
+        var futuras = presencas
+            .Where(p => p.Viagem!.Data >= inicioDoDia)
+            .OrderBy(p => p.Viagem!.Data)
+            .ThenBy(p => p.Viagem!.HoraInicio ?? TimeSpan.MaxValue)
+            .ThenBy(p => p.Viagem!.Id);
+
+        var passadas = presencas
+            .Where(p => p.Viagem!.Data < inicioDoDia)
+            .OrderByDescending(p => p.Viagem!.Data)
+            .ThenByDescending(p => p.Viagem!.Id)
+            .Take(8);
+
+        return View(new PainelAlunoViewModel
+        {
+            Aluno = aluno,
+            Presencas = futuras.Concat(passadas).ToList(),
+            Hoje = ObterHojeLocal()
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Aluno,Administrador")]
+    public async Task<IActionResult> ConfirmarPresenca(int viagemId, bool vou)
+    {
+        var aluno = await ObterAlunoAtualAsync();
+        if (aluno == null)
+        {
+            TempData["Erro"] = "Sua conta ainda não está vinculada a um cadastro de aluno.";
+            return RedirectToAction(nameof(Aluno));
+        }
+
+        var presenca = await _db.PresencasViagem
+            .Include(p => p.Viagem)
+            .FirstOrDefaultAsync(p => p.ViagemId == viagemId && p.AlunoId == aluno.Id);
+
+        if (presenca?.Viagem == null)
+        {
+            TempData["Erro"] = "Viagem não encontrada para este aluno.";
+            return RedirectToAction(nameof(Aluno));
+        }
+
+        if (presenca.Viagem.Status is "Finalizada" or "Cancelada")
+        {
+            TempData["Erro"] = "Esta viagem já foi encerrada e não aceita confirmação.";
+            return RedirectToAction(nameof(Aluno));
+        }
+
+        var (inicioDoDia, _) = ObterIntervaloDoDiaNoFusoDeSaoPaulo();
+        if (presenca.Viagem.Data < inicioDoDia)
+        {
+            TempData["Erro"] = "Esta viagem já aconteceu e não aceita confirmação.";
+            return RedirectToAction(nameof(Aluno));
+        }
+
+        presenca.StatusConfirmacao = vou;
+        presenca.ConfirmadoEm = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        TempData["Sucesso"] = vou
+            ? "Presença confirmada. Bom embarque!"
+            : "Resposta registrada: você não vai nesta viagem.";
+        return RedirectToAction(nameof(Aluno));
     }
 
     [Authorize(Roles = "Aluno,Administrador")]
     public async Task<IActionResult> Detalhes()
     {
-        // "Minha van" do aluno: exibe a primeira van operacional (sem FK aluno-van no MVP,
-        // usamos a van de referência como a van atribuída ao aluno logado).
-        var van = await _db.Vans.FirstOrDefaultAsync(v => v.Status == "Operacional")
-                  ?? await _db.Vans.FirstOrDefaultAsync();
+        var aluno = await ObterAlunoAtualAsync();
+        Van? van = null;
+        string? motoristaNome = null;
+
+        if (aluno != null)
+        {
+            var (inicioDoDia, _) = ObterIntervaloDoDiaNoFusoDeSaoPaulo();
+            var proximaViagem = await _db.Viagens
+                .Include(v => v.Van)!.ThenInclude(van => van!.Rota)
+                .Include(v => v.Motorista)
+                .Where(v => v.Status != "Cancelada"
+                    && v.Data >= inicioDoDia
+                    && v.Presencas.Any(p => p.AlunoId == aluno.Id))
+                .OrderBy(v => v.Data)
+                .ThenBy(v => v.HoraInicio ?? TimeSpan.MaxValue)
+                .FirstOrDefaultAsync();
+
+            van = proximaViagem?.Van;
+            motoristaNome = proximaViagem?.Motorista?.Nome;
+        }
+
+        if (van == null)
+        {
+            van = await _db.Vans
+                .Include(v => v.Motorista)
+                .Include(v => v.Rota)
+                .FirstOrDefaultAsync(v => v.Status == "Operacional")
+                ?? await _db.Vans
+                    .Include(v => v.Motorista)
+                    .Include(v => v.Rota)
+                    .FirstOrDefaultAsync();
+            motoristaNome = van?.Motorista?.Nome;
+        }
+
         if (van == null) return NotFound();
 
-        var motoristaNome = van.Driver;
         return View("DetalhesAluno", new
         {
             Van = van,
-            MotoristaNome = motoristaNome
+            Rota = van.Rota,
+            MotoristaNome = string.IsNullOrWhiteSpace(motoristaNome) ? van.Driver : motoristaNome
         });
     }
 
@@ -80,30 +185,95 @@ public class HomeController : Controller
     [Authorize(Roles = "Motorista,Administrador")]
     public async Task<IActionResult> Motorista()
     {
-        var van = await _db.Vans.FirstOrDefaultAsync(v => v.Status == "Operacional")
-                  ?? await _db.Vans.FirstOrDefaultAsync();
-        var alunos = await _db.Alunos.Where(a => a.Ativo).OrderBy(a => a.Nome).ToListAsync();
-        var rotas = await _db.Rotas.Where(r => r.Ativo).OrderBy(r => r.Nome).ToListAsync();
+        var motorista = await ObterMotoristaAtualAsync();
+        if (motorista == null)
+            return View(new PainelMotoristaViewModel());
 
-        return View(new
+        var viagens = await _db.Viagens
+            .Include(v => v.Van)
+            .Include(v => v.Rota)
+            .Include(v => v.Presencas)!.ThenInclude(p => p.Aluno)
+            .Where(v => v.MotoristaId == motorista.Id && v.Status != "Cancelada")
+            .ToListAsync();
+
+        var (inicioDoDia, _) = ObterIntervaloDoDiaNoFusoDeSaoPaulo();
+        var ordenadas = viagens
+            .Where(v => v.Data >= inicioDoDia)
+            .OrderBy(v => v.Data)
+            .ThenBy(v => v.HoraInicio ?? TimeSpan.MaxValue)
+            .ThenBy(v => v.Id)
+            .Concat(viagens
+                .Where(v => v.Data < inicioDoDia)
+                .OrderByDescending(v => v.Data)
+                .ThenByDescending(v => v.Id)
+                .Take(8))
+            .ToList();
+
+        var painel = ordenadas.Select(v => new ViagemDoMotorista
         {
-            Van = van,
-            Alunos = alunos,
-            Rotas = rotas
+            Viagem = v,
+            Alunos = v.Presencas
+                .Where(p => p.Aluno != null)
+                .OrderBy(p => p.Aluno!.Nome)
+                .Select(p => new LinhaAlunoViagem
+                {
+                    PresencaId = p.Id,
+                    AlunoId = p.AlunoId,
+                    Nome = p.Aluno!.Nome,
+                    Endereco = p.Aluno.Endereco,
+                    Telefone = p.Aluno.Telefone,
+                    Presente = p.Presente,
+                    StatusConfirmacao = p.StatusConfirmacao
+                })
+                .ToList()
+        }).ToList();
+
+        return View(new PainelMotoristaViewModel
+        {
+            Motorista = motorista,
+            Viagens = painel,
+            Hoje = ObterHojeLocal()
         });
     }
 
-    private static (DateTime InicioUtc, DateTime FimUtc) ObterIntervaloDoDiaNoFusoDeSaoPaulo()
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Motorista,Administrador")]
+    public async Task<IActionResult> MarcarPresenca(int viagemId, int alunoId, bool presente)
     {
-        var fuso = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-        var hojeLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, fuso).Date;
-        var inicioLocal = DateTime.SpecifyKind(hojeLocal, DateTimeKind.Unspecified);
-        var fimLocal = inicioLocal.AddDays(1);
+        var motorista = await ObterMotoristaAtualAsync();
+        if (motorista == null && !User.IsInRole("Administrador"))
+        {
+            TempData["Erro"] = "Sua conta ainda não está vinculada a um cadastro de motorista.";
+            return RedirectToAction(nameof(Motorista));
+        }
 
-        return (
-            TimeZoneInfo.ConvertTimeToUtc(inicioLocal, fuso),
-            TimeZoneInfo.ConvertTimeToUtc(fimLocal, fuso)
-        );
+        var viagem = await _db.Viagens.FirstOrDefaultAsync(v => v.Id == viagemId);
+        if (viagem == null)
+        {
+            TempData["Erro"] = "Viagem não encontrada.";
+            return RedirectToAction(nameof(Motorista));
+        }
+
+        if (!User.IsInRole("Administrador") && viagem.MotoristaId != motorista!.Id)
+        {
+            TempData["Erro"] = "Você só pode alterar presenças das suas próprias viagens.";
+            return RedirectToAction(nameof(Motorista));
+        }
+
+        var presenca = await _db.PresencasViagem
+            .FirstOrDefaultAsync(p => p.ViagemId == viagemId && p.AlunoId == alunoId);
+
+        if (presenca == null)
+        {
+            TempData["Erro"] = "Presença não encontrada para esta viagem.";
+            return RedirectToAction(nameof(Motorista));
+        }
+
+        presenca.Presente = presente;
+        await _db.SaveChangesAsync();
+        TempData["Sucesso"] = presente ? "Presença registrada." : "Ausência registrada.";
+        return RedirectToAction(nameof(Motorista));
     }
 
     // ----- Administrador -----
@@ -163,5 +333,45 @@ public class HomeController : Controller
             VansEmManutencao = vansEmManutencao,
             Alertas = alertas
         });
+    }
+
+    private int? ObterUsuarioId()
+    {
+        return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
+    }
+
+    private async Task<Aluno?> ObterAlunoAtualAsync()
+    {
+        var usuarioId = ObterUsuarioId();
+        return usuarioId.HasValue
+            ? await _db.Alunos.FirstOrDefaultAsync(a => a.UsuarioId == usuarioId.Value)
+            : null;
+    }
+
+    private async Task<Motorista?> ObterMotoristaAtualAsync()
+    {
+        var usuarioId = ObterUsuarioId();
+        return usuarioId.HasValue
+            ? await _db.Motoristas.FirstOrDefaultAsync(m => m.UsuarioId == usuarioId.Value)
+            : null;
+    }
+
+    private static DateTime ObterHojeLocal()
+    {
+        var fuso = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, fuso).Date;
+    }
+
+    private static (DateTime InicioUtc, DateTime FimUtc) ObterIntervaloDoDiaNoFusoDeSaoPaulo()
+    {
+        var fuso = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        var hojeLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, fuso).Date;
+        var inicioLocal = DateTime.SpecifyKind(hojeLocal, DateTimeKind.Unspecified);
+        var fimLocal = inicioLocal.AddDays(1);
+
+        return (
+            TimeZoneInfo.ConvertTimeToUtc(inicioLocal, fuso),
+            TimeZoneInfo.ConvertTimeToUtc(fimLocal, fuso)
+        );
     }
 }

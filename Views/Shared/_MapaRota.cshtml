@@ -1,0 +1,52 @@
+@model EasyVan.Models.MapaRotaViewModel
+
+@{
+    var titulo = string.IsNullOrWhiteSpace(Model.Titulo) ? "Trajeto" : Model.Titulo;
+    var linkMapa = $"https://www.google.com/maps/dir/?api=1&origin={Uri.EscapeDataString(Model.Origem)}&destination={Uri.EscapeDataString(Model.Destino)}&travelmode=driving";
+}
+
+<section class="ev-panel ev-panel--flush ev-map-panel" aria-labelledby="mapa-rota-titulo">
+    <div class="ev-panel__head">
+        <div>
+            <h2 id="mapa-rota-titulo">@titulo</h2>
+            <p class="ev-panel__hint">Trajeto planejado entre a origem e o destino. Sem rastreamento em tempo real.</p>
+        </div>
+        @if (Model.TemTrajeto)
+        {
+            <a class="btn btn-outline-secondary btn-sm" href="@linkMapa" target="_blank" rel="noopener noreferrer">
+                <partial name="_Icon" model='"pin"' />
+                Abrir no Google Maps
+                <span class="visually-hidden">(abre em nova aba)</span>
+            </a>
+        }
+    </div>
+
+    @if (!Model.TemTrajeto)
+    {
+        <div class="ev-empty ev-empty--compact">
+            <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
+            <h3 class="ev-empty__title">Trajeto não informado</h3>
+            <p class="ev-empty__text">A rota precisa de origem e destino para exibir o mapa.</p>
+        </div>
+    }
+    else
+    {
+        <div class="ev-map" data-mapa-rota data-origem="@Model.Origem" data-destino="@Model.Destino">
+            <div class="ev-map__canvas" data-mapa-canvas role="img"
+                 aria-label="Mapa do trajeto de @Model.Origem até @Model.Destino"></div>
+            <div class="ev-map__fallback" data-mapa-fallback>
+                <partial name="_Icon" model='"pin"' />
+                <p class="ev-map__fallback-title">Mapa interativo indisponível</p>
+                <p class="ev-map__fallback-text">
+                    O trajeto continua disponível como texto e no link do Google Maps.
+                    O mapa aparece quando a integração está configurada e a API responde.
+                </p>
+                <p class="ev-map__fallback-route">
+                    <span>@Model.Origem</span>
+                    <partial name="_Icon" model='"arrow-right"' />
+                    <span>@Model.Destino</span>
+                </p>
+            </div>
+        </div>
+    }
+</section>

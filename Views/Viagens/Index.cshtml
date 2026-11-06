@@ -9,8 +9,22 @@
     var agendadas = viagens.Count(v => v.Status == "Agendada");
     var emAndamento = viagens.Count(v => v.Status == "EmAndamento");
     var finalizadas = viagens.Count(v => v.Status == "Finalizada");
+    var calendario = ViewData["Calendario"] as CalendarioViagensViewModel;
+    var hoje = DateTime.Today;
 
     string Hora(TimeSpan? valor) => valor.HasValue ? valor.Value.ToString(@"hh\:mm") : "—";
+    string ClasseViagem(string? status) => status switch
+    {
+        "Agendada" => "ev-calendar__trip--info",
+        "EmAndamento" => "ev-calendar__trip--warning",
+        "Finalizada" => "ev-calendar__trip--success",
+        _ => ""
+    };
+    (string Ano, string Mes) SepararMes(string valor)
+    {
+        var partes = valor.Split('-');
+        return partes.Length == 2 ? (partes[0], partes[1]) : (DateTime.Today.Year.ToString(), DateTime.Today.Month.ToString());
+    }
 }
 
 <section class="ev-page">
@@ -36,6 +50,80 @@
             </a>
         </div>
     </header>
+
+    @if (calendario != null)
+    {
+        var mesAnterior = SepararMes(calendario.MesAnterior);
+        var mesSeguinte = SepararMes(calendario.MesSeguinte);
+
+        <section class="ev-panel ev-calendar" aria-labelledby="calendario-viagens">
+            <div class="ev-calendar__head">
+                <div>
+                    <h2 id="calendario-viagens">Calendário</h2>
+                    <p class="ev-panel__hint">Viagens agrupadas por dia, no fuso de São Paulo.</p>
+                </div>
+                <nav class="ev-calendar__nav" aria-label="Navegação do calendário">
+                    <a asp-action="Index" asp-route-ano="@mesAnterior.Ano" asp-route-mes="@mesAnterior.Mes"
+                       class="btn btn-outline-secondary btn-sm" aria-label="Mês anterior">Anterior</a>
+                    <strong class="ev-calendar__month">@calendario.NomeMes</strong>
+                    <a asp-action="Index" asp-route-ano="@mesSeguinte.Ano" asp-route-mes="@mesSeguinte.Mes"
+                       class="btn btn-outline-secondary btn-sm" aria-label="Próximo mês">Próximo</a>
+                </nav>
+            </div>
+
+            <div class="ev-calendar__weekdays" aria-hidden="true">
+                <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+            </div>
+            <div class="ev-calendar__grid" role="grid" aria-label="Viagens de @calendario.NomeMes">
+                @foreach (var dia in calendario.Dias)
+                {
+                    <div class="ev-calendar__day @(dia.DoMes ? "" : "is-outside") @(dia.Data.Date == hoje ? "is-today" : "")"
+                         role="gridcell" aria-label="@dia.Data.ToString("dd/MM/yyyy")">
+                        <span class="ev-calendar__day-number">@dia.Data.Day</span>
+                        @foreach (var viagem in dia.Viagens.Take(2))
+                        {
+                            <a asp-action="Details" asp-route-id="@viagem.Id"
+                               class="ev-calendar__trip @ClasseViagem(viagem.Status)"
+                               title="Viagem #@viagem.Id · @(viagem.Rota?.Nome ?? "Rota removida") · @Hora(viagem.HoraInicio)">
+                                @Hora(viagem.HoraInicio) @(viagem.Rota?.Nome ?? "Viagem")
+                            </a>
+                        }
+                        @if (dia.Viagens.Count > 2)
+                        {
+                            <span class="ev-calendar__more">+@(dia.Viagens.Count - 2) viagens</span>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="ev-calendar__agenda ev-list-mobile">
+                @{
+                    var diasComViagens = calendario.Dias.Where(d => d.DoMes && d.Viagens.Any()).ToList();
+                }
+                @if (diasComViagens.Any())
+                {
+                    foreach (var dia in diasComViagens)
+                    {
+                        <div class="ev-calendar__agenda-day">
+                            <h3>@dia.Data.ToString("dd/MM/yyyy")</h3>
+                            @foreach (var viagem in dia.Viagens)
+                            {
+                                <a asp-action="Details" asp-route-id="@viagem.Id" class="ev-calendar__agenda-item">
+                                    <span class="is-mono">@Hora(viagem.HoraInicio)</span>
+                                    <span>@(viagem.Rota?.Nome ?? "Rota removida")</span>
+                                    <partial name="_StatusBadge" model="viagem.Status" />
+                                </a>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="ev-hint mb-0">Nenhuma viagem neste mês.</p>
+                }
+            </div>
+        </section>
+    }
 
     @if (viagens.Any())
     {

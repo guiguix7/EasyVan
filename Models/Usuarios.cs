@@ -22,6 +22,13 @@ namespace EasyVan.Models
         [DataType(DataType.Password)]
         public string PasswordHasher { get; set; } = string.Empty;
 
+        [StringLength(120)]
+        public string? FotoPerfil { get; set; }
+
+        [Required]
+        [StringLength(10)]
+        public string Tema { get; set; } = "claro";
+
         public static bool IsSupportedRole(string? role)
         {
             if (string.IsNullOrWhiteSpace(role)) return false;

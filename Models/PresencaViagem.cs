@@ -14,6 +14,14 @@ namespace EasyVan.Models
 
         public bool Presente { get; set; }
 
+        /// <summary>
+        /// Resposta do aluno: null = ainda não respondeu, true = vou, false = não vou.
+        /// É separada de <see cref="Presente"/>, que registra a presença efetiva no embarque.
+        /// </summary>
+        public bool? StatusConfirmacao { get; set; }
+
+        public DateTime? ConfirmadoEm { get; set; }
+
         public string? Observacao { get; set; }
 
         // Propriedades de navegação

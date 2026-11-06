@@ -57,6 +57,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 });
 
 builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddScoped<IFotoPerfilService, FotoPerfilService>();
+builder.Services.AddSingleton(new GoogleMapsOptions
+{
+    ApiKey = builder.Configuration["GoogleMaps:ApiKey"]
+        ?? Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY")
+        ?? string.Empty
+});
 
 var supabaseUrl = builder.Configuration["Supabase:Url"];
 var supabaseKey = builder.Configuration["Supabase:Key"];
@@ -125,6 +132,16 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 AtualizarClaim(identity, ClaimTypes.Name, usuario.Nome, context);
                 AtualizarClaim(identity, ClaimTypes.Email, usuario.Email, context);
                 AtualizarClaim(identity, ClaimTypes.Role, EasyVan.Models.Usuarios.NormalizeRole(usuario.RoleManager), context);
+                AtualizarClaim(identity, "FotoPerfil", usuario.FotoPerfil ?? string.Empty, context);
+
+                var tema = EasyVan.Services.TemaUi.Normalizar(usuario.Tema);
+                if (context.HttpContext.Request.Cookies[EasyVan.Services.TemaUi.Cookie] != tema)
+                {
+                    EasyVan.Services.TemaUi.Gravar(
+                        context.HttpContext.Response,
+                        tema,
+                        context.HttpContext.Request.IsHttps);
+                }
             }
         };
     });
