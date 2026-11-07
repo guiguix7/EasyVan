@@ -4,11 +4,25 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, security/railway-persistent-db]
+    branches: [main, security/railway-persistent-db, fix/postgres-migrations]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: easyvan_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d easyvan_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,4 +39,6 @@ jobs:
         run: dotnet build "Gerenciamento de Van.csproj" --configuration Release --no-restore
 
       - name: Run tests
+        env:
+          EASYVAN_TEST_POSTGRES: Host=localhost;Port=5432;Database=easyvan_test;Username=postgres;Password=postgres
         run: dotnet test "tests/EasyVan.Tests/EasyVan.Tests.csproj" --configuration Release

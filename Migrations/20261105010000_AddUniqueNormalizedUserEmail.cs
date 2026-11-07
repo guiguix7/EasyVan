@@ -14,11 +14,18 @@ namespace Gerenciamento_de_Van.Migrations
         {
             // Do not delete or merge accounts automatically. If duplicates exist,
             // resolve them deliberately before applying this migration.
-            migrationBuilder.Sql("""
-                UPDATE "Usuarios" SET "Email" = lower(trim("Email"));
-                CREATE UNIQUE INDEX "IX_Usuarios_Email"
-                ON "Usuarios" ("Email" COLLATE NOCASE);
-                """);
+            migrationBuilder.Sql("UPDATE \"Usuarios\" SET \"Email\" = lower(trim(\"Email\"));");
+            if (ActiveProvider == "Npgsql.EntityFrameworkCore.PostgreSQL")
+            {
+                migrationBuilder.CreateIndex(name: "IX_Usuarios_Email", table: "Usuarios", column: "Email", unique: true);
+            }
+            else
+            {
+                migrationBuilder.Sql("""
+                    CREATE UNIQUE INDEX "IX_Usuarios_Email"
+                    ON "Usuarios" ("Email" COLLATE NOCASE);
+                    """);
+            }
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

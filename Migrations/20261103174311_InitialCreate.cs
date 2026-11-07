@@ -16,13 +16,14 @@ namespace Gerenciamento_de_Van.Migrations
                 name: "Motoristas",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Nome = table.Column<string>(type: "TEXT", nullable: false),
-                    Email = table.Column<string>(type: "TEXT", nullable: false),
-                    Telefone = table.Column<string>(type: "TEXT", nullable: true),
-                    CNH = table.Column<string>(type: "TEXT", nullable: true),
-                    Ativo = table.Column<bool>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Nome = table.Column<string>(nullable: false),
+                    Email = table.Column<string>(nullable: false),
+                    Telefone = table.Column<string>(nullable: true),
+                    CNH = table.Column<string>(nullable: true),
+                    Ativo = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -33,13 +34,14 @@ namespace Gerenciamento_de_Van.Migrations
                 name: "Passageiros",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Nome = table.Column<string>(type: "TEXT", nullable: false),
-                    Email = table.Column<string>(type: "TEXT", nullable: false),
-                    Telefone = table.Column<string>(type: "TEXT", nullable: true),
-                    Endereco = table.Column<string>(type: "TEXT", nullable: true),
-                    Ativo = table.Column<bool>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Nome = table.Column<string>(nullable: false),
+                    Email = table.Column<string>(nullable: false),
+                    Telefone = table.Column<string>(nullable: true),
+                    Endereco = table.Column<string>(nullable: true),
+                    Ativo = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -50,13 +52,14 @@ namespace Gerenciamento_de_Van.Migrations
                 name: "Rotas",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Nome = table.Column<string>(type: "TEXT", nullable: false),
-                    Descricao = table.Column<string>(type: "TEXT", nullable: true),
-                    Origem = table.Column<string>(type: "TEXT", nullable: false),
-                    Destino = table.Column<string>(type: "TEXT", nullable: false),
-                    Ativo = table.Column<bool>(type: "INTEGER", nullable: false)
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Nome = table.Column<string>(nullable: false),
+                    Descricao = table.Column<string>(nullable: true),
+                    Origem = table.Column<string>(nullable: false),
+                    Destino = table.Column<string>(nullable: false),
+                    Ativo = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
                 {
