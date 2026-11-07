@@ -15,16 +15,17 @@ namespace Gerenciamento_de_Van.Migrations
                 name: "LogOperacao",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    UsuarioId = table.Column<int>(type: "INTEGER", nullable: true),
-                    UsuarioNome = table.Column<string>(type: "TEXT", maxLength: 120, nullable: true),
-                    TipoOperacao = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    Entidade = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    EntidadeId = table.Column<int>(type: "INTEGER", nullable: true),
-                    Descricao = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
-                    DataOperacao = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    InformacoesComplementares = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true)
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UsuarioId = table.Column<int>(nullable: true),
+                    UsuarioNome = table.Column<string>(maxLength: 120, nullable: true),
+                    TipoOperacao = table.Column<string>(maxLength: 50, nullable: false),
+                    Entidade = table.Column<string>(maxLength: 50, nullable: false),
+                    EntidadeId = table.Column<int>(nullable: true),
+                    Descricao = table.Column<string>(maxLength: 500, nullable: true),
+                    DataOperacao = table.Column<DateTime>(nullable: false),
+                    InformacoesComplementares = table.Column<string>(maxLength: 200, nullable: true)
                 },
                 constraints: table =>
                 {
