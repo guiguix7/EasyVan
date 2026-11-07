@@ -1,5 +1,6 @@
 @model IEnumerable<EasyVan.Models.Viagem>
 @using EasyVan.Models
+@using EasyVan.Services
 
 @{
     ViewData["Title"] = "Viagens";
@@ -10,9 +11,10 @@
     var emAndamento = viagens.Count(v => v.Status == "EmAndamento");
     var finalizadas = viagens.Count(v => v.Status == "Finalizada");
     var calendario = ViewData["Calendario"] as CalendarioViagensViewModel;
-    var hoje = DateTime.Today;
+    var hoje = ViagemAgenda.AgoraLocal().Date;
 
     string Hora(TimeSpan? valor) => valor.HasValue ? valor.Value.ToString(@"hh\:mm") : "—";
+    string HoraReal(DateTime? valor) => valor.HasValue ? ViagemAgenda.ParaLocal(valor.Value).ToString("HH:mm") : "—";
     string ClasseViagem(string? status) => status switch
     {
         "Agendada" => "ev-calendar__trip--info",
@@ -84,7 +86,7 @@
                         {
                             <a asp-action="Details" asp-route-id="@viagem.Id"
                                class="ev-calendar__trip @ClasseViagem(viagem.Status)"
-                               title="Viagem #@viagem.Id · @(viagem.Rota?.Nome ?? "Rota removida") · @Hora(viagem.HoraInicio)">
+                               title="@(viagem.Rota?.Nome ?? "Viagem") · @Hora(viagem.HoraInicio) · @viagem.Data.ToString("dd/MM/yyyy")">
                                 @Hora(viagem.HoraInicio) @(viagem.Rota?.Nome ?? "Viagem")
                             </a>
                         }
@@ -178,10 +180,12 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var viagem in viagens)
+                        @for (var indice = 0; indice < viagens.Count; indice++)
                         {
+                            var viagem = viagens[indice];
+                            var numero = indice + 1;
                             <tr>
-                                <td><span class="ev-table__primary">#@viagem.Id</span></td>
+                                <td><span class="ev-table__primary">Viagem @numero</span></td>
                                 <td>@viagem.Data.ToString("dd/MM/yyyy")</td>
                                 <td>
                                     <span class="ev-table__primary">@(viagem.Rota?.Nome ?? "Rota removida")</span>
@@ -192,11 +196,21 @@
                                 </td>
                                 <td><span class="ev-plate">@(viagem.Van?.Plate ?? "—")</span></td>
                                 <td>@(viagem.Motorista?.Nome ?? "—")</td>
-                                <td class="text-nowrap">@Hora(viagem.HoraInicio) – @Hora(viagem.HoraFim)</td>
+                                <td class="text-nowrap">
+                                    <span class="ev-table__primary">@Hora(viagem.HoraInicio) – @Hora(viagem.HoraFim)</span>
+                                    @if (viagem.InicioReal.HasValue || viagem.FimReal.HasValue)
+                                    {
+                                        <span class="ev-table__secondary">Real: @HoraReal(viagem.InicioReal) – @HoraReal(viagem.FimReal)</span>
+                                    }
+                                </td>
                                 <td><partial name="_StatusBadge" model="viagem.Status" /></td>
                                 <td class="is-actions">
                                     <div class="ev-row-actions">
                                         <a asp-action="Details" asp-route-id="@viagem.Id" class="ev-link-action">Detalhes</a>
+                                        @if (viagem.Status == "Agendada" || viagem.Status == "Confirmada")
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@viagem.Id" class="ev-link-action">Editar</a>
+                                        }
                                         @if (viagem.Status == "Agendada")
                                         {
                                             <form asp-action="Start" asp-route-id="@viagem.Id" method="post" class="ev-inline-form">
@@ -219,12 +233,14 @@
         </section>
 
         <section class="ev-records ev-list-mobile" aria-label="Lista de viagens">
-            @foreach (var viagem in viagens)
+            @for (var indice = 0; indice < viagens.Count; indice++)
             {
+                var viagem = viagens[indice];
+                var numero = indice + 1;
                 <article class="ev-record">
                     <div class="ev-record__head">
                         <div>
-                            <h2 class="ev-record__title">Viagem #@viagem.Id</h2>
+                            <h2 class="ev-record__title">Viagem @numero</h2>
                             <span class="ev-record__meta">@viagem.Data.ToString("dd/MM/yyyy") · @Hora(viagem.HoraInicio) – @Hora(viagem.HoraFim)</span>
                         </div>
                         <partial name="_StatusBadge" model="viagem.Status" />
@@ -252,10 +268,25 @@
                             <dt>Motorista</dt>
                             <dd>@(viagem.Motorista?.Nome ?? "—")</dd>
                         </div>
+                        <div>
+                            <dt>Horários</dt>
+                            <dd>
+                                Previsto: @Hora(viagem.HoraInicio) – @Hora(viagem.HoraFim)
+                                @if (viagem.InicioReal.HasValue || viagem.FimReal.HasValue)
+                                {
+                                    <br />
+                                    <span class="text-muted">Real: @HoraReal(viagem.InicioReal) – @HoraReal(viagem.FimReal)</span>
+                                }
+                            </dd>
+                        </div>
                     </dl>
 
                     <div class="ev-record__actions">
                         <a asp-action="Details" asp-route-id="@viagem.Id" class="btn btn-outline-primary">Detalhes</a>
+                        @if (viagem.Status == "Agendada" || viagem.Status == "Confirmada")
+                        {
+                            <a asp-action="Edit" asp-route-id="@viagem.Id" class="btn btn-outline-secondary">Editar</a>
+                        }
                         @if (viagem.Status == "Agendada")
                         {
                             <form asp-action="Start" asp-route-id="@viagem.Id" method="post" class="ev-inline-form">

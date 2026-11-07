@@ -262,6 +262,10 @@ namespace Gerenciamento_de_Van.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Modelo")
+                        .HasMaxLength(80)
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("MotoristaId")
                         .HasColumnType("INTEGER");
 
@@ -306,13 +310,22 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<DateTime>("Data")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("DataChegada")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FimReal")
                         .HasColumnType("TEXT");
 
                     b.Property<TimeSpan?>("HoraFim")
                         .HasColumnType("TEXT");
 
                     b.Property<TimeSpan?>("HoraInicio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("InicioReal")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("MotoristaId")

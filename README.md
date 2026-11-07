@@ -23,7 +23,7 @@ O projeto está funcional para desenvolvimento local e possui:
 - hash de senhas com PBKDF2 por meio de `IPasswordService`;
 - perfil de usuário com edição de nome, e-mail e foto de perfil;
 - tema claro/escuro com preferência persistida;
-- cadastro público restrito a Alunos, com rate limiting e antiforgery;
+- criação de contas restrita ao Administrador, com perfil operacional de Aluno/Motorista criado ou vinculado na mesma transação;
 - interface Razor responsiva com Bootstrap, jQuery e CSS próprio;
 - integração opcional com Google Maps (chave por variável de ambiente, com fallback);
 - imagem Docker pronta para publicação em ambiente que forneça a porta 8080.
@@ -77,13 +77,14 @@ Na primeira inicialização, a aplicação aplica as migrações existentes no a
 
 ### Contas de demonstração
 
-As contas abaixo são criadas somente quando `ASPNETCORE_ENVIRONMENT=Development` e o banco ainda não possui usuários:
+As contas abaixo são criadas somente quando `ASPNETCORE_ENVIRONMENT=Development`:
 
-| Perfil | E-mail | Senha |
-|---|---|---|
-| Administrador | `admin@easyvan.com` | `123456` |
-| Motorista | `motorista@easyvan.com` | `123456` |
-| Aluno | `aluno@easyvan.com` | `123456` |
+| Perfil | E-mail | Senha | Condição |
+|---|---|---|---|
+| Administrador | `admin@easyvan.com` | `123456` | banco ainda sem usuários |
+| Motorista | `motorista@easyvan.com` | `123456` | banco ainda sem usuários |
+| Aluno | `aluno@easyvan.com` | `123456` | banco ainda sem usuários |
+| Administrador | `email@email.com` | `123456` | criada se o e-mail ainda não existir |
 
 Essas credenciais são exclusivas para demonstração local. Não as utilize em produção.
 
@@ -157,7 +158,7 @@ dotnet build
 dotnet test
 ```
 
-O projeto inclui **57 testes automatizados** cobrindo:
+O projeto inclui **89 testes automatizados** cobrindo:
 
 - Hash de senhas PBKDF2 (legado e atual);
 - Validação de senha (6 a 20 caracteres);
@@ -165,6 +166,10 @@ O projeto inclui **57 testes automatizados** cobrindo:
 - Regras operacionais: conflito de horário (motorista/van), capacidade excedida, viagem sem motorista/van, dados inconsistentes;
 - Transições de ciclo de vida de viagens (válidas e inválidas);
 - Validação de nova viagem (van/motorista/rota inexistentes, conflitos);
+- Agenda de viagens: data/horário no passado, chegada anterior à partida, viagem que atravessa a meia-noite e fuso de São Paulo;
+- Criação de viagem com gravação de presenças, ordenação cronológica e separação entre horário previsto e real;
+- Criação/vínculo automático de perfil de Aluno/Motorista a partir da conta, incluindo conflitos de e-mail e de vínculo;
+- Vans: bloqueio de placa duplicada, motorista/rota obrigatórios, modelo obrigatório no formulário, busca com um caractere e identificação por placa + modelo;
 - Status da interface (rótulos e classes CSS);
 - Validação brasileira de telefone e CNH.
 

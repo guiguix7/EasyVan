@@ -1,7 +1,9 @@
 @model dynamic
+@using EasyVan.Services
 
 @{
     ViewData["Title"] = "Minha van";
+    var vanAtual = Model.Van as EasyVan.Models.Van;
     var rota = Model.Rota as EasyVan.Models.Rota;
     var mapaVan = rota == null ? null : new EasyVan.Models.MapaRotaViewModel
     {
@@ -21,17 +23,17 @@
     {
         <header class="ev-detail-head">
             <div>
-                <p class="ev-eyebrow">Área do aluno · Van #@Model.Van.Id</p>
+                <p class="ev-eyebrow">Área do aluno · Minha van</p>
                 <div class="ev-detail-head__identity">
-                    <span class="ev-plate ev-plate--lg">@Model.Van.Plate</span>
-                    <partial name="_StatusBadge" model="Model.Van.Status" />
+                    <span class="ev-plate ev-plate--lg">@vanAtual!.Plate</span>
+                    <partial name="_StatusBadge" model="vanAtual.Status" />
                 </div>
                 <p class="ev-detail-head__meta">
                     <partial name="_Icon" model='"route"' />
-                    @(string.IsNullOrWhiteSpace((string)Model.Van.Route) ? "Rota não informada" : Model.Van.Route)
+                    @VanUi.Rota(vanAtual)
                     <span aria-hidden="true">·</span>
                     <partial name="_Icon" model='"clock"' />
-                    @(string.IsNullOrWhiteSpace((string)Model.Van.Schedule) ? "Horário não informado" : Model.Van.Schedule)
+                    @(string.IsNullOrWhiteSpace(vanAtual.Schedule) ? "Horário não informado" : vanAtual.Schedule)
                 </p>
             </div>
         </header>
@@ -47,23 +49,27 @@
                 <dl class="ev-data">
                     <div class="ev-data__item">
                         <dt>Placa</dt>
-                        <dd><span class="ev-plate">@Model.Van.Plate</span></dd>
+                        <dd><span class="ev-plate">@vanAtual.Plate</span></dd>
+                    </div>
+                    <div class="ev-data__item">
+                        <dt>Modelo</dt>
+                        <dd>@(string.IsNullOrWhiteSpace(vanAtual.Modelo) ? "Modelo não informado" : vanAtual.Modelo)</dd>
                     </div>
                     <div class="ev-data__item">
                         <dt>Situação</dt>
-                        <dd>@Model.Van.Status</dd>
+                        <dd>@vanAtual.Status</dd>
                     </div>
                     <div class="ev-data__item">
                         <dt>Rota</dt>
-                        <dd>@(string.IsNullOrWhiteSpace((string)Model.Van.Route) ? "Não informada" : Model.Van.Route)</dd>
+                        <dd>@VanUi.Rota(vanAtual)</dd>
                     </div>
                     <div class="ev-data__item">
                         <dt>Horários</dt>
-                        <dd>@(string.IsNullOrWhiteSpace((string)Model.Van.Schedule) ? "Não informados" : Model.Van.Schedule)</dd>
+                        <dd>@(string.IsNullOrWhiteSpace(vanAtual.Schedule) ? "Não informados" : vanAtual.Schedule)</dd>
                     </div>
                     <div class="ev-data__item">
                         <dt>Capacidade</dt>
-                        <dd>@Model.Van.Capacity lugares</dd>
+                        <dd>@vanAtual.Capacity lugares</dd>
                     </div>
                     <div class="ev-data__item">
                         <dt>Motorista</dt>
@@ -71,7 +77,7 @@
                     </div>
                     <div class="ev-data__item ev-data__item--wide">
                         <dt>Descrição</dt>
-                        <dd>@(string.IsNullOrWhiteSpace((string)Model.Van.Description) ? "Sem descrição cadastrada." : Model.Van.Description)</dd>
+                        <dd>@(string.IsNullOrWhiteSpace(vanAtual.Description) ? "Sem descrição cadastrada." : vanAtual.Description)</dd>
                     </div>
                 </dl>
             </section>

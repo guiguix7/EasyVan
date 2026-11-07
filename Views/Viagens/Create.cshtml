@@ -1,8 +1,10 @@
 @model EasyVan.Models.ViagemFormViewModel
+@using EasyVan.Services
 
 @{
     ViewData["Title"] = "Nova viagem";
     var semCadastros = !Model.Vans.Any() || !Model.Motoristas.Any() || !Model.Rotas.Any();
+    var hoje = ViagemAgenda.AgoraLocal().ToString("yyyy-MM-dd");
 }
 
 <section class="ev-page">
@@ -32,7 +34,7 @@
 
     <form asp-action="Create" method="post" class="ev-form-layout">
         <div class="ev-form-main">
-            <div asp-validation-summary="ModelOnly" class="ev-notice ev-notice--danger" role="alert"></div>
+            <div asp-validation-summary="All" class="ev-notice ev-notice--danger" role="alert"></div>
 
             <section class="ev-panel ev-form-section" aria-labelledby="recursos-viagem">
                 <div class="ev-form-section__head">
@@ -78,19 +80,25 @@
                 </div>
                 <div class="ev-form-grid">
                     <div class="ev-field">
-                        <label asp-for="Data" class="form-label">Data <span class="ev-required" aria-hidden="true">*</span></label>
-                        <input asp-for="Data" class="form-control" type="date" />
+                        <label asp-for="Data" class="form-label">Data de partida <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Data" class="form-control" type="date" min="@hoje" />
                         <span asp-validation-for="Data" class="ev-form-validation"></span>
                     </div>
 
                     <div class="ev-field">
-                        <label asp-for="HoraInicio" class="form-label">Início</label>
+                        <label asp-for="HoraInicio" class="form-label">Horário de partida <span class="ev-required" aria-hidden="true">*</span></label>
                         <input asp-for="HoraInicio" class="form-control" type="time" />
                         <span asp-validation-for="HoraInicio" class="ev-form-validation"></span>
                     </div>
 
                     <div class="ev-field">
-                        <label asp-for="HoraFim" class="form-label">Término</label>
+                        <label asp-for="DataChegada" class="form-label">Data de chegada <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="DataChegada" class="form-control" type="date" min="@hoje" />
+                        <span asp-validation-for="DataChegada" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="HoraFim" class="form-label">Horário de chegada <span class="ev-required" aria-hidden="true">*</span></label>
                         <input asp-for="HoraFim" class="form-control" type="time" />
                         <span asp-validation-for="HoraFim" class="ev-form-validation"></span>
                     </div>

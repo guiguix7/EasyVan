@@ -89,6 +89,13 @@ namespace Gerenciamento_de_Van.Controllers
                 ModelState.AddModelError(nameof(model.RotaId), "Selecione uma rota cadastrada.");
             if (!ModelState.IsValid) return View(model);
 
+            var placa = model.Plate.Trim().ToUpperInvariant();
+            if (await _db.Vans.AnyAsync(v => v.Plate == placa))
+            {
+                ModelState.AddModelError(nameof(model.Plate), "Já existe uma van com esta placa.");
+                return View(model);
+            }
+
             var van = new Van();
             AplicarFormulario(van, model, motorista!, rota!);
             _db.Vans.Add(van);
@@ -111,6 +118,7 @@ namespace Gerenciamento_de_Van.Controllers
             {
                 Id = van.Id,
                 Plate = van.Plate,
+                Modelo = van.Modelo ?? string.Empty,
                 Capacity = van.Capacity,
                 Status = van.Status,
                 Description = van.Description,
@@ -158,6 +166,13 @@ namespace Gerenciamento_de_Van.Controllers
             if (rota == null)
                 ModelState.AddModelError(nameof(model.RotaId), "Selecione uma rota cadastrada.");
             if (!ModelState.IsValid) return View(model);
+
+            var placa = model.Plate.Trim().ToUpperInvariant();
+            if (await _db.Vans.AnyAsync(v => v.Plate == placa && v.Id != id))
+            {
+                ModelState.AddModelError(nameof(model.Plate), "Já existe uma van com esta placa.");
+                return View(model);
+            }
 
             AplicarFormulario(existente, model, motorista!, rota!);
             await _db.SaveChangesAsync();
@@ -233,6 +248,7 @@ namespace Gerenciamento_de_Van.Controllers
                 .ToList();
 
             van.Plate = model.Plate.Trim().ToUpperInvariant();
+            van.Modelo = model.Modelo.Trim();
             van.Capacity = model.Capacity;
             van.Status = model.Status;
             van.Description = model.Description?.Trim() ?? string.Empty;
@@ -324,11 +340,11 @@ namespace Gerenciamento_de_Van.Controllers
             return consulta.ToList();
         }
 
-        // Campos pesquisáveis: placa (com e sem hífen), motorista, rota e descrição.
+        // Campos pesquisáveis: placa (com e sem hífen), modelo, motorista, rota e descrição.
         private static string MontarTextoDeBusca(Van van)
         {
             var placa = NormalizarTexto(van.Plate);
-            return string.Join(' ', placa, placa.Replace("-", string.Empty), NormalizarTexto(van.Driver), NormalizarTexto(van.Route), NormalizarTexto(van.Description));
+            return string.Join(' ', placa, placa.Replace("-", string.Empty), NormalizarTexto(van.Modelo), NormalizarTexto(van.Driver), NormalizarTexto(van.Route), NormalizarTexto(van.Description));
         }
 
         // Minúsculas e sem acentos: "João" -> "joao", "Manutenção" -> "manutencao".

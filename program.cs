@@ -60,6 +60,7 @@ builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IFotoPerfilService, FotoPerfilService>();
 builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
 builder.Services.AddScoped<ValidacaoOperacional>();
+builder.Services.AddScoped<PerfilUsuarioService>();
 builder.Services.AddScoped<CentroOperacoesService>();
 builder.Services.AddSingleton(new GoogleMapsOptions
 {

@@ -1,8 +1,12 @@
 @model EasyVan.Models.Van
+@using EasyVan.Services
 
 @{
     ViewData["Title"] = "Detalhes da van";
     var descricao = string.IsNullOrWhiteSpace(Model.Description) ? "Sem descrição cadastrada." : Model.Description;
+    var motorista = VanUi.Motorista(Model);
+    var rota = VanUi.Rota(Model);
+    var identificacao = VanUi.Identificacao(Model);
 }
 
 <section class="ev-page">
@@ -13,17 +17,20 @@
 
     <header class="ev-detail-head">
         <div>
-            <p class="ev-eyebrow">Van #@Model.Id</p>
+            <p class="ev-eyebrow">Veículo da frota</p>
             <div class="ev-detail-head__identity">
                 <h1><span class="ev-plate ev-plate--lg">@Model.Plate</span></h1>
                 <partial name="_StatusBadge" model="Model.Status" />
             </div>
             <p class="ev-detail-head__meta">
+                <partial name="_Icon" model='"van"' />
+                @identificacao
+                <span aria-hidden="true">·</span>
                 <partial name="_Icon" model='"driver"' />
-                @(string.IsNullOrWhiteSpace(Model.Driver) ? "Motorista não informado" : Model.Driver)
+                @motorista
                 <span aria-hidden="true">·</span>
                 <partial name="_Icon" model='"route"' />
-                @(string.IsNullOrWhiteSpace(Model.Route) ? "Rota não informada" : Model.Route)
+                @rota
             </p>
         </div>
 
@@ -56,12 +63,16 @@
                     <dd class="is-mono">@Model.Plate</dd>
                 </div>
                 <div class="ev-data__item">
+                    <dt>Modelo</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(Model.Modelo) ? "Modelo não informado" : Model.Modelo)</dd>
+                </div>
+                <div class="ev-data__item">
                     <dt>Capacidade</dt>
                     <dd>@Model.Capacity lugares</dd>
                 </div>
                 <div class="ev-data__item">
                     <dt>Motorista no cadastro</dt>
-                    <dd>@(string.IsNullOrWhiteSpace(Model.Driver) ? "Não informado" : Model.Driver)</dd>
+                    <dd>@motorista</dd>
                 </div>
                 <div class="ev-data__item">
                     <dt>Horários</dt>
@@ -69,7 +80,7 @@
                 </div>
                 <div class="ev-data__item ev-data__item--wide">
                     <dt>Rota</dt>
-                    <dd>@(string.IsNullOrWhiteSpace(Model.Route) ? "Não informada" : Model.Route)</dd>
+                    <dd>@rota</dd>
                 </div>
                 <div class="ev-data__item ev-data__item--wide">
                     <dt>Descrição</dt>
@@ -105,8 +116,8 @@
                     <h2>Resumo</h2>
                     <dl class="ev-data ev-data--stacked">
                         <div class="ev-data__item">
-                            <dt>Identificador</dt>
-                            <dd class="is-mono">#@Model.Id</dd>
+                            <dt>Identificação</dt>
+                            <dd>@identificacao</dd>
                         </div>
                         <div class="ev-data__item">
                             <dt>Ocupação máxima</dt>

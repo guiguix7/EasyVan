@@ -15,12 +15,18 @@ namespace EasyVan.Controllers
         private readonly ApplicationDbContext _db;
         private readonly ValidacaoOperacional _validacao;
         private readonly IAuditoriaService _auditoria;
+        private readonly ILogger<ViagensController> _logger;
 
-        public ViagensController(ApplicationDbContext db, ValidacaoOperacional validacao, IAuditoriaService auditoria)
+        public ViagensController(
+            ApplicationDbContext db,
+            ValidacaoOperacional validacao,
+            IAuditoriaService auditoria,
+            ILogger<ViagensController> logger)
         {
             _db = db;
             _validacao = validacao;
             _auditoria = auditoria;
+            _logger = logger;
         }
 
         private string? NomeUsuarioLogado()
@@ -53,9 +59,7 @@ namespace EasyVan.Controllers
             IQueryable<Viagem> consulta = _db.Viagens
                 .Include(v => v.Van)
                 .Include(v => v.Motorista)
-                .Include(v => v.Rota)
-                .OrderByDescending(v => v.Data)
-                .ThenByDescending(v => v.Id);
+                .Include(v => v.Rota);
 
             if (papel == "Motorista")
             {
@@ -70,7 +74,13 @@ namespace EasyVan.Controllers
                 consulta = consulta.Where(v => v.MotoristaId == motorista.Id);
             }
 
-            var viagens = await consulta.ToListAsync();
+            // A ordenação por TimeSpan não é traduzida pelo SQLite (coluna TEXT);
+            // ordenamos em memória para manter o mesmo resultado em SQLite e PostgreSQL.
+            var viagens = (await consulta.ToListAsync())
+                .OrderBy(v => v.Data)
+                .ThenBy(v => v.HoraInicio ?? TimeSpan.MaxValue)
+                .ThenBy(v => v.Id)
+                .ToList();
             ViewData["Papel"] = papel;
             ViewData["MotoristaId"] = motorista?.Id;
             ViewData["Calendario"] = CriarCalendario(viagens, mes, ano);
@@ -109,7 +119,14 @@ namespace EasyVan.Controllers
         // Nova viagem (Admin ou Motorista).
         public async Task<IActionResult> Create()
         {
-            var model = new ViagemFormViewModel { Data = DateTime.Today };
+            var hoje = ViagemAgenda.AgoraLocal().Date;
+            var model = new ViagemFormViewModel
+            {
+                Data = hoje,
+                DataChegada = hoje,
+                HoraInicio = "07:00",
+                HoraFim = "08:00"
+            };
             await PrepararFormularioAsync(model);
             return View(model);
         }
@@ -136,7 +153,7 @@ namespace EasyVan.Controllers
             if (!await _db.Vans.AnyAsync(v => v.Id == model.VanId))
                 ModelState.AddModelError(nameof(model.VanId), "Selecione uma van cadastrada.");
             if (!await _db.Motoristas.AnyAsync(m => m.Id == model.MotoristaId && m.Ativo))
-                ModelState.AddModelError(nameof(model.MotoristaId), "Selecione um motorista ativo.");
+                ModelState.AddModelError(nameof(model.MotoristaId), "Selecione um motorista ativo e cadastrado.");
             if (!await _db.Rotas.AnyAsync(r => r.Id == model.RotaId && r.Ativo))
                 ModelState.AddModelError(nameof(model.RotaId), "Selecione uma rota ativa.");
 
@@ -145,41 +162,210 @@ namespace EasyVan.Controllers
                 return View(model);
             }
 
-            var fusoBrasil = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-            var dataLocal = DateTime.SpecifyKind(model.Data.Date, DateTimeKind.Unspecified);
+            var errosAgenda = ViagemAgenda.ValidarPlanejamento(
+                model.Data,
+                model.HoraInicio,
+                model.DataChegada,
+                model.HoraFim,
+                exigirFuturo: true);
 
-            var viagem = new Viagem
+            foreach (var erro in errosAgenda)
             {
-                VanId = model.VanId,
-                MotoristaId = model.MotoristaId,
-                RotaId = model.RotaId,
-                Data = TimeZoneInfo.ConvertTimeToUtc(dataLocal, fusoBrasil),
-                HoraInicio = string.IsNullOrWhiteSpace(model.HoraInicio) ? null : TimeSpan.ParseExact(model.HoraInicio, @"hh\:mm", CultureInfo.InvariantCulture),
-                HoraFim = string.IsNullOrWhiteSpace(model.HoraFim) ? null : TimeSpan.ParseExact(model.HoraFim, @"hh\:mm", CultureInfo.InvariantCulture),
-                Observacao = Services.ValidacaoBrasil.LimparTexto(model.Observacao, 500),
-                Status = "Agendada",
-                DataCriacao = DateTime.UtcNow
-            };
+                ModelState.AddModelError(string.Empty, erro);
+            }
 
-            _db.Viagens.Add(viagem);
-            await _db.SaveChangesAsync();
+            if (errosAgenda.Count > 0)
+            {
+                return View(model);
+            }
 
-            await CriarPresencasAsync(viagem.Id);
-            TempData["Sucesso"] = "Viagem agendada com sucesso.";
+            if (!ValidacaoBrasil.HorarioValido(model.HoraInicio, out var inicio)
+                || !ValidacaoBrasil.HorarioValido(model.HoraFim, out var fim))
+            {
+                ModelState.AddModelError(string.Empty, "Use horários válidos no formato HH:mm.");
+                return View(model);
+            }
 
-            _auditoria.Registrar(
-                UsuarioIdLogado(),
-                NomeUsuarioLogado(),
-                "Criacao",
-                "Viagem",
-                viagem.Id,
-                $"Viagem #{viagem.Id} criada: {viagem.Status}",
-                $"VanId: {viagem.VanId}, MotoristaId: {viagem.MotoristaId}, RotaId: {viagem.RotaId}, Data: {viagem.Data:dd/MM/yyyy}");
+            await using var transacao = await _db.Database.BeginTransactionAsync();
 
-            return RedirectToAction(nameof(Details), new { id = viagem.Id });
+            try
+            {
+                var viagem = new Viagem
+                {
+                    VanId = model.VanId,
+                    MotoristaId = model.MotoristaId,
+                    RotaId = model.RotaId,
+                    Data = DateTime.SpecifyKind(model.Data.Date, DateTimeKind.Unspecified),
+                    DataChegada = DateTime.SpecifyKind(model.DataChegada.Date, DateTimeKind.Unspecified),
+                    HoraInicio = inicio,
+                    HoraFim = fim,
+                    Observacao = ValidacaoBrasil.LimparTexto(model.Observacao, 500),
+                    Status = "Agendada",
+                    DataCriacao = DateTime.UtcNow
+                };
+
+                _db.Viagens.Add(viagem);
+                await _db.SaveChangesAsync();
+
+                await CriarPresencasAsync(viagem.Id);
+
+                _auditoria.Registrar(
+                    UsuarioIdLogado(),
+                    NomeUsuarioLogado(),
+                    "Criacao",
+                    "Viagem",
+                    viagem.Id,
+                    $"Viagem criada para {ViagemAgenda.FormatarData(viagem.Data)} às {inicio:hh\\:mm}",
+                    $"VanId: {viagem.VanId}, MotoristaId: {viagem.MotoristaId}, RotaId: {viagem.RotaId}");
+
+                await _db.SaveChangesAsync();
+                await transacao.CommitAsync();
+
+                TempData["Sucesso"] = "Viagem agendada com sucesso.";
+                return RedirectToAction(nameof(Details), new { id = viagem.Id });
+            }
+            catch (Exception ex)
+            {
+                await transacao.RollbackAsync();
+                _logger.LogError(ex, "Falha ao criar viagem. VanId={VanId}, MotoristaId={MotoristaId}, RotaId={RotaId}",
+                    model.VanId, model.MotoristaId, model.RotaId);
+                ModelState.AddModelError(string.Empty, "Não foi possível agendar a viagem. Verifique os dados e tente novamente.");
+                return View(model);
+            }
         }
 
-        // Iniciar viagem: Confirmada/Agendada -> EmAndamento, registra HoraInicio.
+        // Edição de viagem ainda não iniciada. Datas passadas continuam bloqueadas.
+        public async Task<IActionResult> Edit(int id)
+        {
+            var viagem = await _db.Viagens.FindAsync(id);
+            if (viagem == null) return NotFound();
+
+            if (!await PodeOperarAsync(viagem))
+                return RedirectToAction("AcessoRestrito", "Home");
+
+            if (viagem.Status is not ("Agendada" or "Confirmada"))
+            {
+                TempData["Erro"] = "Somente viagens agendadas ou confirmadas podem ser editadas.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var model = new ViagemFormViewModel
+            {
+                Id = viagem.Id,
+                VanId = viagem.VanId,
+                MotoristaId = viagem.MotoristaId,
+                RotaId = viagem.RotaId,
+                Data = viagem.Data.Date,
+                DataChegada = (viagem.DataChegada ?? viagem.Data).Date,
+                HoraInicio = viagem.HoraInicio?.ToString(@"hh\:mm"),
+                HoraFim = viagem.HoraFim?.ToString(@"hh\:mm"),
+                Observacao = viagem.Observacao
+            };
+
+            await PrepararFormularioAsync(model);
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, ViagemFormViewModel model)
+        {
+            var viagem = await _db.Viagens.FindAsync(id);
+            if (viagem == null) return NotFound();
+
+            if (!await PodeOperarAsync(viagem))
+                return RedirectToAction("AcessoRestrito", "Home");
+
+            if (viagem.Status is not ("Agendada" or "Confirmada"))
+            {
+                TempData["Erro"] = "Somente viagens agendadas ou confirmadas podem ser editadas.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            model.Id = id;
+
+            if (PapelLogado() == "Motorista")
+            {
+                var motorista = await MotoristaDoUsuarioAsync();
+                if (motorista == null)
+                {
+                    ModelState.AddModelError(string.Empty, "Seu usuário ainda não está vinculado a um perfil de motorista.");
+                }
+                else
+                {
+                    model.MotoristaId = motorista.Id;
+                }
+            }
+
+            await PrepararFormularioAsync(model);
+
+            if (!await _db.Vans.AnyAsync(v => v.Id == model.VanId))
+                ModelState.AddModelError(nameof(model.VanId), "Selecione uma van cadastrada.");
+            if (!await _db.Motoristas.AnyAsync(m => m.Id == model.MotoristaId && m.Ativo))
+                ModelState.AddModelError(nameof(model.MotoristaId), "Selecione um motorista ativo e cadastrado.");
+            if (!await _db.Rotas.AnyAsync(r => r.Id == model.RotaId && r.Ativo))
+                ModelState.AddModelError(nameof(model.RotaId), "Selecione uma rota ativa.");
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var errosAgenda = ViagemAgenda.ValidarPlanejamento(
+                model.Data,
+                model.HoraInicio,
+                model.DataChegada,
+                model.HoraFim,
+                exigirFuturo: true);
+
+            foreach (var erro in errosAgenda)
+            {
+                ModelState.AddModelError(string.Empty, erro);
+            }
+
+            if (errosAgenda.Count > 0
+                || !ValidacaoBrasil.HorarioValido(model.HoraInicio, out var inicio)
+                || !ValidacaoBrasil.HorarioValido(model.HoraFim, out var fim))
+            {
+                return View(model);
+            }
+
+            var dataAnterior = viagem.Data;
+            var horarioAnterior = viagem.HoraInicio;
+
+            viagem.VanId = model.VanId;
+            viagem.MotoristaId = model.MotoristaId;
+            viagem.RotaId = model.RotaId;
+            viagem.Data = DateTime.SpecifyKind(model.Data.Date, DateTimeKind.Unspecified);
+            viagem.DataChegada = DateTime.SpecifyKind(model.DataChegada.Date, DateTimeKind.Unspecified);
+            viagem.HoraInicio = inicio;
+            viagem.HoraFim = fim;
+            viagem.Observacao = ValidacaoBrasil.LimparTexto(model.Observacao, 500);
+
+            try
+            {
+                _auditoria.Registrar(
+                    UsuarioIdLogado(),
+                    NomeUsuarioLogado(),
+                    "Edicao",
+                    "Viagem",
+                    viagem.Id,
+                    $"Viagem editada para {ViagemAgenda.FormatarData(viagem.Data)} às {inicio:hh\\:mm}",
+                    $"Antes: {dataAnterior:dd/MM/yyyy} {horarioAnterior:hh\\:mm}; depois: {viagem.Data:dd/MM/yyyy} {inicio:hh\\:mm}");
+
+                await _db.SaveChangesAsync();
+                TempData["Sucesso"] = "Viagem atualizada com sucesso.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Falha ao editar viagem {ViagemId}", id);
+                ModelState.AddModelError(string.Empty, "Não foi possível atualizar a viagem. Tente novamente.");
+                return View(model);
+            }
+        }
+
+        // Iniciar viagem: Confirmada/Agendada -> EmAndamento, registra o instante real.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Start(int id)
@@ -224,7 +410,7 @@ namespace EasyVan.Controllers
             }
 
             viagem.Status = "EmAndamento";
-            viagem.HoraInicio = DateTime.Now.TimeOfDay;
+            viagem.InicioReal = DateTime.UtcNow;
             await _db.SaveChangesAsync();
 
             _auditoria.Registrar(
@@ -233,8 +419,8 @@ namespace EasyVan.Controllers
                 "MudancaEstado",
                 "Viagem",
                 viagem.Id,
-                $"Viagem #{viagem.Id} iniciada: {viagem.Status} → EmAndamento",
-                $"Van: {van.Plate}, Motorista: {motorista.Nome}, Data: {viagem.Data:dd/MM/yyyy}");
+                $"Viagem iniciada: {viagem.Status} → EmAndamento",
+                $"Van: {van.Plate}, Motorista: {motorista.Nome}, Início real: {viagem.InicioReal:O}");
 
             TempData["Sucesso"] = "Viagem iniciada com sucesso.";
             return RedirectToAction(nameof(Details), new { id });
@@ -259,7 +445,11 @@ namespace EasyVan.Controllers
             }
 
             viagem.Status = "Finalizada";
-            viagem.HoraFim = DateTime.Now.TimeOfDay;
+            viagem.FimReal = DateTime.UtcNow;
+            if (viagem.InicioReal == null || viagem.FimReal < viagem.InicioReal)
+            {
+                viagem.InicioReal = viagem.FimReal;
+            }
             await _db.SaveChangesAsync();
 
             _auditoria.Registrar(
@@ -268,8 +458,8 @@ namespace EasyVan.Controllers
                 "MudancaEstado",
                 "Viagem",
                 viagem.Id,
-                $"Viagem #{viagem.Id} finalizada: {viagem.Status} → Finalizada",
-                $"Data: {viagem.Data:dd/MM/yyyy}");
+                $"Viagem finalizada: {viagem.Status} → Finalizada",
+                $"Início real: {viagem.InicioReal:O}, Fim real: {viagem.FimReal:O}");
 
             TempData["Sucesso"] = "Viagem finalizada com sucesso.";
             return RedirectToAction(nameof(Details), new { id });
@@ -319,10 +509,7 @@ namespace EasyVan.Controllers
             var conflitosImpeditivos = conflitos.Where(c => !c.Valido).ToList();
             if (conflitosImpeditivos.Any())
             {
-                foreach (var conflito in conflitosImpeditivos)
-                {
-                    ModelState.AddModelError(string.Empty, conflito.Descricao);
-                }
+                TempData["Erro"] = string.Join(" ", conflitosImpeditivos.Select(c => c.Descricao));
                 return RedirectToAction(nameof(Details), new { id });
             }
 
@@ -507,7 +694,7 @@ namespace EasyVan.Controllers
             }
 
             model.Vans = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
-                vans.Select(v => new { v.Id, Nome = $"{v.Plate} · {v.Capacity} lugares" }),
+                vans.Select(v => new { v.Id, Nome = $"{VanUi.Identificacao(v)} · {v.Capacity} lugares" }),
                 "Id", "Nome", model.VanId);
             model.Motoristas = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(motoristas, "Id", "Nome", model.MotoristaId);
             model.Rotas = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
@@ -517,7 +704,7 @@ namespace EasyVan.Controllers
 
         private static CalendarioViagensViewModel CriarCalendario(IReadOnlyCollection<Viagem> viagens, int? mes, int? ano)
         {
-            var hojeLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo")).Date;
+            var hojeLocal = ViagemAgenda.AgoraLocal().Date;
             var mesFinal = mes is >= 1 and <= 12 ? mes.Value : hojeLocal.Month;
             var anoFinal = ano is >= 1 and <= 9999 ? ano.Value : hojeLocal.Year;
             var referencia = new DateTime(anoFinal, mesFinal, 1);
@@ -530,7 +717,7 @@ namespace EasyVan.Controllers
                 var dia = inicio.AddDays(i);
                 var doMes = dia.Month == referencia.Month && dia.Year == referencia.Year;
                 var viagensDoDia = doMes
-                    ? viagens.Where(v => ParaDataLocal(v.Data).Date == dia.Date)
+                    ? viagens.Where(v => v.Data.Date == dia.Date)
                         .OrderBy(v => v.HoraInicio ?? TimeSpan.MaxValue)
                         .ThenBy(v => v.Id)
                         .ToList()
@@ -553,12 +740,6 @@ namespace EasyVan.Controllers
                 MesSeguinte = referencia.AddMonths(1).ToString("yyyy-MM"),
                 Dias = dias
             };
-        }
-
-        private static DateTime ParaDataLocal(DateTime data)
-        {
-            var utc = data.Kind == DateTimeKind.Utc ? data : DateTime.SpecifyKind(data, DateTimeKind.Utc);
-            return TimeZoneInfo.ConvertTimeFromUtc(utc, TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo")).Date;
         }
     }
 }

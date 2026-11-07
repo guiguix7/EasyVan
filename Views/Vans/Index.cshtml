@@ -1,4 +1,5 @@
 @model EasyVan.Models.VanIndexViewModel
+@using EasyVan.Services
 
 @{
     ViewData["Title"] = "Vans";
@@ -39,7 +40,7 @@
                     <label for="busca" class="form-label">Buscar veículo</label>
                     <input type="search" id="busca" name="busca" value="@Model.Filtro.Busca"
                            maxlength="100" class="form-control" autocomplete="off"
-                           placeholder="Placa, motorista, rota ou descrição"
+                           placeholder="Placa, modelo, motorista, rota ou descrição"
                            aria-invalid="@(erroBusca is null ? null : "true")"
                            aria-describedby="@(erroBusca is null ? null : "busca-erro")" />
                     @if (erroBusca is not null)
@@ -186,13 +187,13 @@
                             <tr>
                                 <td>
                                     <span class="ev-plate">@van.Plate</span>
-                                    <span class="ev-table__secondary">Van #@van.Id</span>
+                                    <span class="ev-table__secondary">@(string.IsNullOrWhiteSpace(van.Modelo) ? "Modelo não informado" : van.Modelo)</span>
                                 </td>
                                 <td>
-                                    <span class="ev-table__primary">@(string.IsNullOrWhiteSpace(van.Driver) ? "Não informado" : van.Driver)</span>
+                                    <span class="ev-table__primary">@VanUi.Motorista(van)</span>
                                 </td>
                                 <td class="is-numeric">@van.Capacity lugares</td>
-                                <td>@van.Route</td>
+                                <td>@VanUi.Rota(van)</td>
                                 <td class="is-numeric">@van.Schedule</td>
                                 <td><partial name="_StatusBadge" model="van.Status" /></td>
                                 <td class="is-actions">
@@ -223,14 +224,14 @@
                     <div class="ev-record__head">
                         <div>
                             <h2 class="ev-record__title"><span class="ev-plate">@van.Plate</span></h2>
-                            <span class="ev-record__meta">Van #@van.Id</span>
+                            <span class="ev-record__meta">@(string.IsNullOrWhiteSpace(van.Modelo) ? "Modelo não informado" : van.Modelo)</span>
                         </div>
                         <partial name="_StatusBadge" model="van.Status" />
                     </div>
                     <dl class="ev-record__data">
                         <div>
                             <dt>Motorista</dt>
-                            <dd>@(string.IsNullOrWhiteSpace(van.Driver) ? "Não informado" : van.Driver)</dd>
+                            <dd>@VanUi.Motorista(van)</dd>
                         </div>
                         <div>
                             <dt>Capacidade</dt>
@@ -238,7 +239,7 @@
                         </div>
                         <div>
                             <dt>Rota</dt>
-                            <dd>@van.Route</dd>
+                            <dd>@VanUi.Rota(van)</dd>
                         </div>
                         <div>
                             <dt>Horários</dt>

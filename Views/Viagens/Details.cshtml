@@ -1,5 +1,6 @@
 @model EasyVan.Models.Viagem
 @using EasyVan.Models
+@using EasyVan.Services
 
 @{
     ViewData["Title"] = "Detalhes da viagem";
@@ -44,21 +45,28 @@
 
     <header class="ev-detail-head">
         <div>
-            <p class="ev-eyebrow">Operação · Viagem #@Model.Id</p>
+            <p class="ev-eyebrow">Operação · Viagem</p>
             <div class="ev-detail-head__identity">
-                <h1>@(Model.Rota?.Nome ?? $"Viagem #{Model.Id}")</h1>
+                <h1>@(Model.Rota?.Nome ?? "Viagem")</h1>
                 <partial name="_StatusBadge" model="Model.Status" />
             </div>
             <p class="ev-detail-head__meta">
                 <partial name="_Icon" model='"calendar"' />
-                @Model.Data.ToString("dd/MM/yyyy")
+                @ViagemAgenda.FormatarData(Model.Data)
                 <span aria-hidden="true">·</span>
                 <partial name="_Icon" model='"clock"' />
-                @Hora(Model.HoraInicio) – @Hora(Model.HoraFim)
+                Previsto: @Hora(Model.HoraInicio) – @Hora(Model.HoraFim)
             </p>
         </div>
 
         <div class="ev-detail-actions">
+            @if (Model.Status == "Agendada" || Model.Status == "Confirmada")
+            {
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                    <partial name="_Icon" model='"edit"' />
+                    Editar
+                </a>
+            }
             @if (Model.Status == "Agendada")
             {
                 <form asp-action="Start" asp-route-id="@Model.Id" method="post" class="ev-inline-form">
@@ -139,7 +147,10 @@
                             @if (Model.Van != null)
                             {
                                 <span class="ev-plate">@Model.Van.Plate</span>
-                                <span class="ev-data__sub">@Model.Van.Capacity lugares</span>
+                                <span class="ev-data__sub">
+                                    @(string.IsNullOrWhiteSpace(Model.Van.Modelo) ? "Modelo não informado" : Model.Van.Modelo)
+                                    · @Model.Van.Capacity lugares
+                                </span>
                             }
                             else
                             {
@@ -208,18 +219,23 @@
                     <h2>Horários</h2>
                     <dl class="ev-data ev-data--stacked">
                         <div class="ev-data__item">
-                            <dt>Data</dt>
-                            <dd>@Model.Data.ToString("dd/MM/yyyy")</dd>
+                            <dt>Partida prevista</dt>
+                            <dd>@ViagemAgenda.FormatarData(Model.Data) às @Hora(Model.HoraInicio)</dd>
                         </div>
                         <div class="ev-data__item">
-                            <dt>Início registrado</dt>
-                            <dd>@Hora(Model.HoraInicio)</dd>
+                            <dt>Chegada prevista</dt>
+                            <dd>@ViagemAgenda.FormatarData(Model.DataChegada ?? Model.Data) às @Hora(Model.HoraFim)</dd>
                         </div>
                         <div class="ev-data__item">
-                            <dt>Término registrado</dt>
-                            <dd>@Hora(Model.HoraFim)</dd>
+                            <dt>Início real</dt>
+                            <dd>@ViagemAgenda.FormatarDataHora(Model.InicioReal)</dd>
+                        </div>
+                        <div class="ev-data__item">
+                            <dt>Término real</dt>
+                            <dd>@ViagemAgenda.FormatarDataHora(Model.FimReal)</dd>
                         </div>
                     </dl>
+                    <p class="ev-hint mb-0">Horários exibidos no fuso de São Paulo. Início e término reais são registrados pelo sistema.</p>
                 </div>
             </section>
         </aside>

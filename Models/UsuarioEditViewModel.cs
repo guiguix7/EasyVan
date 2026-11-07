@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using EasyVan.Services;
 
 namespace EasyVan.Models
 {
@@ -17,6 +18,19 @@ namespace EasyVan.Models
 
         [Required(ErrorMessage = "Selecione o perfil.")]
         public string RoleManager { get; set; } = "Aluno";
+
+        [TelefoneBrasil]
+        [StringLength(20)]
+        public string? Telefone { get; set; }
+
+        [StringLength(200)]
+        public string? Endereco { get; set; }
+
+        [StringLength(20)]
+        [Display(Name = "CNH")]
+        public string? Cnh { get; set; }
+
+        public bool Ativo { get; set; } = true;
 
         [StringLength(20, MinimumLength = 6, ErrorMessage = "A senha deve ter entre 6 e 20 caracteres.")]
         [DataType(DataType.Password)]

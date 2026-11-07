@@ -1,0 +1,135 @@
+@model EasyVan.Models.ViagemFormViewModel
+@using EasyVan.Services
+
+@{
+    ViewData["Title"] = "Editar viagem";
+    var semCadastros = !Model.Vans.Any() || !Model.Motoristas.Any() || !Model.Rotas.Any();
+    var hoje = ViagemAgenda.AgoraLocal().ToString("yyyy-MM-dd");
+}
+
+<section class="ev-page">
+    <a asp-action="Details" asp-route-id="@Model.Id" class="ev-back">
+        <partial name="_Icon" model='"back"' />
+        Voltar para a viagem
+    </a>
+
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Operação · Viagem agendada</p>
+            <h1>Editar viagem</h1>
+            <p class="ev-page-head__lead">Ajuste os recursos e os horários previstos antes do início da viagem.</p>
+        </div>
+    </header>
+
+    @if (semCadastros)
+    {
+        <div class="ev-notice ev-notice--warning" role="status">
+            <partial name="_Icon" model='"alert"' />
+            <div class="ev-notice__body">
+                <p class="ev-notice__title">Cadastros incompletos</p>
+                <p class="mb-0">É necessário ter ao menos uma van, um motorista ativo e uma rota ativa para editar a viagem.</p>
+            </div>
+        </div>
+    }
+
+    <form asp-action="Edit" method="post" class="ev-form-layout">
+        <div class="ev-form-main">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="All" class="ev-notice ev-notice--danger" role="alert"></div>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="recursos-viagem">
+                <div class="ev-form-section__head">
+                    <h2 id="recursos-viagem">Recursos da viagem</h2>
+                    <p>Van, motorista e rota que serão usados no trajeto.</p>
+                </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="VanId" class="form-label">Van <span class="ev-required" aria-hidden="true">*</span></label>
+                        <select asp-for="VanId" asp-items="Model.Vans" class="form-select">
+                            <option value="">Selecione a van</option>
+                        </select>
+                        <span asp-validation-for="VanId" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="MotoristaId" class="form-label">Motorista <span class="ev-required" aria-hidden="true">*</span></label>
+                        <select asp-for="MotoristaId" asp-items="Model.Motoristas" class="form-select" disabled="@(User.IsInRole("Motorista"))">
+                            <option value="">Selecione o motorista</option>
+                        </select>
+                        @if (User.IsInRole("Motorista"))
+                        {
+                            <input type="hidden" asp-for="MotoristaId" />
+                            <p class="ev-hint">A viagem permanece vinculada ao seu perfil de motorista.</p>
+                        }
+                        <span asp-validation-for="MotoristaId" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field ev-field--full">
+                        <label asp-for="RotaId" class="form-label">Rota <span class="ev-required" aria-hidden="true">*</span></label>
+                        <select asp-for="RotaId" asp-items="Model.Rotas" class="form-select">
+                            <option value="">Selecione a rota</option>
+                        </select>
+                        <span asp-validation-for="RotaId" class="ev-form-validation"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="agenda-viagem">
+                <div class="ev-form-section__head">
+                    <h2 id="agenda-viagem">Agenda prevista</h2>
+                    <p>A chegada deve ser posterior à partida. Datas e horários passados não são aceitos.</p>
+                </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="Data" class="form-label">Data de partida <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Data" class="form-control" type="date" min="@hoje" />
+                        <span asp-validation-for="Data" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="HoraInicio" class="form-label">Horário de partida <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="HoraInicio" class="form-control" type="time" />
+                        <span asp-validation-for="HoraInicio" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="DataChegada" class="form-label">Data de chegada <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="DataChegada" class="form-control" type="date" min="@hoje" />
+                        <span asp-validation-for="DataChegada" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="HoraFim" class="form-label">Horário de chegada <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="HoraFim" class="form-control" type="time" />
+                        <span asp-validation-for="HoraFim" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field ev-field--full">
+                        <label asp-for="Observacao" class="form-label">Observação</label>
+                        <textarea asp-for="Observacao" class="form-control" rows="3" maxlength="500"></textarea>
+                        <span asp-validation-for="Observacao" class="ev-form-validation"></span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="ev-form-actions">
+                <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </div>
+
+        <aside class="ev-form-aside">
+            <section class="ev-panel">
+                <div class="ev-panel__body">
+                    <h2>Viagem em andamento</h2>
+                    <p>Os horários reais de início e fim são registrados automaticamente pelo sistema e não podem ser editados por este formulário.</p>
+                    <p class="mb-0 text-muted small">A edição fica disponível enquanto a viagem está agendada ou confirmada.</p>
+                </div>
+            </section>
+        </aside>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

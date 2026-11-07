@@ -60,8 +60,8 @@ Não apresentar como existente aquilo que ainda não está implementado. Permane
 
 ## Próximas prioridades
 
-- restringir o papel permitido no cadastro público;
+- manter o cadastro de contas restrito ao Administrador e revisar contas legadas;
 - revisar e atualizar a dependência SQLite com vulnerabilidade reportada;
-- ampliar testes de controllers, serviços e fluxos de autorização;
+- ampliar testes de integração HTTP e fluxos de autorização;
 - validar acessibilidade e comportamento visual em desktop e mobile;
 - avaliar o isolamento de dados antes de qualquer multi-tenancy.

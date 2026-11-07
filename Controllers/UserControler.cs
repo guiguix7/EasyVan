@@ -16,11 +16,19 @@ namespace EasyVan.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly IPasswordService _senha;
+        private readonly PerfilUsuarioService _perfil;
+        private readonly ILogger<UsuariosController> _logger;
 
-        public UsuariosController(ApplicationDbContext db, IPasswordService senha)
+        public UsuariosController(
+            ApplicationDbContext db,
+            IPasswordService senha,
+            PerfilUsuarioService perfil,
+            ILogger<UsuariosController> logger)
         {
             _db = db;
             _senha = senha;
+            _perfil = perfil;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
@@ -36,50 +44,94 @@ namespace EasyVan.Controllers
             return View(usuario);
         }
 
-        public IActionResult Create() => View(new Usuarios());
+        public IActionResult Create() => View(new UsuarioCreateViewModel());
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Usuarios usuario)
+        public async Task<IActionResult> Create(UsuarioCreateViewModel model)
         {
-            usuario.Email = Usuarios.NormalizeEmail(usuario.Email);
+            Normalizar(model);
 
-            if (!Usuarios.IsSupportedRole(usuario.RoleManager))
-                ModelState.AddModelError(nameof(usuario.RoleManager), "Selecione um perfil de acesso válido.");
+            if (!Usuarios.IsSupportedRole(model.RoleManager))
+                ModelState.AddModelError(nameof(model.RoleManager), "Selecione um perfil de acesso válido.");
             else
-                usuario.RoleManager = Usuarios.NormalizeRole(usuario.RoleManager);
+                model.RoleManager = Usuarios.NormalizeRole(model.RoleManager);
+
+            var papel = Usuarios.IsSupportedRole(model.RoleManager)
+                ? Usuarios.NormalizeRole(model.RoleManager)
+                : null;
+
+            if (papel == "Motorista" && !ValidacaoBrasil.CnhValida(model.Cnh))
+                ModelState.AddModelError(nameof(model.Cnh), "Informe uma CNH válida com 11 dígitos para o motorista.");
 
             if (!ModelState.IsValid)
             {
-                ModelState.Remove(nameof(usuario.PasswordHasher));
-                usuario.PasswordHasher = string.Empty;
-                return View(usuario);
+                model.PasswordHasher = string.Empty;
+                model.ConfirmarSenha = string.Empty;
+                return View(model);
             }
 
-            if (await _db.Usuarios.AnyAsync(u => u.Email == usuario.Email))
+            if (await _db.Usuarios.AnyAsync(u => u.Email == model.Email))
             {
-                ModelState.AddModelError(nameof(usuario.Email), "Este e-mail já está cadastrado.");
-                ModelState.Remove(nameof(usuario.PasswordHasher));
-                usuario.PasswordHasher = string.Empty;
-                return View(usuario);
+                ModelState.AddModelError(nameof(model.Email), "Este e-mail já está cadastrado.");
+                model.PasswordHasher = string.Empty;
+                model.ConfirmarSenha = string.Empty;
+                return View(model);
             }
 
-            usuario.Nome = usuario.Nome.Trim();
-            usuario.PasswordHasher = _senha.Hash(usuario.PasswordHasher);
-            _db.Usuarios.Add(usuario);
+            var usuario = new Usuarios
+            {
+                Nome = model.Nome.Trim(),
+                Email = model.Email,
+                RoleManager = papel!,
+                PasswordHasher = _senha.Hash(model.PasswordHasher),
+                Tema = "claro"
+            };
+
+            await using var transacao = await _db.Database.BeginTransactionAsync();
 
             try
             {
+                _db.Usuarios.Add(usuario);
+
+                var perfil = await _perfil.GarantirPerfilAsync(
+                    usuario,
+                    new DadosPerfilUsuario(model.Telefone, model.Endereco, model.Cnh, model.Ativo));
+
+                if (!perfil.Sucesso)
+                {
+                    await transacao.RollbackAsync();
+                    ModelState.AddModelError(string.Empty, perfil.Erro!);
+                    model.PasswordHasher = string.Empty;
+                    model.ConfirmarSenha = string.Empty;
+                    return View(model);
+                }
+
                 await _db.SaveChangesAsync();
+                await transacao.CommitAsync();
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException ex)
             {
-                ModelState.AddModelError(nameof(usuario.Email), "Não foi possível cadastrar este e-mail. Verifique se ele já está em uso.");
-                ModelState.Remove(nameof(usuario.PasswordHasher));
-                usuario.PasswordHasher = string.Empty;
-                return View(usuario);
+                await transacao.RollbackAsync();
+                _logger.LogError(ex, "Falha ao criar conta e perfil para {Email}.", model.Email);
+                ModelState.AddModelError(nameof(model.Email), "Não foi possível cadastrar este e-mail. Verifique se ele já está em uso.");
+                model.PasswordHasher = string.Empty;
+                model.ConfirmarSenha = string.Empty;
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await transacao.RollbackAsync();
+                _logger.LogError(ex, "Falha inesperada ao criar conta para {Email}.", model.Email);
+                ModelState.AddModelError(string.Empty, "Não foi possível criar a conta. Tente novamente.");
+                model.PasswordHasher = string.Empty;
+                model.ConfirmarSenha = string.Empty;
+                return View(model);
             }
 
+            TempData["Sucesso"] = papel == "Administrador"
+                ? "Usuário administrador criado."
+                : $"Usuário criado e perfil de {papel!.ToLowerInvariant()} vinculado automaticamente.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -88,12 +140,19 @@ namespace EasyVan.Controllers
             var usuario = await _db.Usuarios.FindAsync(id);
             if (usuario == null) return NotFound();
 
+            var aluno = await _db.Alunos.AsNoTracking().FirstOrDefaultAsync(a => a.UsuarioId == id);
+            var motorista = await _db.Motoristas.AsNoTracking().FirstOrDefaultAsync(m => m.UsuarioId == id);
+
             return View(new UsuarioEditViewModel
             {
                 Id = usuario.Id,
                 Nome = usuario.Nome,
                 Email = usuario.Email,
-                RoleManager = Usuarios.NormalizeRole(usuario.RoleManager)
+                RoleManager = Usuarios.NormalizeRole(usuario.RoleManager),
+                Telefone = aluno?.Telefone ?? motorista?.Telefone,
+                Endereco = aluno?.Endereco,
+                Cnh = motorista?.CNH,
+                Ativo = aluno?.Ativo ?? motorista?.Ativo ?? true
             });
         }
 
@@ -102,6 +161,7 @@ namespace EasyVan.Controllers
         public async Task<IActionResult> Edit(int id, UsuarioEditViewModel model)
         {
             if (id != model.Id) return NotFound();
+            Normalizar(model);
 
             if (!Usuarios.IsSupportedRole(model.RoleManager))
                 ModelState.AddModelError(nameof(model.RoleManager), "Selecione um perfil de acesso válido.");
@@ -118,11 +178,18 @@ namespace EasyVan.Controllers
                 ? Usuarios.NormalizeRole(model.RoleManager)
                 : papelAtual;
 
-            var temAluno = await _db.Alunos.AnyAsync(a => a.UsuarioId == id);
-            var temMotorista = await _db.Motoristas.AnyAsync(m => m.UsuarioId == id);
-            if ((temAluno && novoPapel != "Aluno") || (temMotorista && novoPapel != "Motorista"))
+            var alunoExistente = await _db.Alunos.FirstOrDefaultAsync(a => a.UsuarioId == id);
+            var motoristaExistente = await _db.Motoristas.FirstOrDefaultAsync(m => m.UsuarioId == id);
+            if ((alunoExistente != null && novoPapel != "Aluno") || (motoristaExistente != null && novoPapel != "Motorista"))
             {
                 ModelState.AddModelError(nameof(model.RoleManager), "Este usuário possui um perfil vinculado. Altere o vínculo antes de mudar o perfil de acesso.");
+            }
+
+            if (novoPapel == "Motorista"
+                && (motoristaExistente == null || !string.Equals(motoristaExistente.CNH, model.Cnh, StringComparison.Ordinal))
+                && !ValidacaoBrasil.CnhValida(model.Cnh))
+            {
+                ModelState.AddModelError(nameof(model.Cnh), "Informe uma CNH válida com 11 dígitos para o motorista.");
             }
 
             if (papelAtual == "Administrador" && novoPapel != "Administrador")
@@ -151,21 +218,39 @@ namespace EasyVan.Controllers
             if (!string.IsNullOrWhiteSpace(model.NovaSenha))
                 existente.PasswordHasher = _senha.Hash(model.NovaSenha);
 
-            var aluno = await _db.Alunos.FirstOrDefaultAsync(a => a.UsuarioId == id);
-            if (aluno != null)
+            await using var transacao = await _db.Database.BeginTransactionAsync();
+
+            try
             {
-                aluno.Nome = existente.Nome;
-                aluno.Email = existente.Email;
+                var perfil = await _perfil.GarantirPerfilAsync(
+                    existente,
+                    new DadosPerfilUsuario(model.Telefone, model.Endereco, model.Cnh, model.Ativo));
+
+                if (!perfil.Sucesso)
+                {
+                    await transacao.RollbackAsync();
+                    ModelState.AddModelError(string.Empty, perfil.Erro!);
+                    return View(model);
+                }
+
+                await _db.SaveChangesAsync();
+                await transacao.CommitAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                await transacao.RollbackAsync();
+                _logger.LogError(ex, "Falha ao atualizar conta e perfil do usuário {UsuarioId}.", id);
+                ModelState.AddModelError(string.Empty, "Não foi possível atualizar o usuário. Verifique os dados e tente novamente.");
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                await transacao.RollbackAsync();
+                _logger.LogError(ex, "Falha inesperada ao atualizar o usuário {UsuarioId}.", id);
+                ModelState.AddModelError(string.Empty, "Não foi possível atualizar o usuário. Tente novamente.");
+                return View(model);
             }
 
-            var motorista = await _db.Motoristas.FirstOrDefaultAsync(m => m.UsuarioId == id);
-            if (motorista != null)
-            {
-                motorista.Nome = existente.Nome;
-                motorista.Email = existente.Email;
-            }
-
-            await _db.SaveChangesAsync();
             TempData["Sucesso"] = "Usuário atualizado. A senha só é alterada quando uma nova é informada.";
             return RedirectToAction(nameof(Index));
         }
@@ -268,6 +353,24 @@ namespace EasyVan.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Index", "Home");
+        }
+
+        private static void Normalizar(UsuarioCreateViewModel model)
+        {
+            model.Nome = (model.Nome ?? string.Empty).Trim();
+            model.Email = Usuarios.NormalizeEmail(model.Email);
+            model.Telefone = ValidacaoBrasil.NormalizarTelefone(model.Telefone);
+            model.Endereco = ValidacaoBrasil.LimparTexto(model.Endereco, 200);
+            model.Cnh = ValidacaoBrasil.NormalizarCnh(model.Cnh);
+        }
+
+        private static void Normalizar(UsuarioEditViewModel model)
+        {
+            model.Nome = (model.Nome ?? string.Empty).Trim();
+            model.Email = Usuarios.NormalizeEmail(model.Email);
+            model.Telefone = ValidacaoBrasil.NormalizarTelefone(model.Telefone);
+            model.Endereco = ValidacaoBrasil.LimparTexto(model.Endereco, 200);
+            model.Cnh = ValidacaoBrasil.NormalizarCnh(model.Cnh);
         }
 
         private bool UsuarioAtual(int id)

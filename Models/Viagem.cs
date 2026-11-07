@@ -15,12 +15,22 @@ namespace EasyVan.Models
         [Required(ErrorMessage = "A rota é obrigatória.")]
         public int RotaId { get; set; }
 
+        // Data prevista de partida, armazenada como meia-noite UTC do dia local.
         [Required(ErrorMessage = "A data é obrigatória.")]
         public DateTime Data { get; set; } = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified);
 
+        // Horários previstos (planejamento), independentes dos horários reais.
         public TimeSpan? HoraInicio { get; set; }
 
         public TimeSpan? HoraFim { get; set; }
+
+        // Data prevista de chegada; quando nula, usa a mesma data da partida.
+        public DateTime? DataChegada { get; set; }
+
+        // Instantes reais registrados pelo servidor em UTC.
+        public DateTime? InicioReal { get; set; }
+
+        public DateTime? FimReal { get; set; }
 
         [Required(ErrorMessage = "O status é obrigatório.")]
         [StringLength(20)]

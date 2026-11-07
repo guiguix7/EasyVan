@@ -10,6 +10,9 @@ namespace EasyVan.Models
         [StringLength(10, ErrorMessage = "A placa deve ter no máximo 10 caracteres.")]
         public string Plate { get; set; } = string.Empty;
 
+        [StringLength(80, ErrorMessage = "O modelo deve ter no máximo 80 caracteres.")]
+        public string? Modelo { get; set; }
+
         [StringLength(120, ErrorMessage = "O nome do motorista deve ter no máximo 120 caracteres.")]
         public string Driver { get; set; } = string.Empty;
 

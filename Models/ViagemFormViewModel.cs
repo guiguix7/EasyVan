@@ -19,15 +19,22 @@ namespace EasyVan.Models
         [Display(Name = "Rota")]
         public int RotaId { get; set; }
 
-        [Required(ErrorMessage = "Informe a data da viagem.")]
+        [Required(ErrorMessage = "Informe a data prevista de partida.")]
         [DataType(DataType.Date)]
-        [Display(Name = "Data")]
+        [Display(Name = "Partida prevista")]
         public DateTime Data { get; set; } = DateTime.Today;
 
-        [Display(Name = "Início")]
+        [Required(ErrorMessage = "Informe a data prevista de chegada.")]
+        [DataType(DataType.Date)]
+        [Display(Name = "Chegada prevista")]
+        public DateTime DataChegada { get; set; } = DateTime.Today;
+
+        [Required(ErrorMessage = "Informe o horário previsto de partida.")]
+        [Display(Name = "Horário de partida")]
         public string? HoraInicio { get; set; }
 
-        [Display(Name = "Término")]
+        [Required(ErrorMessage = "Informe o horário previsto de chegada.")]
+        [Display(Name = "Horário de chegada")]
         public string? HoraFim { get; set; }
 
         [StringLength(500, ErrorMessage = "A observação deve ter no máximo 500 caracteres.")]
@@ -40,17 +47,24 @@ namespace EasyVan.Models
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            var temInicio = !string.IsNullOrWhiteSpace(HoraInicio);
-            var temFim = !string.IsNullOrWhiteSpace(HoraFim);
-
-            if (!temInicio && !temFim)
+            if (Data == default)
             {
+                yield return new ValidationResult("Informe a data prevista de partida.", new[] { nameof(Data) });
                 yield break;
             }
 
+            if (DataChegada == default)
+            {
+                yield return new ValidationResult("Informe a data prevista de chegada.", new[] { nameof(DataChegada) });
+                yield break;
+            }
+
+            var temInicio = !string.IsNullOrWhiteSpace(HoraInicio);
+            var temFim = !string.IsNullOrWhiteSpace(HoraFim);
+
             if (!temInicio || !temFim)
             {
-                yield return new ValidationResult("Informe o horário de início e o de término juntos.", new[] { nameof(HoraInicio), nameof(HoraFim) });
+                yield return new ValidationResult("Informe o horário previsto de partida e o de chegada.", new[] { nameof(HoraInicio), nameof(HoraFim) });
                 yield break;
             }
 
@@ -61,9 +75,11 @@ namespace EasyVan.Models
                 yield break;
             }
 
-            if (fim <= inicio)
+            var partida = Data.Date.Add(inicio);
+            var chegada = DataChegada.Date.Add(fim);
+            if (chegada <= partida)
             {
-                yield return new ValidationResult("O término deve ser posterior ao início.", new[] { nameof(HoraFim) });
+                yield return new ValidationResult("A chegada prevista deve ser posterior à partida prevista.", new[] { nameof(DataChegada), nameof(HoraFim) });
             }
         }
     }

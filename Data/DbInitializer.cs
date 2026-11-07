@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using EasyVan.Models;
 using EasyVan.Services;
@@ -221,6 +223,220 @@ namespace EasyVan.Data
 
             VincularPerfis(context, hasher, seedDemoUsers);
             context.SaveChanges();
+
+            ReconciliarPerfis(context);
+            VincularVans(context);
+            context.SaveChanges();
+        }
+
+        /// <summary>
+        /// Cria o perfil operacional que falta para contas de Aluno/Motorista já existentes.
+        /// O vínculo usa exclusivamente o e-mail normalizado; nomes iguais não são usados como prova.
+        /// </summary>
+        private static void ReconciliarPerfis(ApplicationDbContext context)
+        {
+            var alunos = context.Alunos.ToList();
+            var motoristas = context.Motoristas.ToList();
+            var usuarios = context.Usuarios.ToList();
+
+            foreach (var usuario in usuarios)
+            {
+                var papel = Usuarios.NormalizeRole(usuario.RoleManager);
+                if (papel is not ("Aluno" or "Motorista"))
+                    continue;
+
+                var email = Usuarios.NormalizeEmail(usuario.Email);
+                var alunosMesmoEmail = alunos
+                    .Where(a => Usuarios.NormalizeEmail(a.Email) == email)
+                    .ToList();
+                var motoristasMesmoEmail = motoristas
+                    .Where(m => Usuarios.NormalizeEmail(m.Email) == email)
+                    .ToList();
+
+                if (papel == "Aluno")
+                {
+                    var aluno = alunos.FirstOrDefault(a => a.UsuarioId == usuario.Id);
+                    if (aluno != null)
+                    {
+                        aluno.Nome = usuario.Nome.Trim();
+                        aluno.Email = email;
+                        continue;
+                    }
+
+                    if (motoristasMesmoEmail.Count > 0)
+                    {
+                        Registrar(context, usuario, "PerfilNaoReconciliado",
+                            "Conta de aluno possui e-mail já usado por um motorista. Revisão administrativa necessária.");
+                        continue;
+                    }
+
+                    if (alunosMesmoEmail.Count > 1)
+                    {
+                        Registrar(context, usuario, "PerfilNaoReconciliado",
+                            "Há mais de um aluno com o mesmo e-mail. Revisão administrativa necessária.");
+                        continue;
+                    }
+
+                    var existente = alunosMesmoEmail.SingleOrDefault();
+                    if (existente != null)
+                    {
+                        if (existente.UsuarioId.HasValue)
+                        {
+                            Registrar(context, usuario, "PerfilNaoReconciliado",
+                                "O aluno com este e-mail já está vinculado a outra conta.");
+                            continue;
+                        }
+
+                        existente.UsuarioId = usuario.Id;
+                        existente.Nome = usuario.Nome.Trim();
+                        existente.Email = email;
+                        Registrar(context, usuario, "PerfilVinculado", "Aluno existente vinculado automaticamente pelo e-mail.");
+                        continue;
+                    }
+
+                    context.Alunos.Add(new Aluno
+                    {
+                        Nome = usuario.Nome.Trim(),
+                        Email = email,
+                        Ativo = true,
+                        UsuarioId = usuario.Id
+                    });
+                    alunos.Add(context.Alunos.Local.Last());
+                    Registrar(context, usuario, "PerfilCriado", "Perfil de aluno criado automaticamente para a conta existente.");
+                }
+                else
+                {
+                    var motorista = motoristas.FirstOrDefault(m => m.UsuarioId == usuario.Id);
+                    if (motorista != null)
+                    {
+                        motorista.Nome = usuario.Nome.Trim();
+                        motorista.Email = email;
+                        continue;
+                    }
+
+                    if (alunosMesmoEmail.Count > 0)
+                    {
+                        Registrar(context, usuario, "PerfilNaoReconciliado",
+                            "Conta de motorista possui e-mail já usado por um aluno. Revisão administrativa necessária.");
+                        continue;
+                    }
+
+                    if (motoristasMesmoEmail.Count > 1)
+                    {
+                        Registrar(context, usuario, "PerfilNaoReconciliado",
+                            "Há mais de um motorista com o mesmo e-mail. Revisão administrativa necessária.");
+                        continue;
+                    }
+
+                    var existente = motoristasMesmoEmail.SingleOrDefault();
+                    if (existente != null)
+                    {
+                        if (existente.UsuarioId.HasValue)
+                        {
+                            Registrar(context, usuario, "PerfilNaoReconciliado",
+                                "O motorista com este e-mail já está vinculado a outra conta.");
+                            continue;
+                        }
+
+                        existente.UsuarioId = usuario.Id;
+                        existente.Nome = usuario.Nome.Trim();
+                        existente.Email = email;
+                        Registrar(context, usuario, "PerfilVinculado", "Motorista existente vinculado automaticamente pelo e-mail.");
+                        continue;
+                    }
+
+                    context.Motoristas.Add(new Motorista
+                    {
+                        Nome = usuario.Nome.Trim(),
+                        Email = email,
+                        Ativo = true,
+                        UsuarioId = usuario.Id
+                    });
+                    motoristas.Add(context.Motoristas.Local.Last());
+                    Registrar(context, usuario, "PerfilCriado", "Perfil de motorista criado automaticamente para a conta existente.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Completa os vínculos das vans antigas quando o nome do motorista e o nome da rota
+        /// identificam exatamente um registro. Casos ambíguos permanecem sem vínculo para revisão.
+        /// </summary>
+        private static void VincularVans(ApplicationDbContext context)
+        {
+            var motoristas = context.Motoristas.ToList();
+            var rotas = context.Rotas.ToList();
+
+            foreach (var van in context.Vans.ToList())
+            {
+                if (van.MotoristaId == null && !string.IsNullOrWhiteSpace(van.Driver))
+                {
+                    var candidatos = motoristas
+                        .Where(m => NormalizarComparacao(m.Nome) == NormalizarComparacao(van.Driver))
+                        .ToList();
+
+                    if (candidatos.Count == 1)
+                    {
+                        van.MotoristaId = candidatos[0].Id;
+                        van.Driver = candidatos[0].Nome;
+                    }
+                    else if (candidatos.Count > 1)
+                    {
+                        Registrar(context, null, "VanNaoVinculada",
+                            $"A van {van.Plate} tem mais de um motorista com o nome informado. Revisão administrativa necessária.",
+                            van.Id, "Vans");
+                    }
+                }
+
+                if (van.RotaId == null && !string.IsNullOrWhiteSpace(van.Route))
+                {
+                    var candidatas = rotas
+                        .Where(r => NormalizarComparacao(r.Nome) == NormalizarComparacao(van.Route))
+                        .ToList();
+
+                    if (candidatas.Count == 1)
+                    {
+                        van.RotaId = candidatas[0].Id;
+                        van.Route = candidatas[0].Nome;
+                    }
+                    else if (candidatas.Count > 1)
+                    {
+                        Registrar(context, null, "VanNaoVinculada",
+                            $"A van {van.Plate} tem mais de uma rota com o nome informado. Revisão administrativa necessária.",
+                            van.Id, "Vans");
+                    }
+                }
+            }
+        }
+
+        private static void Registrar(ApplicationDbContext context, Usuarios? usuario, string tipo, string descricao, int? entidadeId = null, string entidade = "Usuarios")
+        {
+            context.LogOperacao.Add(new LogOperacao
+            {
+                UsuarioId = usuario?.Id,
+                UsuarioNome = "Sistema",
+                TipoOperacao = tipo,
+                Entidade = entidade,
+                EntidadeId = entidadeId ?? usuario?.Id,
+                Descricao = descricao,
+                DataOperacao = DateTime.UtcNow
+            });
+        }
+
+        private static string NormalizarComparacao(string? texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return string.Empty;
+
+            var decomposto = texto.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD);
+            var construtor = new StringBuilder(decomposto.Length);
+            foreach (var caractere in decomposto)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(caractere) != UnicodeCategory.NonSpacingMark)
+                    construtor.Append(caractere);
+            }
+
+            return construtor.ToString().Normalize(NormalizationForm.FormC);
         }
 
         /// <summary>

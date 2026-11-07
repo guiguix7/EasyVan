@@ -1,15 +1,15 @@
-@model EasyVan.Models.Usuarios
+@model EasyVan.Models.UsuarioCreateViewModel
 
 @{
-    var rotuloEnvio = ViewData["SubmitLabel"] as string ?? "Criar conta";
+    var rotuloEnvio = ViewData["SubmitLabel"] as string ?? "Criar usuário";
 }
 
 <form asp-controller="Usuarios" asp-action="Create" method="post" class="ev-auth__form">
-    <div asp-validation-summary="ModelOnly" class="ev-auth__error" role="alert"></div>
+    <div asp-validation-summary="All" class="ev-auth__error" role="alert"></div>
 
     <div class="ev-field">
         <label asp-for="Nome" class="form-label">Nome completo</label>
-        <input asp-for="Nome" class="form-control" placeholder="Seu nome completo" autocomplete="name" />
+        <input asp-for="Nome" class="form-control" placeholder="Nome completo da pessoa" autocomplete="name" />
         <span asp-validation-for="Nome" class="ev-form-validation"></span>
     </div>
 
@@ -29,13 +29,9 @@
                 <option value="Motorista">Motorista</option>
                 <option value="Administrador">Administrador</option>
             </select>
-            <p class="ev-hint">O perfil define quais áreas da plataforma a pessoa pode acessar.</p>
+            <p class="ev-hint">Aluno e Motorista criam automaticamente o cadastro operacional correspondente, sem duplicar a pessoa.</p>
             <span asp-validation-for="RoleManager" class="ev-form-validation"></span>
         </div>
-    }
-    else
-    {
-        <p class="ev-hint">Este cadastro cria uma conta de aluno.</p>
     }
 
     <div class="ev-field">
@@ -50,6 +46,43 @@
         </div>
         <p class="ev-hint">Use de 6 a 20 caracteres.</p>
         <span asp-validation-for="PasswordHasher" class="ev-form-validation"></span>
+    </div>
+
+    <div class="ev-field">
+        <label asp-for="ConfirmarSenha" class="form-label">Confirmar senha</label>
+        <input asp-for="ConfirmarSenha" id="senhaCadastroConfirmacao" class="form-control" type="password"
+               placeholder="Repita a senha" autocomplete="new-password" />
+        <span asp-validation-for="ConfirmarSenha" class="ev-form-validation"></span>
+    </div>
+
+    <div class="ev-field">
+        <label asp-for="Telefone" class="form-label">Telefone</label>
+        <input asp-for="Telefone" class="form-control" type="tel" placeholder="(11) 91234-5678"
+               inputmode="tel" data-telefone-brasil />
+        <p class="ev-hint">Opcional, mas ajuda no contato operacional. Use DDD e o nono dígito em celulares.</p>
+        <span asp-validation-for="Telefone" class="ev-form-validation"></span>
+    </div>
+
+    <div class="ev-field">
+        <label asp-for="Endereco" class="form-label">Endereço</label>
+        <input asp-for="Endereco" class="form-control" placeholder="Rua, número e bairro" autocomplete="street-address" />
+        <p class="ev-hint">Usado no perfil de aluno quando houver.</p>
+        <span asp-validation-for="Endereco" class="ev-form-validation"></span>
+    </div>
+
+    <div class="ev-field">
+        <label asp-for="Cnh" class="form-label">CNH</label>
+        <input asp-for="Cnh" class="form-control" placeholder="11 dígitos" inputmode="numeric" data-cnh-brasil />
+        <p class="ev-hint">Obrigatória para motoristas. Pode ficar vazia nos demais perfis.</p>
+        <span asp-validation-for="Cnh" class="ev-form-validation"></span>
+    </div>
+
+    <div class="ev-field">
+        <div class="form-check">
+            <input asp-for="Ativo" class="form-check-input" />
+            <label asp-for="Ativo" class="form-check-label">Cadastro ativo</label>
+        </div>
+        <p class="ev-hint">Desative para impedir novas viagens e presenças sem excluir o histórico.</p>
     </div>
 
     <button type="submit" class="btn btn-primary w-100">@rotuloEnvio</button>

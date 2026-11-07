@@ -58,6 +58,12 @@ namespace EasyVan.Controllers
                 ModelState.AddModelError(nameof(model.Senha), "Informe uma senha para criar a conta de acesso do motorista.");
             }
 
+            if (await _db.Motoristas.AnyAsync(m => m.Email == email))
+                ModelState.AddModelError(nameof(model.Email), "Já existe um motorista com este e-mail. Edite o cadastro existente.");
+
+            if (await _db.Alunos.AnyAsync(a => a.Email == email))
+                ModelState.AddModelError(nameof(model.Email), "Este e-mail já está associado a um aluno.");
+
             if (!ModelState.IsValid) return View(model);
 
             await using var transacao = await _db.Database.BeginTransactionAsync();
@@ -149,6 +155,12 @@ namespace EasyVan.Controllers
             {
                 ModelState.AddModelError(nameof(model.Email), "Este e-mail já está cadastrado em outra conta.");
             }
+
+            if (await _db.Motoristas.AnyAsync(m => m.Id != id && m.Email == email))
+                ModelState.AddModelError(nameof(model.Email), "Já existe outro motorista com este e-mail.");
+
+            if (await _db.Alunos.AnyAsync(a => a.Email == email))
+                ModelState.AddModelError(nameof(model.Email), "Este e-mail já está associado a um aluno.");
 
             if (!ModelState.IsValid) return View(model);
 

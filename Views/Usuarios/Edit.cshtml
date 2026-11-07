@@ -18,7 +18,7 @@
 
     <header class="ev-page-head">
         <div class="ev-page-head__text">
-            <p class="ev-eyebrow">Usuário #@Model.Id</p>
+            <p class="ev-eyebrow">Conta de @Model.Nome</p>
             <h1>Editar usuário</h1>
             <p class="ev-page-head__lead">Atualize os dados da conta. A senha só muda se você informar uma nova.</p>
         </div>
@@ -27,7 +27,7 @@
     <form asp-action="Edit" method="post" class="ev-form-layout">
         <div class="ev-form-main">
             <input type="hidden" asp-for="Id" />
-            <div asp-validation-summary="ModelOnly" class="ev-notice ev-notice--danger" role="alert"></div>
+            <div asp-validation-summary="All" class="ev-notice ev-notice--danger" role="alert"></div>
 
             <section class="ev-panel ev-form-section" aria-labelledby="dados-conta">
                 <div class="ev-form-section__head">
@@ -53,6 +53,42 @@
                         @Html.DropDownListFor(m => m.RoleManager, perfis, new { @class = "form-select" })
                         <p class="ev-hint">Contas vinculadas a um aluno ou motorista não podem trocar de perfil sem antes ajustar o vínculo.</p>
                         <span asp-validation-for="RoleManager" class="ev-form-validation"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ev-panel ev-form-section" aria-labelledby="dados-perfil">
+                <div class="ev-form-section__head">
+                    <h2 id="dados-perfil">Dados do perfil</h2>
+                    <p>Telefone, endereço e CNH ficam no cadastro de aluno ou motorista. Contas administrativas ignoram estes campos.</p>
+                </div>
+                <div class="ev-form-grid">
+                    <div class="ev-field">
+                        <label asp-for="Telefone" class="form-label">Telefone</label>
+                        <input asp-for="Telefone" class="form-control" type="tel" placeholder="(11) 91234-5678"
+                               inputmode="tel" data-telefone-brasil />
+                        <span asp-validation-for="Telefone" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
+                        <label asp-for="Cnh" class="form-label">CNH</label>
+                        <input asp-for="Cnh" class="form-control" placeholder="11 dígitos" inputmode="numeric" data-cnh-brasil />
+                        <p class="ev-hint">Obrigatória para motoristas.</p>
+                        <span asp-validation-for="Cnh" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field ev-field--full">
+                        <label asp-for="Endereco" class="form-label">Endereço</label>
+                        <input asp-for="Endereco" class="form-control" placeholder="Rua, número e bairro" autocomplete="street-address" />
+                        <span asp-validation-for="Endereco" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field ev-field--full">
+                        <div class="form-check">
+                            <input asp-for="Ativo" class="form-check-input" />
+                            <label asp-for="Ativo" class="form-check-label">Cadastro ativo</label>
+                        </div>
+                        <p class="ev-hint">Desative para impedir novas viagens e presenças sem excluir o histórico.</p>
                     </div>
                 </div>
             </section>

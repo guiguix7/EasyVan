@@ -1,4 +1,4 @@
-@model EasyVan.Models.Usuarios
+@model EasyVan.Models.UsuarioCreateViewModel
 
 @{
     ViewData["Title"] = "Novo usuário";
@@ -15,7 +15,7 @@
         <div class="ev-page-head__text">
             <p class="ev-eyebrow">Administração</p>
             <h1>Novo usuário</h1>
-            <p class="ev-page-head__lead">Crie uma conta e defina o perfil de acesso. A senha é armazenada com hash.</p>
+            <p class="ev-page-head__lead">Crie a conta e o perfil operacional juntos. Ao escolher Aluno ou Motorista, o cadastro correspondente é criado ou vinculado pelo e-mail.</p>
         </div>
     </header>
 
@@ -35,10 +35,11 @@
                 <div class="ev-panel__body">
                     <h2>Perfis de acesso</h2>
                     <ul>
-                        <li><strong>Aluno:</strong> consulta as informações de transporte.</li>
-                        <li><strong>Motorista:</strong> acompanha e opera as próprias viagens.</li>
+                        <li><strong>Aluno:</strong> consulta as informações de transporte e confirma presença.</li>
+                        <li><strong>Motorista:</strong> acompanha e opera as próprias viagens. Exige CNH válida.</li>
                         <li><strong>Administrador:</strong> gerencia cadastros, contas e operação.</li>
                     </ul>
+                    <p class="ev-hint mb-0">A mesma pessoa não deve ser cadastrada novamente na área de Alunos ou Motoristas: o vínculo é feito pelo e-mail.</p>
                 </div>
             </section>
         </aside>

@@ -12,6 +12,11 @@ namespace EasyVan.Models
         [Display(Name = "Placa")]
         public string Plate { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Informe o modelo da van.")]
+        [StringLength(80, ErrorMessage = "O modelo deve ter no máximo 80 caracteres.")]
+        [Display(Name = "Modelo")]
+        public string Modelo { get; set; } = string.Empty;
+
         [Range(1, 1000, ErrorMessage = "A capacidade deve estar entre 1 e 1000 passageiros.")]
         [Display(Name = "Capacidade")]
         public int Capacity { get; set; }

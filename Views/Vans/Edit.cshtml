@@ -14,7 +14,7 @@
 
     <header class="ev-page-head">
         <div class="ev-page-head__text">
-            <p class="ev-eyebrow">Van #@Model.Id</p>
+            <p class="ev-eyebrow">Van @Model.Plate</p>
             <h1>Editar van</h1>
             <p class="ev-page-head__lead">Atualize o veículo, os vínculos e a situação exibida na operação.</p>
         </div>
@@ -26,12 +26,12 @@
     <form asp-action="Edit" method="post" class="ev-form-layout">
         <div class="ev-form-main">
             <input type="hidden" asp-for="Id" />
-            <div asp-validation-summary="ModelOnly" class="ev-notice ev-notice--danger" role="alert"></div>
+            <div asp-validation-summary="All" class="ev-notice ev-notice--danger" role="alert"></div>
 
             <section class="ev-panel ev-form-section" aria-labelledby="identificacao-van">
                 <div class="ev-form-section__head">
                     <h2 id="identificacao-van">Identificação</h2>
-                    <p>Placa, capacidade e situação do veículo.</p>
+                    <p>Placa, modelo, capacidade e situação do veículo.</p>
                 </div>
                 <div class="ev-form-grid">
                     <div class="ev-field">
@@ -41,12 +41,18 @@
                     </div>
 
                     <div class="ev-field">
+                        <label asp-for="Modelo" class="form-label">Modelo <span class="ev-required" aria-hidden="true">*</span></label>
+                        <input asp-for="Modelo" class="form-control" maxlength="80" placeholder="Ex.: Mercedes-Benz Sprinter" autocomplete="off" />
+                        <span asp-validation-for="Modelo" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
                         <label asp-for="Capacity" class="form-label">Capacidade (lugares) <span class="ev-required" aria-hidden="true">*</span></label>
                         <input asp-for="Capacity" class="form-control" type="number" min="1" max="1000" step="1" inputmode="numeric" />
                         <span asp-validation-for="Capacity" class="ev-form-validation"></span>
                     </div>
 
-                    <div class="ev-field ev-span-2">
+                    <div class="ev-field">
                         <label asp-for="Status" class="form-label">Status <span class="ev-required" aria-hidden="true">*</span></label>
                         <select asp-for="Status" class="form-select">
                             @if (!statusConhecido)
