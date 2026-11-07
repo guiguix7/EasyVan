@@ -15,12 +15,13 @@ namespace Gerenciamento_de_Van.Migrations
                 name: "PresencasViagem",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    ViagemId = table.Column<int>(type: "INTEGER", nullable: false),
-                    AlunoId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Presente = table.Column<bool>(type: "INTEGER", nullable: false),
-                    Observacao = table.Column<string>(type: "TEXT", nullable: true)
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ViagemId = table.Column<int>(nullable: false),
+                    AlunoId = table.Column<int>(nullable: false),
+                    Presente = table.Column<bool>(nullable: false),
+                    Observacao = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -31,17 +32,18 @@ namespace Gerenciamento_de_Van.Migrations
                 name: "Viagens",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    VanId = table.Column<int>(type: "INTEGER", nullable: false),
-                    MotoristaId = table.Column<int>(type: "INTEGER", nullable: false),
-                    RotaId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Data = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    HoraInicio = table.Column<TimeSpan>(type: "TEXT", nullable: true),
-                    HoraFim = table.Column<TimeSpan>(type: "TEXT", nullable: true),
-                    Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    Observacao = table.Column<string>(type: "TEXT", nullable: true),
-                    DataCriacao = table.Column<DateTime>(type: "TEXT", nullable: false)
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true)
+                        .Annotation("Npgsql:ValueGenerationStrategy", Npgsql.EntityFrameworkCore.PostgreSQL.Metadata.NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    VanId = table.Column<int>(nullable: false),
+                    MotoristaId = table.Column<int>(nullable: false),
+                    RotaId = table.Column<int>(nullable: false),
+                    Data = table.Column<DateTime>(nullable: false),
+                    HoraInicio = table.Column<TimeSpan>(nullable: true),
+                    HoraFim = table.Column<TimeSpan>(nullable: true),
+                    Status = table.Column<string>(maxLength: 20, nullable: false),
+                    Observacao = table.Column<string>(nullable: true),
+                    DataCriacao = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {

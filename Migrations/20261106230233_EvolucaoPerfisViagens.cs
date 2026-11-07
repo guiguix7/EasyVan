@@ -14,26 +14,22 @@ namespace Gerenciamento_de_Van.Migrations
             migrationBuilder.AddColumn<int>(
                 name: "MotoristaId",
                 table: "Vans",
-                type: "INTEGER",
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "RotaId",
                 table: "Vans",
-                type: "INTEGER",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "FotoPerfil",
                 table: "Usuarios",
-                type: "TEXT",
                 maxLength: 120,
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "Tema",
                 table: "Usuarios",
-                type: "TEXT",
                 maxLength: 10,
                 nullable: false,
                 defaultValue: "claro");
@@ -41,25 +37,21 @@ namespace Gerenciamento_de_Van.Migrations
             migrationBuilder.AddColumn<DateTime>(
                 name: "ConfirmadoEm",
                 table: "PresencasViagem",
-                type: "TEXT",
                 nullable: true);
 
             migrationBuilder.AddColumn<bool>(
                 name: "StatusConfirmacao",
                 table: "PresencasViagem",
-                type: "INTEGER",
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "UsuarioId",
                 table: "Motoristas",
-                type: "INTEGER",
                 nullable: true);
 
             migrationBuilder.AddColumn<int>(
                 name: "UsuarioId",
                 table: "Alunos",
-                type: "INTEGER",
                 nullable: true);
 
             migrationBuilder.CreateIndex(

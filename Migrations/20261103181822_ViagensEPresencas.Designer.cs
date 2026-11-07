@@ -24,24 +24,18 @@ namespace Gerenciamento_de_Van.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("Ativo")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Endereco")
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Telefone")
-                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -52,24 +46,18 @@ namespace Gerenciamento_de_Van.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("Ativo")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("CNH")
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Telefone")
-                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -80,19 +68,14 @@ namespace Gerenciamento_de_Van.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
 
                     b.Property<int>("AlunoId")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Observacao")
-                        .HasColumnType("TEXT");
 
                     b.Property<bool>("Presente")
-                        .HasColumnType("INTEGER");
 
                     b.Property<int>("ViagemId")
-                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -103,25 +86,19 @@ namespace Gerenciamento_de_Van.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("Ativo")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Descricao")
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Destino")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Origem")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -132,24 +109,19 @@ namespace Gerenciamento_de_Van.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHasher")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("RoleManager")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -160,34 +132,26 @@ namespace Gerenciamento_de_Van.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Capacity")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Driver")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Plate")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Route")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Schedule")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -198,36 +162,26 @@ namespace Gerenciamento_de_Van.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("Data")
-                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("DataCriacao")
-                        .HasColumnType("TEXT");
 
                     b.Property<TimeSpan?>("HoraFim")
-                        .HasColumnType("TEXT");
 
                     b.Property<TimeSpan?>("HoraInicio")
-                        .HasColumnType("TEXT");
 
                     b.Property<int>("MotoristaId")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Observacao")
-                        .HasColumnType("TEXT");
 
                     b.Property<int>("RotaId")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("TEXT");
 
                     b.Property<int>("VanId")
-                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 

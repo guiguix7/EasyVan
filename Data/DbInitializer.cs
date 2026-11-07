@@ -25,7 +25,6 @@ namespace EasyVan.Data
                 context.Vans.AddRange(
                     new Van
                     {
-                        Id = 1,
                         Plate = "ABC-1234",
                         Driver = "João Silva",
                         Capacity = 12,
@@ -36,7 +35,6 @@ namespace EasyVan.Data
                     },
                     new Van
                     {
-                        Id = 2,
                         Plate = "DEF-5678",
                         Driver = "Maria Oliveira",
                         Capacity = 10,
@@ -47,7 +45,6 @@ namespace EasyVan.Data
                     },
                     new Van
                     {
-                        Id = 3,
                         Plate = "TUF-6769",
                         Driver = "Aurudo da Silva",
                         Capacity = 15,
