@@ -3852,3 +3852,132 @@ button.ev-link-action {
   display: none;
 }
 
+/* --------------------------------------------------------------------------
+   Centro de Operações Inteligente
+   -------------------------------------------------------------------------- */
+
+.ev-metrics--five {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.ev-metrics--six {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+@media (max-width: 767.98px) {
+  .ev-metrics--five,
+  .ev-metrics--six {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 479.98px) {
+  .ev-metrics--five,
+  .ev-metrics--six {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ev-panel--alertas {
+  border-left: 4px solid var(--ev-ambar);
+}
+
+.ev-alertas-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ev-alerta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--ev-linha);
+  border-radius: var(--ev-raio-controle);
+  background: var(--ev-superficie);
+}
+
+.ev-alerta--impeditivo {
+  border-left: 4px solid var(--ev-vermelho);
+  background: var(--ev-vermelho-claro);
+}
+
+.ev-alerta--aviso {
+  border-left: 4px solid var(--ev-ambar);
+  background: var(--ev-ambar-claro);
+}
+
+.ev-alerta__tipo {
+  flex: 0 0 auto;
+}
+
+.ev-alerta__conteudo {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.ev-alerta__acao {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ev-alerta__titulo {
+  margin: 0 0 4px;
+  color: var(--ev-texto);
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.ev-alerta__descricao {
+  margin: 0;
+  color: var(--ev-texto-secundario);
+  font-size: 0.875rem;
+}
+
+.ev-alerta__gravidade {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--ev-raio-pill);
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.ev-alerta__gravidade--impeditivo {
+  color: var(--ev-vermelho-texto);
+  background: var(--ev-vermelho-claro);
+  border: 1px solid var(--ev-vermelho-borda);
+}
+
+.ev-alerta__gravidade--aviso {
+  color: var(--ev-ambar-escuro);
+  background: var(--ev-ambar-claro);
+  border: 1px solid var(--ev-linha-forte);
+}
+
+.ev-acoes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.ev-acoes-grid .btn {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 8px;
+  text-align: left;
+}
+

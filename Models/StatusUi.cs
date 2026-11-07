@@ -18,6 +18,8 @@ public static class StatusUi
             var v when Igual(v, "EmAndamento") => "Em andamento",
             var v when Igual(v, "Operacional") => "Operacional",
             var v when Igual(v, "Manutencao") || Igual(v, "Manutenção") => "Manutenção",
+            var v when Igual(v, "Planejada") => "Planejada",
+            var v when Igual(v, "Confirmada") => "Confirmada",
             var v when Igual(v, "Agendada") => "Agendada",
             var v when Igual(v, "Finalizada") => "Finalizada",
             var v when Igual(v, "Cancelada") => "Cancelada",
@@ -43,6 +45,7 @@ public static class StatusUi
         {
             var v when Igual(v, "Operacional") || Igual(v, "Ativo") || Igual(v, "Ativa") || Igual(v, "Finalizada") || Igual(v, "Presente") => "ev-badge--success",
             var v when Igual(v, "Manutencao") || Igual(v, "Manutenção") || Igual(v, "EmAndamento") => "ev-badge--warning",
+            var v when Igual(v, "Planejada") || Igual(v, "Confirmada") => "ev-badge--info",
             var v when Igual(v, "Agendada") => "ev-badge--info",
             var v when Igual(v, "Cancelada") || Igual(v, "Inativo") || Igual(v, "Inativa") || Igual(v, "Ausente") => "ev-badge--neutral",
             var v when Igual(v, "Administrador") => "ev-badge--brand",

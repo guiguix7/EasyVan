@@ -1,287 +1,293 @@
-@model dynamic
-@using EasyVan.Models
+@model EasyVan.Models.CentroOperacoesViewModel
 
 @{
-    ViewData["Title"] = "Visão geral";
-
-    int totalVans = Model?.TotalVans ?? 0;
-    int vansOperacionais = Model?.VansOperacionais ?? 0;
-    int vansManutencao = Model?.VansManutencao ?? 0;
-    int vansOutros = Model?.VansOutros ?? 0;
-    int totalMotoristas = Model?.TotalMotoristas ?? 0;
-    int totalAlunos = Model?.TotalAlunos ?? 0;
-    int totalRotas = Model?.TotalRotas ?? 0;
-    int viagensHoje = Model?.ViagensHoje ?? 0;
-    int viagensEmAndamento = Model?.ViagensEmAndamento ?? 0;
-    int viagensAgendadas = Model?.ViagensAgendadas ?? 0;
-
-    var alertas = Model?.Alertas as IEnumerable<string> ?? Enumerable.Empty<string>();
-    var proximasViagens = Model?.ProximasViagens as IEnumerable<Viagem> ?? Enumerable.Empty<Viagem>();
-    var vansEmManutencao = Model?.VansEmManutencao as IEnumerable<Van> ?? Enumerable.Empty<Van>();
-
-    double pctOperacionais = totalVans > 0 ? Math.Round(vansOperacionais * 100.0 / totalVans) : 0;
-    double pctManutencao = totalVans > 0 ? Math.Round(vansManutencao * 100.0 / totalVans) : 0;
-    double pctOutros = totalVans > 0 ? Math.Max(0, 100 - pctOperacionais - pctManutencao) : 0;
+    ViewData["Title"] = "Centro de Operações";
 }
 
 <section class="ev-page">
     <header class="ev-page-head">
         <div class="ev-page-head__text">
-            <p class="ev-eyebrow">Operação</p>
-            <h1>Visão geral</h1>
-            <p class="ev-page-head__lead">A situação da frota, dos cadastros e das viagens de hoje em uma única leitura.</p>
+            <p class="ev-eyebrow">Centro de Operações</p>
+            <h1>Painel do Gestor</h1>
+            <p class="ev-page-head__lead">Acompanhamento operacional em tempo real com dados da frota, viagens e alertas.</p>
         </div>
         <div class="ev-page-head__actions">
-            <a asp-controller="Viagens" asp-action="Create" class="btn btn-primary">
-                <partial name="_Icon" model='"plus"' />
+            <a asp-action="Index" asp-controller="Viagens" class="btn btn-primary">
+                <partial name="_Icon" model='"trip"' />
                 Nova viagem
             </a>
-            <a asp-controller="Vans" asp-action="Index" class="btn btn-outline-secondary">Gerenciar frota</a>
         </div>
     </header>
 
-    <section class="ev-metrics" aria-label="Indicadores da operação">
-        <article class="ev-metric">
-            <div class="ev-metric__top">
-                <span class="ev-metric__label">Vans</span>
-                <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"van"' /></span>
-            </div>
-            <strong class="ev-metric__value">@totalVans</strong>
-            <span class="ev-metric__hint">@vansOperacionais operacionais · @vansManutencao em manutenção</span>
-        </article>
-
-        <article class="ev-metric">
-            <div class="ev-metric__top">
-                <span class="ev-metric__label">Motoristas ativos</span>
-                <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"driver"' /></span>
-            </div>
-            <strong class="ev-metric__value">@totalMotoristas</strong>
-            <span class="ev-metric__hint">Cadastros aptos a operar</span>
-        </article>
-
-        <article class="ev-metric">
-            <div class="ev-metric__top">
-                <span class="ev-metric__label">Alunos ativos</span>
-                <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
-            </div>
-            <strong class="ev-metric__value">@totalAlunos</strong>
-            <span class="ev-metric__hint">Passageiros nos cadastros ativos</span>
-        </article>
-
-        <article class="ev-metric">
-            <div class="ev-metric__top">
-                <span class="ev-metric__label">Rotas ativas</span>
-                <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
-            </div>
-            <strong class="ev-metric__value">@totalRotas</strong>
-            <span class="ev-metric__hint">Trajetos disponíveis</span>
-        </article>
-    </section>
-
-    @if (alertas.Any())
+    @if (TempData["Sucesso"] is string sucesso)
     {
-        <div class="ev-notice ev-notice--warning" role="status">
+        <div class="ev-notice ev-notice--success" role="status">
+            <partial name="_Icon" model='"check"' />
+            <div class="ev-notice__body"><p class="mb-0">@sucesso</p></div>
+        </div>
+    }
+    @if (TempData["Erro"] is string erro)
+    {
+        <div class="ev-notice ev-notice--danger" role="alert">
             <partial name="_Icon" model='"alert"' />
-            <div class="ev-notice__body">
-                <p class="ev-notice__title">Atenção à operação</p>
-                <ul>
-                    @foreach (var alerta in alertas)
-                    {
-                        <li>@alerta</li>
-                    }
-                </ul>
-            </div>
+            <div class="ev-notice__body"><p class="mb-0">@erro</p></div>
         </div>
     }
 
-    <div class="ev-dash-grid">
-        <div class="ev-form-main">
-            <section class="ev-panel" aria-labelledby="frota-titulo">
-                <div class="ev-panel__head">
-                    <div>
-                        <h2 id="frota-titulo">Composição da frota</h2>
-                        <p class="ev-panel__hint">Situação atual dos veículos cadastrados.</p>
-                    </div>
-                    <a asp-controller="Vans" asp-action="Index" class="ev-link-action">
-                        Ver vans
-                        <partial name="_Icon" model='"arrow-right"' />
-                    </a>
-                </div>
-                <div class="ev-panel__body">
-                    @if (totalVans > 0)
-                    {
-                        <div class="ev-meter">
-                            <div class="ev-meter__bar" role="img"
-                                 aria-label="Frota: @vansOperacionais operacionais, @vansManutencao em manutenção e @vansOutros em outros status.">
-                                @if (pctOperacionais > 0)
-                                {
-                                    <span class="ev-meter__segment ev-meter__segment--success" style="width:@pctOperacionais%"></span>
-                                }
-                                @if (pctManutencao > 0)
-                                {
-                                    <span class="ev-meter__segment ev-meter__segment--warning" style="width:@pctManutencao%"></span>
-                                }
-                                @if (pctOutros > 0)
-                                {
-                                    <span class="ev-meter__segment ev-meter__segment--neutral" style="width:@pctOutros%"></span>
-                                }
-                            </div>
-                            <ul class="ev-legend">
-                                <li class="ev-legend__item">
-                                    <span class="ev-legend__swatch ev-legend__swatch--success" aria-hidden="true"></span>
-                                    Operacionais <strong>@vansOperacionais</strong>
-                                </li>
-                                <li class="ev-legend__item">
-                                    <span class="ev-legend__swatch ev-legend__swatch--warning" aria-hidden="true"></span>
-                                    Em manutenção <strong>@vansManutencao</strong>
-                                </li>
-                                <li class="ev-legend__item">
-                                    <span class="ev-legend__swatch ev-legend__swatch--neutral" aria-hidden="true"></span>
-                                    Outros status <strong>@vansOutros</strong>
-                                </li>
-                            </ul>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="ev-empty">
-                            <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"van"' /></span>
-                            <p class="ev-empty__title">Nenhuma van cadastrada</p>
-                            <p class="ev-empty__text">Cadastre o primeiro veículo para acompanhar a composição da frota.</p>
-                            <a asp-controller="Vans" asp-action="Create" class="btn btn-primary">Cadastrar van</a>
-                        </div>
-                    }
-                </div>
-
-                @if (vansEmManutencao.Any())
-                {
-                    <div class="ev-panel__head">
-                        <h2>Precisam de atenção</h2>
-                    </div>
-                    <ul class="ev-attention">
-                        @foreach (var van in vansEmManutencao)
-                        {
-                            <li class="ev-attention__item">
-                                <div class="ev-attention__text">
-                                    <span class="ev-attention__title">
-                                        <span class="ev-plate">@van.Plate</span>
-                                        <span class="ms-2">@van.Driver</span>
-                                    </span>
-                                    <span class="ev-attention__sub">@van.Route</span>
-                                </div>
-                                <div class="ev-cluster">
-                                    <partial name="_StatusBadge" model="van.Status" />
-                                    <a asp-controller="Vans" asp-action="Details" asp-route-id="@van.Id"
-                                       class="ev-link-action">
-                                        Detalhes
-                                        <partial name="_Icon" model='"chevron-right"' />
-                                    </a>
-                                </div>
-                            </li>
-                        }
-                    </ul>
-                }
-            </section>
-
-            <section class="ev-panel" aria-labelledby="atalhos-titulo">
-                <div class="ev-panel__head">
-                    <div>
-                        <h2 id="atalhos-titulo">Acessos rápidos</h2>
-                        <p class="ev-panel__hint">Cadastros que mantêm a operação em dia.</p>
-                    </div>
-                </div>
-                <div class="ev-panel__body">
-                    <nav class="ev-shortcuts" aria-label="Acessos rápidos da administração">
-                        <a asp-controller="Motoristas" asp-action="Index" class="ev-shortcut">
-                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"driver"' /></span>
-                            <span class="ev-shortcut__text">
-                                <span class="ev-shortcut__label">Motoristas</span>
-                                <span class="ev-shortcut__hint">@totalMotoristas ativos</span>
-                            </span>
-                        </a>
-                        <a asp-controller="Alunos" asp-action="Index" class="ev-shortcut">
-                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
-                            <span class="ev-shortcut__text">
-                                <span class="ev-shortcut__label">Alunos</span>
-                                <span class="ev-shortcut__hint">@totalAlunos ativos</span>
-                            </span>
-                        </a>
-                        <a asp-controller="Rotas" asp-action="Index" class="ev-shortcut">
-                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
-                            <span class="ev-shortcut__text">
-                                <span class="ev-shortcut__label">Rotas</span>
-                                <span class="ev-shortcut__hint">@totalRotas ativas</span>
-                            </span>
-                        </a>
-                        <a asp-controller="Vans" asp-action="Index" class="ev-shortcut">
-                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"van"' /></span>
-                            <span class="ev-shortcut__text">
-                                <span class="ev-shortcut__label">Frota</span>
-                                <span class="ev-shortcut__hint">@totalVans veículos</span>
-                            </span>
-                        </a>
-                        <a asp-controller="Usuarios" asp-action="Index" class="ev-shortcut">
-                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"users"' /></span>
-                            <span class="ev-shortcut__text">
-                                <span class="ev-shortcut__label">Usuários</span>
-                                <span class="ev-shortcut__hint">Contas e perfis</span>
-                            </span>
-                        </a>
-                        <a asp-controller="Home" asp-action="Privacy" class="ev-shortcut">
-                            <span class="ev-shortcut__icon" aria-hidden="true"><partial name="_Icon" model='"shield"' /></span>
-                            <span class="ev-shortcut__text">
-                                <span class="ev-shortcut__label">Privacidade</span>
-                                <span class="ev-shortcut__hint">Tratamento de dados</span>
-                            </span>
-                        </a>
-                    </nav>
-                </div>
-            </section>
+    <!-- A. Visão geral -->
+    <section class="ev-panel ev-panel--flush" aria-labelledby="visao-geral">
+        <div class="ev-panel__head">
+            <div>
+                <h2 id="visao-geral">Visão geral da operação</h2>
+                <p class="ev-panel__hint">Indicadores principais da frota e da equipe.</p>
+            </div>
         </div>
 
-        <section class="ev-panel" aria-labelledby="viagens-titulo">
-            <div class="ev-panel__head">
-                <div>
-                    <h2 id="viagens-titulo">Viagens de hoje e próximas</h2>
-                    <p class="ev-panel__hint">@viagensHoje hoje · @viagensEmAndamento em andamento · @viagensAgendadas agendadas</p>
+        <div class="ev-metrics ev-metrics--five" aria-label="Resumo operacional">
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Vans totais</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"van"' /></span>
                 </div>
-                <a asp-controller="Viagens" asp-action="Index" class="ev-link-action">
-                    Ver todas
-                    <partial name="_Icon" model='"arrow-right"' />
-                </a>
-            </div>
+                <strong class="ev-metric__value">@Model.TotalVans</strong>
+                <span class="ev-metric__hint">@Model.VansOperacionais operacionais · @Model.VansManutencao em manutenção</span>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Motoristas</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"driver"' /></span>
+                </div>
+                <strong class="ev-metric__value">@Model.TotalMotoristas</strong>
+                <span class="ev-metric__hint">@Model.MotoristasAtivos ativos</span>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Alunos</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
+                </div>
+                <strong class="ev-metric__value">@Model.TotalAlunos</strong>
+                <span class="ev-metric__hint">@Model.AlunosAtivos ativos</span>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Rotas</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
+                </div>
+                <strong class="ev-metric__value">@Model.TotalRotas</strong>
+                <span class="ev-metric__hint">@Model.RotasAtivas ativas</span>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Viagens hoje</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"calendar"' /></span>
+                </div>
+                <strong class="ev-metric__value">@Model.ViagensHoje</strong>
+                <span class="ev-metric__hint">agendadas para este dia</span>
+            </article>
+        </div>
+    </section>
 
-            @if (proximasViagens.Any())
-            {
-                <ul class="ev-today">
-                    @foreach (var viagem in proximasViagens)
-                    {
-                        <li>
-                            <a asp-controller="Viagens" asp-action="Details" asp-route-id="@viagem.Id" class="ev-today__item">
-                                <span class="ev-today__time">
-                                    @(viagem.HoraInicio.HasValue ? viagem.HoraInicio.Value.ToString(@"hh\:mm") : "A definir")
-                                </span>
-                                <span>
-                                    <span class="ev-today__route">@viagem.Rota?.Nome</span>
-                                    <span class="ev-today__meta">
-                                        @viagem.Data.ToString("dd/MM") · @viagem.Van?.Plate · @viagem.Motorista?.Nome
-                                    </span>
-                                </span>
-                                <partial name="_StatusBadge" model="viagem.Status" />
-                            </a>
-                        </li>
-                    }
-                </ul>
-            }
-            else
-            {
-                <div class="ev-empty">
-                    <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"calendar"' /></span>
-                    <p class="ev-empty__title">Nenhuma viagem agendada</p>
-                    <p class="ev-empty__text">Não há viagens de hoje ou futuras aguardando início.</p>
-                    <a asp-controller="Viagens" asp-action="Create" class="btn btn-primary">Agendar viagem</a>
+    <!-- B. Situação das viagens -->
+    <section class="ev-panel ev-panel--flush" aria-labelledby="situacao-viagens">
+        <div class="ev-panel__head">
+            <div>
+                <h2 id="situacao-viagens">Situação das viagens</h2>
+                <p class="ev-panel__hint">Distribuição por estado do ciclo de vida.</p>
+            </div>
+        </div>
+
+        <div class="ev-metrics ev-metrics--six" aria-label="Viagens por status">
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Planejadas</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"calendar"' /></span>
                 </div>
+                <strong class="ev-metric__value">@Model.ViagensPlanejadas</strong>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Confirmadas</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"check"' /></span>
+                </div>
+                <strong class="ev-metric__value">@Model.ViagensConfirmadas</strong>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Agendadas</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"clock"' /></span>
+                </div>
+                <strong class="ev-metric__value">@Model.ViagensAgendadas</strong>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Em andamento</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"trip"' /></span>
+                </div>
+                <strong class="ev-metric__value">@Model.ViagensEmAndamento</strong>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Finalizadas</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"check"' /></span>
+                </div>
+                <strong class="ev-metric__value">@Model.ViagensFinalizadas</strong>
+            </article>
+            <article class="ev-metric">
+                <div class="ev-metric__top">
+                    <span class="ev-metric__label">Canceladas</span>
+                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"x"' /></span>
+                </div>
+                <strong class="ev-metric__value">@Model.ViagensCanceladas</strong>
+            </article>
+        </div>
+    </section>
+
+    <!-- C. Alertas operacionais -->
+    <section class="ev-panel ev-panel--flush @(Model.TemAlertas ? "ev-panel--alertas" : "")" aria-labelledby="alertas">
+        <div class="ev-panel__head">
+            <div>
+                <h2 id="alertas">Alertas operacionais</h2>
+                <p class="ev-panel__hint">Inconsistências identificadas automaticamente no banco de dados.</p>
+            </div>
+            <span class="ev-badge @(Model.AlertasImpeditivos > 0 ? "ev-badge--warning" : "ev-badge--neutral")">
+                @Model.TotalAlertas alerta(s)
+            </span>
+        </div>
+
+        @if (!Model.TemAlertas)
+        {
+            <div class="ev-empty ev-empty--compact">
+                <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"check"' /></span>
+                <h3 class="ev-empty__title">Nenhum alerta operacional</h3>
+                <p class="ev-empty__text">Todas as viagens, vans e motoristas estão consistentes.</p>
+            </div>
+        }
+        else
+        {
+            <div class="ev-alertas-lista">
+                @foreach (var alerta in Model.Alertas)
+                {
+                    <div class="ev-alerta @(alerta.Gravidade == "Impeditivo" ? "ev-alerta--impeditivo" : "ev-alerta--aviso")">
+                        <div class="ev-alerta__tipo">
+                            <span class="ev-badge @(alerta.Gravidade == "Impeditivo" ? "ev-badge--warning" : "ev-badge--info")">
+                                @alerta.Tipo
+                            </span>
+                        </div>
+                        <div class="ev-alerta__conteudo">
+                            <h4 class="ev-alerta__titulo">@alerta.Titulo</h4>
+                            <p class="ev-alerta__descricao">@alerta.Descricao</p>
+                        </div>
+                        <div class="ev-alerta__acao">
+                            <span class="ev-alerta__gravidade @(alerta.Gravidade == "Impeditivo" ? "ev-alerta__gravidade--impeditivo" : "ev-alerta__gravidade--aviso")">
+                                @alerta.Gravidade
+                            </span>
+                            <a asp-action="Details" asp-controller="Viagens" asp-route-id="@alerta.EntidadeId"
+                               class="btn btn-outline-secondary btn-sm">
+                                Ver registro
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <!-- D. Ações prioritárias -->
+    <section class="ev-panel ev-panel--flush" aria-labelledby="acoes-prioritarias">
+        <div class="ev-panel__head">
+            <div>
+                <h2 id="acoes-prioritarias">Ações prioritárias</h2>
+                <p class="ev-panel__hint">Atalhos para corrigir problemas e acessar registros relacionados.</p>
+            </div>
+        </div>
+
+        <div class="ev-acoes-grid">
+            @if (Model.VansEmManutencao.Any())
+            {
+                <a asp-action="Index" asp-controller="Vans" class="btn btn-outline-secondary">
+                    <partial name="_Icon" model='"wrench"' />
+                    Vans em manutenção (@Model.VansEmManutencao.Count)
+                </a>
             }
-        </section>
-    </div>
+            @if (Model.ViagensEmAndamento > 0)
+            {
+                <a asp-action="Index" asp-controller="Viagens" class="btn btn-outline-secondary">
+                    <partial name="_Icon" model='"trip"' />
+                    Viagens em andamento (@Model.ViagensEmAndamento)
+                </a>
+            }
+            @if (Model.AlertasImpeditivos > 0)
+            {
+                <a asp-action="Index" asp-controller="Viagens" class="btn btn-outline-secondary">
+                    <partial name="_Icon" model='"alert"' />
+                    Resolver alertas impeditivos (@Model.AlertasImpeditivos)
+                </a>
+            }
+            <a asp-action="Index" asp-controller="Motoristas" class="btn btn-outline-secondary">
+                <partial name="_Icon" model='"driver"' />
+                Gerenciar motoristas
+            </a>
+            <a asp-action="Index" asp-controller="Alunos" class="btn btn-outline-secondary">
+                <partial name="_Icon" model='"students"' />
+                Gerenciar alunos
+            </a>
+            <a asp-action="Index" asp-controller="Rotas" class="btn btn-outline-secondary">
+                <partial name="_Icon" model='"route"' />
+                Gerenciar rotas
+            </a>
+        </div>
+    </section>
+
+    <!-- E. Atividade recente -->
+    <section class="ev-panel ev-panel--flush" aria-labelledby="atividade-recente">
+        <div class="ev-panel__head">
+            <div>
+                <h2 id="atividade-recente">Atividade recente</h2>
+                <p class="ev-panel__hint">Últimas operações registradas no histórico de auditoria.</p>
+            </div>
+        </div>
+
+        @if (!Model.AtividadeRecente.Any())
+        {
+            <div class="ev-empty ev-empty--compact">
+                <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"clock"' /></span>
+                <h3 class="ev-empty__title">Nenhuma atividade registrada</h3>
+                <p class="ev-empty__text">As operações aparecerão aqui à medida que forem realizadas.</p>
+            </div>
+        }
+        else
+        {
+            <table class="ev-table">
+                <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Operação</th>
+                        <th>Entidade</th>
+                        <th>ID</th>
+                        <th>Responsável</th>
+                        <th>Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.AtividadeRecente)
+                    {
+                        <tr>
+                            <td>@log.DataOperacao.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <span class="ev-badge ev-badge--info">@log.TipoOperacao</span>
+                            </td>
+                            <td>@log.Entidade</td>
+                            <td>@log.EntidadeId</td>
+                            <td>@(log.UsuarioNome ?? "Sistema")</td>
+                            <td>@log.Descricao</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
 </section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

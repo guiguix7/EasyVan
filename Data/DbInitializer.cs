@@ -88,6 +88,23 @@ namespace EasyVan.Data
                 );
             }
 
+            // Conta de administrador solicitada (somente Development).
+            // Verifica por e-mail específico para não depender do banco estar vazio.
+            // Carrega os e-mails para memória porque Usuarios.NormalizeEmail não é traduzível para SQL.
+            var emailsExistentes = context.Usuarios.Select(u => u.Email).ToList();
+            if (seedDemoUsers && !emailsExistentes.Any(e => Usuarios.NormalizeEmail(e) == Usuarios.NormalizeEmail("email@email.com")))
+            {
+                var demoHash = hasher.Hash("123456");
+                context.Usuarios.Add(new Usuarios
+                {
+                    Nome = "Administrador",
+                    Email = Usuarios.NormalizeEmail("email@email.com"),
+                    RoleManager = "Administrador",
+                    PasswordHasher = demoHash
+                });
+                context.SaveChanges();
+            }
+
             // Em produção, cria o primeiro administrador apenas com credenciais fornecidas
             // por variáveis de ambiente privadas (nunca usa senha padrão).
             if (!seedDemoUsers && !context.Usuarios.Any())

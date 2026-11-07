@@ -171,64 +171,6 @@ namespace EasyVan.Controllers
         }
 
         [AllowAnonymous]
-        public IActionResult Registrar()
-        {
-            if (User.Identity?.IsAuthenticated == true)
-                return RedirectToAction("Index", "Home");
-
-            return View(new RegistroAlunoViewModel());
-        }
-
-        [AllowAnonymous]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [EnableRateLimiting("login")]
-        public async Task<IActionResult> Registrar(RegistroAlunoViewModel model)
-        {
-            if (User.Identity?.IsAuthenticated == true)
-                return RedirectToAction("Index", "Home");
-
-            model.Email = Usuarios.NormalizeEmail(model.Email);
-            model.Nome = model.Nome.Trim();
-            model.Telefone = ValidacaoBrasil.NormalizarTelefone(model.Telefone);
-            model.Endereco = ValidacaoBrasil.LimparTexto(model.Endereco, 200);
-
-            if (!ValidacaoBrasil.NomeValido(model.Nome))
-                ModelState.AddModelError(nameof(model.Nome), "Informe um nome válido, com pelo menos 3 letras.");
-
-            if (await _db.Usuarios.AnyAsync(u => u.Email == model.Email))
-                ModelState.AddModelError(nameof(model.Email), "Este e-mail já está cadastrado. Entre com sua conta.");
-
-            if (!ModelState.IsValid) return View(model);
-
-            var usuario = new Usuarios
-            {
-                Nome = model.Nome,
-                Email = model.Email,
-                RoleManager = "Aluno",
-                PasswordHasher = _senha.Hash(model.Senha),
-                Tema = "claro"
-            };
-
-            _db.Usuarios.Add(usuario);
-            await _db.SaveChangesAsync();
-
-            _db.Alunos.Add(new Aluno
-            {
-                Nome = model.Nome,
-                Email = model.Email,
-                Telefone = model.Telefone,
-                Endereco = model.Endereco,
-                Ativo = true,
-                UsuarioId = usuario.Id
-            });
-
-            await _db.SaveChangesAsync();
-            TempData["Sucesso"] = "Conta criada. Entre com seu e-mail e senha.";
-            return RedirectToAction(nameof(Login));
-        }
-
-        [AllowAnonymous]
         public IActionResult Login()
         {
             if (User.Identity?.IsAuthenticated == true)

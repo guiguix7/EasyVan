@@ -14,6 +14,7 @@ namespace EasyVan.Data
         public DbSet<Rota> Rotas { get; set; }
         public DbSet<Viagem> Viagens { get; set; }
         public DbSet<PresencaViagem> PresencasViagem { get; set; }
+        public DbSet<LogOperacao> LogOperacao { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

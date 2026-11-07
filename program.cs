@@ -58,6 +58,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IFotoPerfilService, FotoPerfilService>();
+builder.Services.AddScoped<IAuditoriaService, AuditoriaService>();
+builder.Services.AddScoped<ValidacaoOperacional>();
+builder.Services.AddScoped<CentroOperacoesService>();
 builder.Services.AddSingleton(new GoogleMapsOptions
 {
     ApiKey = builder.Configuration["GoogleMaps:ApiKey"]

@@ -55,6 +55,50 @@ namespace Gerenciamento_de_Van.Migrations
                     b.ToTable("Alunos");
                 });
 
+            modelBuilder.Entity("EasyVan.Models.LogOperacao", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("DataOperacao")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Descricao")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Entidade")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("EntidadeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("InformacoesComplementares")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TipoOperacao")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UsuarioNome")
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("LogOperacao");
+                });
+
             modelBuilder.Entity("EasyVan.Models.Motorista", b =>
                 {
                     b.Property<int>("Id")
@@ -305,6 +349,15 @@ namespace Gerenciamento_de_Van.Migrations
                         .WithOne()
                         .HasForeignKey("EasyVan.Models.Aluno", "UsuarioId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.LogOperacao", b =>
+                {
+                    b.HasOne("EasyVan.Models.Usuarios", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId");
 
                     b.Navigation("Usuario");
                 });

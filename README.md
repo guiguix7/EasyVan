@@ -10,21 +10,44 @@ O projeto está funcional para desenvolvimento local e possui:
 - perfis de Administrador, Motorista e Aluno;
 - CRUD de usuários, vans, motoristas, alunos e rotas;
 - criação, início, finalização e acompanhamento de viagens;
+- **ciclo de vida formal das viagens**: Planejada → Confirmada → Em andamento → Finalizada, com Cancelada;
+- **validação de transições de estado** no backend, bloqueando mudanças inválidas;
+- **validadores operacionais centralizados**: conflito de horário (motorista e van), capacidade excedida, viagem sem motorista, viagem sem van, dados inconsistentes;
 - registro de presença dos alunos nas viagens;
+- **confirmação de presença dos alunos**: "Vou"/"Não vou" nas viagens agendadas;
+- **marcação de presença pelo motorista**: Presente/Ausente durante viagens em andamento;
 - busca e filtros combináveis de vans por texto, status e capacidade;
+- **Centro de Operações Inteligente**: dashboard do gestor com indicadores reais, alertas operacionais, ações prioritárias e atividade recente;
+- **histórico de auditoria**: registro de operações relevantes (criação, atualização, mudança de estado, cancelamento, presença);
 - persistência em SQLite com Entity Framework Core e migrações aplicadas na inicialização;
 - hash de senhas com PBKDF2 por meio de `IPasswordService`;
+- perfil de usuário com edição de nome, e-mail e foto de perfil;
+- tema claro/escuro com preferência persistida;
+- cadastro público restrito a Alunos, com rate limiting e antiforgery;
 - interface Razor responsiva com Bootstrap, jQuery e CSS próprio;
+- integração opcional com Google Maps (chave por variável de ambiente, com fallback);
 - imagem Docker pronta para publicação em ambiente que forneça a porta 8080.
 
-O produto ainda não implementa GPS em tempo real, reservas, pagamentos, notificações, multi-tenancy ou integração externa.
+O produto ainda não implementa GPS em tempo real, reservas, pagamentos, notificações ou multi-tenancy.
+
+## Centro de Operações Inteligente
+
+O painel administrativo (`/Administrador`) é um centro de acompanhamento operacional com:
+
+- **Visão geral**: vans totais, operacionais, em manutenção; motoristas, alunos e rotas cadastrados; viagens hoje;
+- **Situação das viagens**: distribuição por estado (Planejada, Confirmada, Agendada, Em andamento, Finalizada, Cancelada);
+- **Alertas operacionais**: inconsistências detectadas automaticamente (conflito de horário, capacidade excedida, viagem sem motorista/van, dados inconsistentes);
+- **Ações prioritárias**: atalhos para vans em manutenção, viagens em andamento, resolver alertas, gerenciar cadastros;
+- **Atividade recente**: operações registradas no histórico de auditoria com data, responsável e descrição.
+
+Todos os indicadores utilizam dados reais do banco de dados.
 
 ## Tecnologia
 
 - .NET 10 e ASP.NET Core MVC;
 - Razor Views;
 - Entity Framework Core 8;
-- SQLite;
+- SQLite (desenvolvimento) / PostgreSQL (produção via Supabase);
 - Bootstrap e jQuery;
 - xUnit para testes automatizados;
 - Docker com imagens oficiais do .NET 10.
@@ -76,16 +99,21 @@ A conexão padrão é definida em `appsettings.json`:
 }
 ```
 
-Em produção no Railway, anexe um Volume ao serviço com Mount Path exatamente `/data`. O banco e as chaves de autenticação ficam nesse volume. A aplicação falha ao iniciar no Railway se o volume não estiver montado corretamente.\n\nEm produção, prefira variáveis de ambiente:
+Em produção no Railway, anexe um Volume ao serviço com Mount Path exatamente `/data`. O banco e as chaves de autenticação ficam nesse volume. A aplicação falha ao iniciar no Railway se o volume não estiver montado corretamente.
+
+Em produção, prefira variáveis de ambiente:
 
 ```powershell
 $env:ASPNETCORE_ENVIRONMENT = "Production"
 $env:ConnectionStrings__DefaultConnection = "Data Source=/data/easyvan.db"
 $env:EASYVAN_ADMIN_EMAIL = "admin@exemplo.com"
 $env:EASYVAN_ADMIN_PASSWORD = "use-uma-senha-forte-com-12-ou-mais-caracteres"
+$env:GoogleMaps__ApiKey = "sua-chave-do-google-maps"
 ```
 
 Quando o banco de produção estiver vazio, `EASYVAN_ADMIN_EMAIL` e `EASYVAN_ADMIN_PASSWORD` permitem criar o primeiro administrador. A aplicação não cria senha padrão em produção.
+
+A variável `GoogleMaps__ApiKey` (ou `GOOGLE_MAPS_API_KEY`) ativa a integração opcional com Google Maps para visualização de trajetos. Sem a chave, o sistema exibe um fallback em texto.
 
 Em produção, as chaves do cookie do ASP.NET Core Data Protection são persistidas em `/data/keys`. Esse diretório deve estar em um volume persistente quando o ambiente reiniciar contêineres.
 
@@ -99,6 +127,7 @@ docker run --rm -p 8080:8080 `
   -e ASPNETCORE_ENVIRONMENT=Production `
   -e EASYVAN_ADMIN_EMAIL=admin@exemplo.com `
   -e EASYVAN_ADMIN_PASSWORD="defina-uma-senha-forte" `
+  -e GoogleMaps__ApiKey="sua-chave-do-google-maps" `
   -v easyvan-data:/data `
   easyvan
 ```
@@ -109,15 +138,15 @@ Acesse `http://localhost:8080`. O Dockerfile configura `ASPNETCORE_URLS=http://0
 
 ```text
 Controllers/     Fluxos MVC e regras de entrada
-Data/             DbContext, inicialização e persistência
-Models/           Entidades e ViewModels
-Services/         Serviços de domínio, incluindo hash de senhas
-Views/            Views Razor da aplicação
-Migrations/       Migrações do Entity Framework Core
-tests/            Projeto de testes xUnit
-wwwroot/          CSS, JavaScript, imagens e bibliotecas estáticas
-spec/             Especificações funcionais
-plan/             Planos de implementação e testes
+Data/            DbContext, inicialização e persistência
+Models/          Entidades e ViewModels
+Services/        Serviços de domínio (validação, auditoria, centro de operações, fotos, tema)
+Views/           Views Razor da aplicação
+Migrations/      Migrações do Entity Framework Core
+tests/           Projeto de testes xUnit
+wwwroot/         CSS, JavaScript, imagens e bibliotecas estáticas
+spec/            Especificações funcionais
+plan/            Planos de implementação e testes
 ```
 
 ## Testes e validação
@@ -128,15 +157,31 @@ dotnet build
 dotnet test
 ```
 
-O conjunto atual inclui testes da normalização de papéis em `tests/EasyVan.Tests`. A compilação também valida as Views Razor.
+O projeto inclui **57 testes automatizados** cobrindo:
+
+- Hash de senhas PBKDF2 (legado e atual);
+- Validação de senha (6 a 20 caracteres);
+- Normalização de papéis de usuário;
+- Regras operacionais: conflito de horário (motorista/van), capacidade excedida, viagem sem motorista/van, dados inconsistentes;
+- Transições de ciclo de vida de viagens (válidas e inválidas);
+- Validação de nova viagem (van/motorista/rota inexistentes, conflitos);
+- Status da interface (rótulos e classes CSS);
+- Validação brasileira de telefone e CNH.
+
+A compilação também valida as Views Razor.
 
 ## Segurança
 
 - Senhas novas são armazenadas com hash PBKDF2, nunca em texto simples.
 - A autenticação usa cookie HttpOnly, SameSite e expiração deslizante.
-- Ações administrativas devem respeitar o papel do usuário.
-- Segredos de produção devem ser fornecidos por variáveis de ambiente ou pelo provedor de hospedagem.
+- Ações administrativas requerem o papel "Administrador" no backend.
+- Motoristas só podem operar suas próprias viagens.
+- Alunos só podem confirmar presença em suas próprias viagens.
+- Proteção antiforgery em todos os formulários POST.
+- Rate limiting em endpoints de login.
+- Segredos de produção devem ser fornecidos por variáveis de ambiente.
 - Não versione `easyvan.db`, tokens, senhas ou chaves de Data Protection.
+- Upload de fotos valida tipo (JPEG/PNG/WebP) e tamanho (máx. 2 MB) com nomes não previsíveis.
 
 Consulte [SECURITY.md](SECURITY.md) para os controles, limitações conhecidas e responsabilidades de implantação.
 
