@@ -29,6 +29,8 @@ namespace EasyVan.Models
         [StringLength(10)]
         public string Tema { get; set; } = "claro";
 
+        public bool Ativo { get; set; } = true;
+
         public static bool IsSupportedRole(string? role)
         {
             if (string.IsNullOrWhiteSpace(role)) return false;

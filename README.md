@@ -17,7 +17,7 @@ O projeto está funcional para desenvolvimento local e possui:
 - **confirmação de presença dos alunos**: "Vou"/"Não vou" nas viagens agendadas;
 - **marcação de presença pelo motorista**: Presente/Ausente durante viagens em andamento;
 - busca e filtros combináveis de vans por texto, status e capacidade;
-- **Centro de Operações Inteligente**: dashboard do gestor com indicadores reais, alertas operacionais, ações prioritárias e atividade recente;
+- **Centro de Operações**: dashboard do gestor com indicadores reais, alertas operacionais, ações prioritárias e atividade recente;
 - **histórico de auditoria**: registro de operações relevantes (criação, atualização, mudança de estado, cancelamento, presença);
 - persistência com Entity Framework Core: SQLite no desenvolvimento local e PostgreSQL (Supabase) em produção;
 - hash de senhas com PBKDF2 por meio de `IPasswordService`;
@@ -30,7 +30,7 @@ O projeto está funcional para desenvolvimento local e possui:
 
 O produto ainda não implementa GPS em tempo real, reservas, pagamentos, notificações ou multi-tenancy.
 
-## Centro de Operações Inteligente
+## Centro de Operações
 
 O painel administrativo (`/Administrador`) é um centro de acompanhamento operacional com:
 
@@ -68,10 +68,10 @@ Na raiz do projeto:
 dotnet restore
 dotnet build
 dotnet test
-dotnet run
+dotnet run --launch-profile https
 ```
 
-Acesse `http://localhost:5256`.
+Acesse `https://localhost:7291` para entrar. O perfil também expõe `http://localhost:5256`, mas o cookie de autenticação é `Secure`; o login só persiste em HTTPS.
 
 Na primeira inicialização local, a aplicação aplica as migrations EF Core ao arquivo `easyvan.db` e cria dados de demonstração. O banco local é um artefato de desenvolvimento e não deve ser versionado. Em produção PostgreSQL, o bootstrapper gera o schema com o provider Npgsql e registra o baseline das migrations históricas.
 
@@ -158,7 +158,7 @@ dotnet build
 dotnet test
 ```
 
-O projeto inclui **89 testes automatizados** cobrindo:
+O projeto inclui **92 testes automatizados** cobrindo:
 
 - Hash de senhas PBKDF2 (legado e atual);
 - Validação de senha (6 a 20 caracteres);

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace EasyVan.Services
 {
     /// <summary>
-    /// Serviço do Centro de Operações Inteligente.
+    /// Serviço do Centro de Operações.
     /// Calcula indicadores operacionais a partir de dados reais do banco.
     /// </summary>
     public class CentroOperacoesService

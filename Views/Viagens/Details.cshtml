@@ -7,7 +7,7 @@
     var alunos = ViewData["AlunosDaViagem"] as IEnumerable<PresencaViagem> ?? Enumerable.Empty<PresencaViagem>();
     var listaAlunos = alunos.ToList();
     var presentes = listaAlunos.Count(a => a.Presente);
-    var confirmados = listaAlunos.Count(a => a.StatusConfirmacao == true);
+    var confirmados = listaAlunos.Count(a => a.Status == StatusPresenca.Confirmado);
     var erro = TempData["Erro"] as string;
 
     var mapaViagem = Model.Rota == null ? null : new MapaRotaViewModel
@@ -314,12 +314,12 @@
                         <div class="ev-attendance__actions">
                             @if (Model.Status == "Agendada")
                             {
-                                <partial name="_StatusBadge" model='presenca.StatusConfirmacao == true ? "Confirmou" : presenca.StatusConfirmacao == false ? "Não vai" : "Sem resposta"' />
+                                <partial name="_StatusBadge" model='presenca.Status == StatusPresenca.Confirmado ? "Confirmou" : presenca.Status == StatusPresenca.Ausente ? "Não vai" : "Sem resposta"' />
                             }
                             else
                             {
                                 <partial name="_StatusBadge" model='presenca.Presente ? "Presente" : "Ausente"' />
-                                <partial name="_StatusBadge" model='presenca.StatusConfirmacao == true ? "Confirmou" : presenca.StatusConfirmacao == false ? "Não vai" : "Sem resposta"' />
+                                <partial name="_StatusBadge" model='presenca.Status == StatusPresenca.Confirmado ? "Confirmou" : presenca.Status == StatusPresenca.Ausente ? "Não vai" : "Sem resposta"' />
                             }
                             @if (Model.Status == "EmAndamento")
                             {

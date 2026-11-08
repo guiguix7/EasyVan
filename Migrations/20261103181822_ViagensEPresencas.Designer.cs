@@ -23,19 +23,19 @@ namespace Gerenciamento_de_Van.Migrations
             modelBuilder.Entity("EasyVan.Models.Aluno", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                        .ValueGeneratedOnAdd();
 
-                    b.Property<bool>("Ativo")
+                    b.Property<bool>("Ativo");
 
                     b.Property<string>("Email")
-                        .IsRequired()
+                        .IsRequired();
 
-                    b.Property<string>("Endereco")
+                    b.Property<string>("Endereco");
 
                     b.Property<string>("Nome")
-                        .IsRequired()
+                        .IsRequired();
 
-                    b.Property<string>("Telefone")
+                    b.Property<string>("Telefone");
 
                     b.HasKey("Id");
 
@@ -45,19 +45,19 @@ namespace Gerenciamento_de_Van.Migrations
             modelBuilder.Entity("EasyVan.Models.Motorista", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                        .ValueGeneratedOnAdd();
 
-                    b.Property<bool>("Ativo")
+                    b.Property<bool>("Ativo");
 
-                    b.Property<string>("CNH")
+                    b.Property<string>("CNH");
 
                     b.Property<string>("Email")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.Property<string>("Nome")
-                        .IsRequired()
+                        .IsRequired();
 
-                    b.Property<string>("Telefone")
+                    b.Property<string>("Telefone");
 
                     b.HasKey("Id");
 
@@ -67,15 +67,15 @@ namespace Gerenciamento_de_Van.Migrations
             modelBuilder.Entity("EasyVan.Models.PresencaViagem", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                        .ValueGeneratedOnAdd();
 
-                    b.Property<int>("AlunoId")
+                    b.Property<int>("AlunoId");
 
-                    b.Property<string>("Observacao")
+                    b.Property<string>("Observacao");
 
-                    b.Property<bool>("Presente")
+                    b.Property<bool>("Presente");
 
-                    b.Property<int>("ViagemId")
+                    b.Property<int>("ViagemId");
 
                     b.HasKey("Id");
 
@@ -85,20 +85,20 @@ namespace Gerenciamento_de_Van.Migrations
             modelBuilder.Entity("EasyVan.Models.Rota", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                        .ValueGeneratedOnAdd();
 
-                    b.Property<bool>("Ativo")
+                    b.Property<bool>("Ativo");
 
-                    b.Property<string>("Descricao")
+                    b.Property<string>("Descricao");
 
                     b.Property<string>("Destino")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.Property<string>("Nome")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.Property<string>("Origem")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.HasKey("Id");
 
@@ -108,20 +108,20 @@ namespace Gerenciamento_de_Van.Migrations
             modelBuilder.Entity("EasyVan.Models.Usuarios", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("Email")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.Property<string>("Nome")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.Property<string>("PasswordHasher")
                         .IsRequired()
-                        .HasMaxLength(100)
+                        .HasMaxLength(100);
 
                     b.Property<string>("RoleManager")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.HasKey("Id");
 
@@ -131,27 +131,27 @@ namespace Gerenciamento_de_Van.Migrations
             modelBuilder.Entity("EasyVan.Models.Van", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                        .ValueGeneratedOnAdd();
 
-                    b.Property<int>("Capacity")
+                    b.Property<int>("Capacity");
 
                     b.Property<string>("Description")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.Property<string>("Driver")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.Property<string>("Plate")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.Property<string>("Route")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.Property<string>("Schedule")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.Property<string>("Status")
-                        .IsRequired()
+                        .IsRequired();
 
                     b.HasKey("Id");
 
@@ -161,27 +161,27 @@ namespace Gerenciamento_de_Van.Migrations
             modelBuilder.Entity("EasyVan.Models.Viagem", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                        .ValueGeneratedOnAdd();
 
-                    b.Property<DateTime>("Data")
+                    b.Property<DateTime>("Data");
 
-                    b.Property<DateTime>("DataCriacao")
+                    b.Property<DateTime>("DataCriacao");
 
-                    b.Property<TimeSpan?>("HoraFim")
+                    b.Property<TimeSpan?>("HoraFim");
 
-                    b.Property<TimeSpan?>("HoraInicio")
+                    b.Property<TimeSpan?>("HoraInicio");
 
-                    b.Property<int>("MotoristaId")
+                    b.Property<int>("MotoristaId");
 
-                    b.Property<string>("Observacao")
+                    b.Property<string>("Observacao");
 
-                    b.Property<int>("RotaId")
+                    b.Property<int>("RotaId");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
+                        .HasMaxLength(20);
 
-                    b.Property<int>("VanId")
+                    b.Property<int>("VanId");
 
                     b.HasKey("Id");
 

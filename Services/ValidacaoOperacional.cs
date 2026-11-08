@@ -158,7 +158,7 @@ namespace EasyVan.Services
                 return erros;
 
             var totalPassageiros = _db.PresencasViagem
-                .Count(p => p.ViagemId == viagemId);
+                .Count(p => p.ViagemId == viagemId && p.Status == StatusPresenca.Confirmado);
 
             if (totalPassageiros > viagem.Van.Capacity)
             {
@@ -193,8 +193,8 @@ namespace EasyVan.Services
             var alertas = new List<ResultadoValidacao>();
 
             var gruposMotorista = viagens
-                .Where(v => v.MotoristaId != 0)
-                .GroupBy(v => v.MotoristaId);
+                .Where(v => v.MotoristaId.HasValue)
+                .GroupBy(v => v.MotoristaId!.Value);
 
             foreach (var grupo in gruposMotorista)
             {
@@ -224,8 +224,8 @@ namespace EasyVan.Services
             var alertas = new List<ResultadoValidacao>();
 
             var gruposVan = viagens
-                .Where(v => v.VanId != 0)
-                .GroupBy(v => v.VanId);
+                .Where(v => v.VanId.HasValue)
+                .GroupBy(v => v.VanId!.Value);
 
             foreach (var grupo in gruposVan)
             {
@@ -258,9 +258,10 @@ namespace EasyVan.Services
 
             foreach (var viagem in viagens)
             {
-                if (!vansPorId.TryGetValue(viagem.VanId, out var van)) continue;
+                if (!viagem.VanId.HasValue || !vansPorId.TryGetValue(viagem.VanId.Value, out var van)) continue;
 
-                var totalPassageiros = presencas.Count(p => p.ViagemId == viagem.Id);
+                var totalPassageiros = presencas.Count(p =>
+                    p.ViagemId == viagem.Id && p.Status == StatusPresenca.Confirmado);
                 if (totalPassageiros > van.Capacity)
                 {
                     alertas.Add(new ResultadoValidacao(
@@ -279,7 +280,7 @@ namespace EasyVan.Services
 
             foreach (var viagem in viagens)
             {
-                if (viagem.MotoristaId == 0)
+                if (!viagem.MotoristaId.HasValue)
                 {
                     alertas.Add(new ResultadoValidacao(
                         true, "ViagemSemMotorista", "Viagem sem motorista",
@@ -297,7 +298,7 @@ namespace EasyVan.Services
 
             foreach (var viagem in viagens)
             {
-                if (viagem.VanId == 0)
+                if (!viagem.VanId.HasValue)
                 {
                     alertas.Add(new ResultadoValidacao(
                         true, "ViagemSemVan", "Viagem sem veículo",

@@ -70,6 +70,14 @@
                         </select>
                         <span asp-validation-for="RotaId" class="ev-form-validation"></span>
                     </div>
+
+                    <div class="ev-field">
+                        <label asp-for="Sentido" class="form-label">Sentido <span class="ev-required" aria-hidden="true">*</span></label>
+                        <select asp-for="Sentido" asp-items="Model.Sentidos" class="form-select">
+                            <option value="">Selecione o sentido</option>
+                        </select>
+                        <span asp-validation-for="Sentido" class="ev-form-validation"></span>
+                    </div>
                 </div>
             </section>
 

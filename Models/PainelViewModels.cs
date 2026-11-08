@@ -17,7 +17,7 @@ namespace EasyVan.Models
         public string? Endereco { get; set; }
         public string? Telefone { get; set; }
         public bool Presente { get; set; }
-        public bool? StatusConfirmacao { get; set; }
+        public StatusPresenca Status { get; set; }
     }
 
     public class ViagemDoMotorista

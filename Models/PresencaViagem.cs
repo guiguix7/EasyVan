@@ -15,11 +15,20 @@ namespace EasyVan.Models
         public bool Presente { get; set; }
 
         /// <summary>
-        /// Resposta do aluno: null = ainda não respondeu, true = vou, false = não vou.
-        /// É separada de <see cref="Presente"/>, que registra a presença efetiva no embarque.
+        /// Resposta do aluno. Separada de <see cref="Presente"/>, que registra o embarque efetivo.
+        /// </summary>
+        public StatusPresenca Status { get; set; } = StatusPresenca.SemResposta;
+
+        public DateTime? RespondidoEm { get; set; }
+
+        /// <summary>
+        /// Coluna legada mantida até a migração de limpeza. Use <see cref="Status"/> no código novo.
         /// </summary>
         public bool? StatusConfirmacao { get; set; }
 
+        /// <summary>
+        /// Coluna legada mantida até a migração de limpeza. Use <see cref="RespondidoEm"/> no código novo.
+        /// </summary>
         public DateTime? ConfirmadoEm { get; set; }
 
         public string? Observacao { get; set; }

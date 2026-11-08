@@ -6,14 +6,17 @@ namespace EasyVan.Models
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "A van é obrigatória.")]
-        public int VanId { get; set; }
+        // Nulos apenas em viagens sem alocação (alerta A2) ou legado ainda não classificado.
+        public int? VanId { get; set; }
 
-        [Required(ErrorMessage = "O motorista é obrigatório.")]
-        public int MotoristaId { get; set; }
+        public int? MotoristaId { get; set; }
 
         [Required(ErrorMessage = "A rota é obrigatória.")]
         public int RotaId { get; set; }
+
+        public SentidoViagem? Sentido { get; set; }
+
+        public int? HorarioRotaId { get; set; }
 
         // Data prevista de partida, armazenada como meia-noite UTC do dia local.
         [Required(ErrorMessage = "A data é obrigatória.")]
@@ -44,6 +47,7 @@ namespace EasyVan.Models
         public Van? Van { get; set; }
         public Motorista? Motorista { get; set; }
         public Rota? Rota { get; set; }
+        public HorarioRota? HorarioRota { get; set; }
         public ICollection<PresencaViagem> Presencas { get; set; } = new List<PresencaViagem>();
     }
 }

@@ -1,12 +1,13 @@
 @model EasyVan.Models.PainelAlunoViewModel
+@using EasyVan.Models
 
 @{
     ViewData["Title"] = "Meu transporte";
     var proximas = Model.Presencas
         .Where(p => p.Viagem != null && p.Viagem.Data >= Model.Hoje && p.Viagem.Status != "Finalizada")
         .ToList();
-    var pendentes = proximas.Count(p => p.StatusConfirmacao == null);
-    var confirmadas = proximas.Count(p => p.StatusConfirmacao == true);
+    var pendentes = proximas.Count(p => p.Status == StatusPresenca.SemResposta);
+    var confirmadas = proximas.Count(p => p.Status == StatusPresenca.Confirmado);
 }
 
 <section class="ev-page">
@@ -137,11 +138,11 @@
                                 </div>
 
                                 <div class="ev-attendance__actions">
-                                    @if (presenca.StatusConfirmacao == true)
+                                    @if (presenca.Status == StatusPresenca.Confirmado)
                                     {
                                         <span class="ev-badge ev-badge--success"><span class="ev-badge__dot" aria-hidden="true"></span>Você vai</span>
                                     }
-                                    else if (presenca.StatusConfirmacao == false)
+                                    else if (presenca.Status == StatusPresenca.Ausente)
                                     {
                                         <span class="ev-badge ev-badge--neutral"><span class="ev-badge__dot" aria-hidden="true"></span>Você não vai</span>
                                     }

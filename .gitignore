@@ -9,6 +9,11 @@
 bin/
 obj/
 
+# Banco local (nunca versionar)
+*.db
+*.db-shm
+*.db-wal
+
 .fds
 
 node_modules/

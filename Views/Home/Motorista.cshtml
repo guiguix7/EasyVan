@@ -1,4 +1,5 @@
 @model EasyVan.Models.PainelMotoristaViewModel
+@using EasyVan.Models
 
 @{
     ViewData["Title"] = "Meu painel";
@@ -7,7 +8,7 @@
         .ToList();
     var viagensHoje = Model.Viagens.Count(v => v.Viagem.Data == Model.Hoje && v.Viagem.Status != "Cancelada");
     var alunosPrevistos = proximas.Sum(v => v.Alunos.Count);
-    var alunosConfirmados = proximas.Sum(v => v.Alunos.Count(a => a.StatusConfirmacao == true));
+    var alunosConfirmados = proximas.Sum(v => v.Alunos.Count(a => a.Status == StatusPresenca.Confirmado));
 
     string Iniciais(string? nome)
     {
@@ -170,11 +171,11 @@
                                                 @(viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Sem horário")
                                             </span>
 
-                                            @if (aluno.StatusConfirmacao == true)
+                                            @if (aluno.Status == StatusPresenca.Confirmado)
                                             {
                                                 <span class="ev-badge ev-badge--success"><span class="ev-badge__dot" aria-hidden="true"></span>Confirmou</span>
                                             }
-                                            else if (aluno.StatusConfirmacao == false)
+                                            else if (aluno.Status == StatusPresenca.Ausente)
                                             {
                                                 <span class="ev-badge ev-badge--neutral"><span class="ev-badge__dot" aria-hidden="true"></span>Não vai</span>
                                             }

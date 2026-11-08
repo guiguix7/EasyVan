@@ -126,6 +126,8 @@ public class HomeController : Controller
             return RedirectToAction(nameof(Aluno));
         }
 
+        presenca.Status = vou ? StatusPresenca.Confirmado : StatusPresenca.Ausente;
+        presenca.RespondidoEm = DateTime.UtcNow;
         presenca.StatusConfirmacao = vou;
         presenca.ConfirmadoEm = DateTime.UtcNow;
         await _db.SaveChangesAsync();
@@ -224,7 +226,7 @@ public class HomeController : Controller
                     Endereco = p.Aluno.Endereco,
                     Telefone = p.Aluno.Telefone,
                     Presente = p.Presente,
-                    StatusConfirmacao = p.StatusConfirmacao
+                    Status = p.Status
                 })
                 .ToList()
         }).ToList();

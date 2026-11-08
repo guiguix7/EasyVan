@@ -19,6 +19,9 @@ namespace EasyVan.Models
         [Display(Name = "Rota")]
         public int RotaId { get; set; }
 
+        [Display(Name = "Sentido")]
+        public SentidoViagem? Sentido { get; set; }
+
         [Required(ErrorMessage = "Informe a data prevista de partida.")]
         [DataType(DataType.Date)]
         [Display(Name = "Partida prevista")]
@@ -44,6 +47,7 @@ namespace EasyVan.Models
         public IEnumerable<SelectListItem> Vans { get; set; } = Array.Empty<SelectListItem>();
         public IEnumerable<SelectListItem> Motoristas { get; set; } = Array.Empty<SelectListItem>();
         public IEnumerable<SelectListItem> Rotas { get; set; } = Array.Empty<SelectListItem>();
+        public IEnumerable<SelectListItem> Sentidos { get; set; } = Array.Empty<SelectListItem>();
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
