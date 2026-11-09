@@ -1,5 +1,8 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EasyVan.Data;
 
@@ -79,6 +82,11 @@ public static class PostgresDatabaseBootstrapper
         if (db.Database.GetPendingMigrations().Any())
             db.Database.Migrate();
 
+        // SQLite-origin migrations create boolean columns as INTEGER on PostgreSQL.
+        // Normalize every bool property in the EF model before DbInitializer writes
+        // data, preserving NULL and mapping legacy 0/1 values to false/true.
+        NormalizeLegacyBooleanColumns(db);
+
         // The EasyVan app authenticates users with ASP.NET cookies, not Supabase Auth.
         // Public Supabase API roles must not query operational application tables.
         db.Database.ExecuteSqlRaw("""
@@ -100,6 +108,85 @@ public static class PostgresDatabaseBootstrapper
         db.Database.ExecuteSqlRaw("REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;");
         db.Database.ExecuteSqlRaw("ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;");
         db.Database.ExecuteSqlRaw("ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;");
+    }
+
+    private static void NormalizeLegacyBooleanColumns(ApplicationDbContext db)
+    {
+        var booleanColumns = db.Model.GetEntityTypes()
+            .SelectMany(entityType =>
+            {
+                var tableName = entityType.GetTableName();
+                if (tableName is null)
+                    return Enumerable.Empty<(string Schema, string Table, string Column)>();
+
+                var schema = entityType.GetSchema() ?? "public";
+                var storeObject = StoreObjectIdentifier.Table(tableName, schema);
+
+                return entityType.GetProperties()
+                    .Where(property =>
+                        (Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType) == typeof(bool))
+                    .Select(property => property.GetColumnName(storeObject))
+                    .Where(column => !string.IsNullOrWhiteSpace(column))
+                    .Select(column => (Schema: schema, Table: tableName, Column: column!));
+            })
+            .Distinct()
+            .ToArray();
+
+        if (booleanColumns.Length == 0)
+            return;
+
+        var connection = db.Database.GetDbConnection();
+        var closeAfterCheck = connection.State != ConnectionState.Open;
+        if (closeAfterCheck)
+            connection.Open();
+
+        try
+        {
+            var sqlHelper = db.GetService<ISqlGenerationHelper>();
+            foreach (var column in booleanColumns)
+            {
+                using var typeCommand = connection.CreateCommand();
+                typeCommand.CommandText = """
+                    SELECT data_type
+                    FROM information_schema.columns
+                    WHERE table_schema = @schema
+                      AND table_name = @table
+                      AND column_name = @column;
+                    """;
+
+                foreach (var (name, value) in new[]
+                {
+                    ("@schema", column.Schema),
+                    ("@table", column.Table),
+                    ("@column", column.Column)
+                })
+                {
+                    var parameter = typeCommand.CreateParameter();
+                    parameter.ParameterName = name;
+                    parameter.Value = value;
+                    typeCommand.Parameters.Add(parameter);
+                }
+
+                var dataType = Convert.ToString(typeCommand.ExecuteScalar());
+                if (dataType is not ("smallint" or "integer" or "bigint"))
+                    continue;
+
+                var tableIdentifier = sqlHelper.DelimitIdentifier(column.Table, column.Schema);
+                var columnIdentifier = sqlHelper.DelimitIdentifier(column.Column);
+                using var alterCommand = connection.CreateCommand();
+                alterCommand.CommandText = $"""
+                    ALTER TABLE {tableIdentifier}
+                    ALTER COLUMN {columnIdentifier} TYPE boolean
+                    USING ({columnIdentifier} <> 0);
+                    """;
+                alterCommand.ExecuteNonQuery();
+            }
+        }
+        finally
+        {
+            if (closeAfterCheck)
+                connection.Close();
+        }
     }
 
     private static int GetPublicApplicationTableCount(ApplicationDbContext db)
