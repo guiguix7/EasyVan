@@ -149,7 +149,7 @@ public static class PostgresDatabaseBootstrapper
             {
                 using var typeCommand = connection.CreateCommand();
                 typeCommand.CommandText = """
-                    SELECT data_type
+                    SELECT data_type, column_default
                     FROM information_schema.columns
                     WHERE table_schema = @schema
                       AND table_name = @table
@@ -169,19 +169,53 @@ public static class PostgresDatabaseBootstrapper
                     typeCommand.Parameters.Add(parameter);
                 }
 
-                var dataType = Convert.ToString(typeCommand.ExecuteScalar());
+                string? dataType;
+                string? defaultExpression;
+                using (var reader = typeCommand.ExecuteReader())
+                {
+                    if (!reader.Read())
+                        continue;
+
+                    dataType = reader.IsDBNull(0) ? null : reader.GetString(0);
+                    defaultExpression = reader.IsDBNull(1) ? null : reader.GetString(1);
+                }
+
                 if (dataType is not ("smallint" or "integer" or "bigint"))
                     continue;
 
                 var tableIdentifier = sqlHelper.DelimitIdentifier(column.Table, column.Schema);
                 var columnIdentifier = sqlHelper.DelimitIdentifier(column.Column);
-                using var alterCommand = connection.CreateCommand();
-                alterCommand.CommandText = $"""
-                    ALTER TABLE {tableIdentifier}
-                    ALTER COLUMN {columnIdentifier} TYPE boolean
-                    USING ({columnIdentifier} <> 0);
-                    """;
-                alterCommand.ExecuteNonQuery();
+
+                // PostgreSQL cannot automatically cast an INTEGER default while
+                // changing the column to BOOLEAN. Preserve simple legacy 0/1 defaults.
+                using (var dropDefaultCommand = connection.CreateCommand())
+                {
+                    dropDefaultCommand.CommandText = $"""
+                        ALTER TABLE {tableIdentifier}
+                        ALTER COLUMN {columnIdentifier} DROP DEFAULT;
+                        """;
+                    dropDefaultCommand.ExecuteNonQuery();
+                }
+
+                using (var alterCommand = connection.CreateCommand())
+                {
+                    alterCommand.CommandText = $"""
+                        ALTER TABLE {tableIdentifier}
+                        ALTER COLUMN {columnIdentifier} TYPE boolean
+                        USING ({columnIdentifier} <> 0);
+                        """;
+                    alterCommand.ExecuteNonQuery();
+                }
+
+                if (TryParseBooleanDefault(defaultExpression, out var defaultBoolean))
+                {
+                    using var setDefaultCommand = connection.CreateCommand();
+                    setDefaultCommand.CommandText = $"""
+                        ALTER TABLE {tableIdentifier}
+                        ALTER COLUMN {columnIdentifier} SET DEFAULT {(defaultBoolean ? "TRUE" : "FALSE")};
+                        """;
+                    setDefaultCommand.ExecuteNonQuery();
+                }
             }
         }
         finally
@@ -189,6 +223,25 @@ public static class PostgresDatabaseBootstrapper
             if (closeAfterCheck)
                 connection.Close();
         }
+    }
+
+    private static bool TryParseBooleanDefault(string? expression, out bool value)
+    {
+        value = false;
+        if (string.IsNullOrWhiteSpace(expression))
+            return false;
+
+        var normalized = expression.Trim().Trim('(', ')').Trim();
+        var castSeparator = normalized.IndexOf("::", StringComparison.Ordinal);
+        if (castSeparator >= 0)
+            normalized = normalized[..castSeparator].Trim();
+
+        normalized = normalized.Trim('\'');
+        if (!int.TryParse(normalized, out var integerValue) || integerValue is not (0 or 1))
+            return false;
+
+        value = integerValue == 1;
+        return true;
     }
 
     private static int GetPublicApplicationTableCount(ApplicationDbContext db)
