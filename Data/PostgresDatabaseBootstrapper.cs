@@ -87,6 +87,7 @@ public static class PostgresDatabaseBootstrapper
         // data, preserving NULL and mapping legacy 0/1 values to false/true.
         NormalizeLegacyBooleanColumns(db);
         NormalizeLegacyGeneratedIntegerKeys(db);
+        NormalizeLegacyCalendarDateColumns(db);
 
         // The EasyVan app authenticates users with ASP.NET cookies, not Supabase Auth.
         // Public Supabase API roles must not query operational application tables.
@@ -217,6 +218,73 @@ public static class PostgresDatabaseBootstrapper
                         """;
                     setDefaultCommand.ExecuteNonQuery();
                 }
+            }
+        }
+        finally
+        {
+            if (closeAfterCheck)
+                connection.Close();
+        }
+    }
+
+    private static void NormalizeLegacyCalendarDateColumns(ApplicationDbContext db)
+    {
+        // These fields represent Sao Paulo calendar dates, not UTC instants.
+        // Normalize old PostgreSQL timestamptz/text columns to match the EF model.
+        var calendarColumns = new[]
+        {
+            (Table: "Viagens", Column: "Data"),
+            (Table: "Viagens", Column: "DataChegada")
+        };
+
+        var connection = db.Database.GetDbConnection();
+        var closeAfterCheck = connection.State != ConnectionState.Open;
+        if (closeAfterCheck)
+            connection.Open();
+
+        try
+        {
+            var sqlHelper = db.GetService<ISqlGenerationHelper>();
+            foreach (var column in calendarColumns)
+            {
+                using var typeCommand = connection.CreateCommand();
+                typeCommand.CommandText = """
+                    SELECT data_type
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = @table
+                      AND column_name = @column;
+                    """;
+
+                foreach (var (name, value) in new[]
+                {
+                    ("@table", column.Table),
+                    ("@column", column.Column)
+                })
+                {
+                    var parameter = typeCommand.CreateParameter();
+                    parameter.ParameterName = name;
+                    parameter.Value = value;
+                    typeCommand.Parameters.Add(parameter);
+                }
+
+                var dataType = Convert.ToString(typeCommand.ExecuteScalar());
+                if (dataType is not ("timestamp with time zone" or "text" or "character varying" or "date"))
+                    continue;
+
+                var tableIdentifier = sqlHelper.DelimitIdentifier(column.Table, "public");
+                var columnIdentifier = sqlHelper.DelimitIdentifier(column.Column);
+                var usingExpression = dataType == "timestamp with time zone"
+                    ? $"{columnIdentifier} AT TIME ZONE 'UTC'"
+                    : $"{columnIdentifier}::timestamp without time zone";
+
+                using var alterCommand = connection.CreateCommand();
+                alterCommand.CommandText = $"""
+                    ALTER TABLE {tableIdentifier}
+                    ALTER COLUMN {columnIdentifier} TYPE timestamp without time zone
+                    USING ({usingExpression});
+                    """;
+                alterCommand.ExecuteNonQuery();
             }
         }
         finally
