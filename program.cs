@@ -55,9 +55,20 @@ var connectionString = rawConnectionString ?? "Data Source=easyvan.db";
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     if (isPostgres)
+    {
         options.UseNpgsql(connectionString);
+        // The shared EF migration snapshot is generated with SQLite conventions.
+        // EF Core 10 compares provider-specific store types (for example TEXT/REAL
+        // versus PostgreSQL types) and raises PendingModelChangesWarning even when
+        // the migration operations themselves are valid for Npgsql. Keep this
+        // provider-specific so SQLite development still reports model drift.
+        options.ConfigureWarnings(warnings => warnings.Ignore(
+            Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+    }
     else
+    {
         options.UseSqlite(connectionString);
+    }
 });
 
 builder.Services.AddScoped<IPasswordService, PasswordService>();
