@@ -86,6 +86,7 @@ public static class PostgresDatabaseBootstrapper
         // Normalize every bool property in the EF model before DbInitializer writes
         // data, preserving NULL and mapping legacy 0/1 values to false/true.
         NormalizeLegacyBooleanColumns(db);
+        NormalizeLegacyGeneratedIntegerKeys(db);
 
         // The EasyVan app authenticates users with ASP.NET cookies, not Supabase Auth.
         // Public Supabase API roles must not query operational application tables.
@@ -216,6 +217,114 @@ public static class PostgresDatabaseBootstrapper
                         """;
                     setDefaultCommand.ExecuteNonQuery();
                 }
+            }
+        }
+        finally
+        {
+            if (closeAfterCheck)
+                connection.Close();
+        }
+    }
+
+    private static void NormalizeLegacyGeneratedIntegerKeys(ApplicationDbContext db)
+    {
+        var generatedKeys = db.Model.GetEntityTypes()
+            .SelectMany(entityType =>
+            {
+                var tableName = entityType.GetTableName();
+                if (tableName is null)
+                    return Enumerable.Empty<(string Schema, string Table, string Column)>();
+
+                var schema = entityType.GetSchema();
+                var storeObject = StoreObjectIdentifier.Table(tableName, schema);
+                return (entityType.FindPrimaryKey()?.Properties ?? Array.Empty<Microsoft.EntityFrameworkCore.Metadata.IProperty>())
+                    .Where(property =>
+                        property.ValueGenerated == Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnAdd
+                        && (Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType) == typeof(int))
+                    .Select(property => property.GetColumnName(storeObject))
+                    .Where(column => !string.IsNullOrWhiteSpace(column))
+                    .Select(column => (Schema: schema ?? "public", Table: tableName, Column: column!));
+            })
+            .Distinct()
+            .ToArray();
+
+        if (generatedKeys.Length == 0)
+            return;
+
+        var connection = db.Database.GetDbConnection();
+        var closeAfterCheck = connection.State != ConnectionState.Open;
+        if (closeAfterCheck)
+            connection.Open();
+
+        try
+        {
+            var sqlHelper = db.GetService<ISqlGenerationHelper>();
+            foreach (var key in generatedKeys)
+            {
+                using var typeCommand = connection.CreateCommand();
+                typeCommand.CommandText = """
+                    SELECT data_type, column_default, is_identity
+                    FROM information_schema.columns
+                    WHERE table_schema = @schema
+                      AND table_name = @table
+                      AND column_name = @column;
+                    """;
+
+                foreach (var (name, value) in new[]
+                {
+                    ("@schema", key.Schema),
+                    ("@table", key.Table),
+                    ("@column", key.Column)
+                })
+                {
+                    var parameter = typeCommand.CreateParameter();
+                    parameter.ParameterName = name;
+                    parameter.Value = value;
+                    typeCommand.Parameters.Add(parameter);
+                }
+
+                string? dataType;
+                string? columnDefault;
+                string? isIdentity;
+                using (var reader = typeCommand.ExecuteReader())
+                {
+                    if (!reader.Read())
+                        continue;
+
+                    dataType = reader.IsDBNull(0) ? null : reader.GetString(0);
+                    columnDefault = reader.IsDBNull(1) ? null : reader.GetString(1);
+                    isIdentity = reader.IsDBNull(2) ? null : reader.GetString(2);
+                }
+
+                // Only repair SQLite-origin integer keys that have no PostgreSQL
+                // identity/default. Existing generators and their current data remain intact.
+                if (dataType != "integer" || isIdentity == "YES" || !string.IsNullOrWhiteSpace(columnDefault))
+                    continue;
+
+                var sequenceName = $"{key.Table}_{key.Column}_seq";
+                var tableIdentifier = sqlHelper.DelimitIdentifier(key.Table, key.Schema);
+                var columnIdentifier = sqlHelper.DelimitIdentifier(key.Column);
+                var sequenceIdentifier = sqlHelper.DelimitIdentifier(sequenceName, key.Schema);
+                var sequenceRegclass = $"{key.Schema}.{sequenceName}".Replace("'", "''", StringComparison.Ordinal);
+
+                using var sequenceCommand = connection.CreateCommand();
+                sequenceCommand.CommandText = $"""
+                    CREATE SEQUENCE IF NOT EXISTS {sequenceIdentifier};
+
+                    SELECT setval(
+                        '{sequenceRegclass}'::regclass,
+                        COALESCE((SELECT MAX({columnIdentifier}) FROM {tableIdentifier}), 1),
+                        EXISTS(SELECT 1 FROM {tableIdentifier})
+                    );
+
+                    ALTER TABLE {tableIdentifier}
+                    ALTER COLUMN {columnIdentifier}
+                    SET DEFAULT nextval('{sequenceRegclass}'::regclass);
+
+                    ALTER SEQUENCE {sequenceIdentifier}
+                    OWNED BY {tableIdentifier}.{columnIdentifier};
+                    """;
+                sequenceCommand.ExecuteNonQuery();
             }
         }
         finally
