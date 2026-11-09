@@ -16,11 +16,13 @@ namespace EasyVan.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly IPasswordService _senha;
+        private readonly ILogger<UsuariosController> _logger;
 
-        public UsuariosController(ApplicationDbContext db, IPasswordService senha)
+        public UsuariosController(ApplicationDbContext db, IPasswordService senha, ILogger<UsuariosController> logger)
         {
             _db = db;
             _senha = senha;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
@@ -178,6 +180,16 @@ namespace EasyVan.Controllers
         }
 
         [AllowAnonymous]
+        [HttpGet]
+        public IActionResult Login()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Index", "Home");
+
+            return View("~/Views/Home/Index.cshtml", new LoginViewModel());
+        }
+
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         [EnableRateLimiting("login")]
@@ -185,6 +197,7 @@ namespace EasyVan.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("Login rejected because the submitted model is invalid. TraceId={TraceId}", HttpContext.TraceIdentifier);
                 ModelState.Remove(nameof(model.Password));
                 model.Password = string.Empty;
                 return View("~/Views/Home/Index.cshtml", model);
@@ -192,7 +205,11 @@ namespace EasyVan.Controllers
 
             var email = Usuarios.NormalizeEmail(model.Email);
             var user = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
-            if (user == null || !_senha.Verificar(model.Password, user.PasswordHasher))
+            var passwordVerified = user != null && _senha.Verificar(model.Password, user.PasswordHasher);
+            if (!passwordVerified)
+                _logger.LogWarning("Login credentials rejected. AccountFound={AccountFound}, PasswordVerified={PasswordVerified}, TraceId={TraceId}", user != null, passwordVerified, HttpContext.TraceIdentifier);
+
+            if (user == null || !passwordVerified)
             {
                 ModelState.AddModelError(string.Empty, "E-mail ou senha inválidos.");
                 ModelState.Remove(nameof(model.Password));
@@ -227,6 +244,7 @@ namespace EasyVan.Controllers
                 new ClaimsPrincipal(identity),
                 properties);
 
+            _logger.LogInformation("Login credentials accepted and cookie sign-in completed. UserId={UserId}, Role={Role}, TraceId={TraceId}", user.Id, user.RoleManager, HttpContext.TraceIdentifier);
             return RedirectToAction(user.RoleManager, "Home");
         }
 
