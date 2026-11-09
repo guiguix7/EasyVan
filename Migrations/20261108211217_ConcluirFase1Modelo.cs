@@ -22,6 +22,12 @@ namespace Gerenciamento_de_Van.Migrations
                     END,
                     "RespondidoEm" = COALESCE("RespondidoEm", "ConfirmadoEm");
                     """);
+
+                migrationBuilder.DropIndex(
+                    name: "IX_VinculosAluno_AlunoSentido",
+                    table: "VinculosAluno");
+
+                migrationBuilder.Sql("CREATE UNIQUE INDEX \"IX_VinculosAluno_AlunoSentidoAtivo\" ON \"VinculosAluno\" (\"AlunoId\", \"Sentido\") WHERE \"Ativo\" = 1;");
             }
             else
             {
@@ -42,19 +48,36 @@ namespace Gerenciamento_de_Van.Migrations
                     END,
                     "RespondidoEm" = COALESCE("RespondidoEm", "ConfirmadoEm");
                     """);
-            }
 
-            migrationBuilder.DropIndex(
-                name: "IX_VinculosAluno_AlunoSentido",
-                table: "VinculosAluno");
+                // The legacy schema can still have Ativo as an integer (0/1),
+                // although the current EF model maps it as boolean. Normalize it
+                // without changing the represented values before building the
+                // PostgreSQL partial unique index.
+                migrationBuilder.Sql("""
+                    DO $migration$
+                    DECLARE ativo_type text;
+                    BEGIN
+                        SELECT data_type INTO ativo_type
+                        FROM information_schema.columns
+                        WHERE table_schema = 'public'
+                          AND table_name = 'VinculosAluno'
+                          AND column_name = 'Ativo';
 
-            if (migrationBuilder.ActiveProvider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
-            {
-                migrationBuilder.Sql("CREATE UNIQUE INDEX \"IX_VinculosAluno_AlunoSentidoAtivo\" ON \"VinculosAluno\" (\"AlunoId\", \"Sentido\") WHERE \"Ativo\" = 1;");
-            }
-            else
-            {
-                migrationBuilder.Sql("CREATE UNIQUE INDEX \"IX_VinculosAluno_AlunoSentidoAtivo\" ON \"VinculosAluno\" (\"AlunoId\", \"Sentido\") WHERE \"Ativo\" = TRUE;");
+                        IF ativo_type IN ('smallint', 'integer', 'bigint') THEN
+                            ALTER TABLE "VinculosAluno"
+                            ALTER COLUMN "Ativo" TYPE boolean
+                            USING ("Ativo" <> 0);
+                        END IF;
+                    END
+                    $migration$;
+
+                    DROP INDEX IF EXISTS "IX_VinculosAluno_AlunoSentido";
+                    DROP INDEX IF EXISTS "IX_VinculosAluno_AlunoSentidoAtivo";
+
+                    CREATE UNIQUE INDEX "IX_VinculosAluno_AlunoSentidoAtivo"
+                    ON "VinculosAluno" ("AlunoId", "Sentido")
+                    WHERE "Ativo" = TRUE;
+                    """);
             }
         }
 
