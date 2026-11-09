@@ -86,6 +86,77 @@ public class ValidacaoOperacionalTests : IDisposable
         Assert.Equal("Baixa", alerta.Gravidade);
     }
 
+    [Fact]
+    public void AnalisarAlertas_GeraA3SomenteDepoisDoPrazoQuandoHaSemResposta()
+    {
+        CriarReferencias();
+        var vencida = NovaViagem(811, 100, 10, 200, DateTime.Today.AddDays(-2));
+        vencida.Sentido = SentidoViagem.Ida;
+        var futura = NovaViagem(812, 101, 20, 201, DateTime.Today.AddDays(10));
+        futura.Sentido = SentidoViagem.Ida;
+        _db.Viagens.AddRange(vencida, futura);
+        _db.SaveChanges();
+        _db.PresencasViagem.AddRange(
+            new PresencaViagem { ViagemId = vencida.Id, AlunoId = 81, Status = StatusPresenca.SemResposta },
+            new PresencaViagem { ViagemId = futura.Id, AlunoId = 82, Status = StatusPresenca.SemResposta });
+        _db.SaveChanges();
+
+        var alerta = Assert.Single(_validacao.AnalisarAlertas(), a => a.Tipo == "A3");
+
+        Assert.Equal(vencida.Id, alerta.EntidadeId);
+        Assert.Equal("Média", alerta.Gravidade);
+    }
+
+    [Fact]
+    public void AnalisarAlertas_GeraA4ParaAlunoAtivoSemVinculoOperacional()
+    {
+        _db.Alunos.Add(new Aluno { Id = 91, Nome = "Aluno sem linha", Email = "sem-linha@test.com", Ativo = true });
+        _db.SaveChanges();
+
+        var alerta = Assert.Single(_validacao.AnalisarAlertas(), a => a.Tipo == "A4");
+
+        Assert.Equal(91, alerta.EntidadeId);
+        Assert.Equal("Aluno", alerta.EntidadeTipo);
+        Assert.Equal("Média", alerta.Gravidade);
+    }
+
+    [Fact]
+    public void AnalisarAlertas_NaoGeraA4QuandoAlunoTemPontoOperacionalNaLinha()
+    {
+        CriarReferencias();
+        var usuario = new Usuarios { Nome = "Aluno vinculado", Email = "vinculado@test.com", RoleManager = "Aluno", Ativo = true };
+        _db.Usuarios.Add(usuario);
+        _db.SaveChanges();
+        var aluno = new Aluno { Id = 92, Nome = usuario.Nome, Email = usuario.Email, Ativo = true, UsuarioId = usuario.Id };
+        _db.Alunos.Add(aluno);
+        var linha = new Linha { Id = 301, RotaLegadaId = 200, Nome = "Linha teste", Origem = "A", Destino = "B", Ativa = true };
+        _db.Linhas.Add(linha);
+        _db.SaveChanges();
+        _db.LinhasPassageiros.Add(new LinhaPassageiro
+        {
+            LinhaId = linha.Id, UsuarioId = usuario.Id, VanId = 100,
+            EnderecoEmbarque = "Ponto operacional", LatitudeEmbarque = -23.5, LongitudeEmbarque = -46.6
+        });
+        _db.SaveChanges();
+
+        Assert.DoesNotContain(_validacao.AnalisarAlertas(), a => a.Tipo == "A4");
+    }
+
+    [Fact]
+    public void AnalisarAlertas_GeraA6QuandoVanEmManutencaoEstaAtribuida()
+    {
+        CriarReferencias();
+        var van = _db.Vans.Single(v => v.Id == 100);
+        van.Status = "Manutenção";
+        _db.Viagens.Add(NovaViagem(861, 100, 10, 200, DateTime.Today.AddDays(1)));
+        _db.SaveChanges();
+
+        var alerta = Assert.Single(_validacao.AnalisarAlertas(), a => a.Tipo == "A6");
+
+        Assert.Equal(861, alerta.EntidadeId);
+        Assert.Equal("Alta", alerta.Gravidade);
+    }
+
     #region Conflito de horário - Motorista
 
     [Fact]
@@ -200,9 +271,9 @@ public class ValidacaoOperacionalTests : IDisposable
 
         var alertas = _validacao.AnalisarAlertas().ToList();
 
-        var capacidade = alertas.FirstOrDefault(a => a.Tipo == "CapacidadeExcedida");
+        var capacidade = alertas.FirstOrDefault(a => a.Tipo == "A1");
         Assert.NotNull(capacidade);
-        Assert.Equal("Impeditivo", capacidade.Gravidade);
+        Assert.Equal("Alta", capacidade.Gravidade);
         Assert.Contains("11", capacidade.Descricao);
         Assert.Contains("10", capacidade.Descricao);
     }
@@ -224,7 +295,7 @@ public class ValidacaoOperacionalTests : IDisposable
 
         var alertas = _validacao.AnalisarAlertas().ToList();
 
-        Assert.DoesNotContain(alertas, a => a.Tipo == "CapacidadeExcedida");
+        Assert.DoesNotContain(alertas, a => a.Tipo == "A1");
     }
 
     #endregion
@@ -241,7 +312,7 @@ public class ValidacaoOperacionalTests : IDisposable
 
         var alertas = _validacao.AnalisarAlertas().ToList();
 
-        Assert.Contains(alertas, a => a.Tipo == "ViagemSemMotorista" && a.Gravidade == "Impeditivo");
+        Assert.Contains(alertas, a => a.Tipo == "A2" && a.Gravidade == "Alta" && a.Descricao.Contains("motorista"));
     }
 
     [Fact]
@@ -254,7 +325,7 @@ public class ValidacaoOperacionalTests : IDisposable
 
         var alertas = _validacao.AnalisarAlertas().ToList();
 
-        Assert.Contains(alertas, a => a.Tipo == "ViagemSemVan" && a.Gravidade == "Impeditivo");
+        Assert.Contains(alertas, a => a.Tipo == "A2" && a.Gravidade == "Alta" && a.Descricao.Contains("van"));
     }
 
     #endregion

@@ -1,5 +1,6 @@
 @model EasyVan.Models.LinhaFormViewModel
 @using EasyVan.Models
+@using System.Globalization
 @inject EasyVan.Services.GoogleMapsOptions GoogleMaps
 @{
     var editing = Model.Id > 0;
@@ -20,6 +21,10 @@
         <input asp-for="Id" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
         @if (ViewData["AvisoCapacidade"] is string aviso) { <div class="alert alert-warning" role="alert">@aviso</div> }
+        @if (!GoogleMaps.Configurado && !GoogleMaps.BrowserConfigurado)
+        {
+            <div class="alert alert-info" role="status">A busca e a localização automática do Google Maps não estão configuradas. Você pode cadastrar os endereços agora; para gerar rotas de navegação, configure as chaves do Google Maps.</div>
+        }
 
         <section class="ev-panel">
             <div class="ev-panel__body">
@@ -28,25 +33,25 @@
                 <div class="mb-3">
                     <label class="form-label" for="Destino">Destino exato</label>
                     <input asp-for="Destino" id="Destino" class="form-control" placeholder="Digite o nome ou endereço completo" autocomplete="street-address" />
+                    <input asp-for="DestinoLat" type="hidden" />
+                    <input asp-for="DestinoLng" type="hidden" />
                     @if (GoogleMaps.BrowserConfigurado)
                     {
                         <label class="form-label mt-2" for="busca-Destino">Ou escolha no Google Maps</label>
                         <div id="busca-Destino" data-place-autocomplete data-address-target="Destino" data-lat-target="DestinoLat" data-lng-target="DestinoLng"></div>
                     }
-                    <input asp-for="DestinoLat" type="hidden" />
-                    <input asp-for="DestinoLng" type="hidden" />
                     <span asp-validation-for="Destino" class="text-danger"></span>
                 </div>
                 <div class="mb-3">
                     <label class="form-label" for="Origem">Ponto de partida da van</label>
                     <input asp-for="Origem" id="Origem" class="form-control" placeholder="Digite a garagem ou local de início" autocomplete="street-address" />
+                    <input asp-for="OrigemLat" type="hidden" />
+                    <input asp-for="OrigemLng" type="hidden" />
                     @if (GoogleMaps.BrowserConfigurado)
                     {
                         <label class="form-label mt-2" for="busca-Origem">Ou escolha no Google Maps</label>
                         <div id="busca-Origem" data-place-autocomplete data-address-target="Origem" data-lat-target="OrigemLat" data-lng-target="OrigemLng"></div>
                     }
-                    <input asp-for="OrigemLat" type="hidden" />
-                    <input asp-for="OrigemLng" type="hidden" />
                     <span asp-validation-for="Origem" class="text-danger"></span>
                 </div>
             </div>
@@ -72,7 +77,7 @@
         <section class="ev-panel">
             <div class="ev-panel__body">
                 <h2>4. Passageiros</h2>
-                <p class="ev-panel__hint">Apenas alunos com conta ativa aparecem. O endereço de embarque ajuda a calcular o trajeto; confira também a escola de cada aluno.</p>
+                <p class="ev-panel__hint">Apenas alunos com conta ativa aparecem. Defina o ponto de embarque operacional de cada aluno; o endereço residencial do cadastro não é usado na rota.</p>
                 <p class="fw-semibold" aria-live="polite"><span data-contador-alunos>@Model.PassageirosIds.Count</span> aluno(s) selecionado(s)</p>
                 @if (!alunos.Any()) { <p class="alert alert-info">Não há alunos ativos vinculados a uma conta nesta organização.</p> }
                 @foreach (var aluno in alunos)
@@ -80,7 +85,16 @@
                     <div class="border rounded p-2 mb-2" data-passageiro-row>
                         <label class="form-check"><input type="checkbox" name="PassageirosIds" value="@aluno.Id" class="form-check-input" checked="@Model.PassageirosIds.Contains(aluno.Id)" data-passageiro-check /><span class="form-check-label">@aluno.Nome</span></label>
                         <small class="text-muted d-block"><strong>Escola:</strong> @(string.IsNullOrWhiteSpace(aluno.Escola) ? "Não informada" : aluno.Escola)</small>
-                        <small class="text-muted d-block"><strong>Endereço de embarque:</strong> @(aluno.EnderecoGeocodificado ? aluno.Endereco : "Ainda não localizado")</small>
+                        <label class="form-label mt-2" for="embarque-endereco-@aluno.Id">Ponto de embarque operacional</label>
+                        <input id="embarque-endereco-@aluno.Id" name="PontosEmbarque[@aluno.Id].Endereco" value="@Model.PontosEmbarque.GetValueOrDefault(aluno.Id)?.Endereco" class="form-control" maxlength="300" autocomplete="street-address" data-ponto-endereco="@aluno.Id" />
+                        <input type="hidden" name="PontosEmbarque[@aluno.Id].Latitude" value="@Model.PontosEmbarque.GetValueOrDefault(aluno.Id)?.Latitude?.ToString(CultureInfo.InvariantCulture)" id="embarque-lat-@aluno.Id" />
+                        <input type="hidden" name="PontosEmbarque[@aluno.Id].Longitude" value="@Model.PontosEmbarque.GetValueOrDefault(aluno.Id)?.Longitude?.ToString(CultureInfo.InvariantCulture)" id="embarque-lng-@aluno.Id" />
+                        @if (GoogleMaps.BrowserConfigurado)
+                        {
+                            <label class="form-label mt-2" for="embarque-busca-@aluno.Id">Ou escolha no Google Maps</label>
+                            <div id="embarque-busca-@aluno.Id" data-place-autocomplete data-address-target="embarque-endereco-@aluno.Id" data-lat-target="embarque-lat-@aluno.Id" data-lng-target="embarque-lng-@aluno.Id"></div>
+                        }
+                        <span asp-validation-for="PontosEmbarque[@aluno.Id].Endereco" class="text-danger"></span>
                         <label class="form-label mt-2" for="van-aluno-@aluno.Id">Van do aluno (necessária com mais de uma van)</label>
                         <select id="van-aluno-@aluno.Id" name="VanPorPassageiro[@aluno.Id]" class="form-select form-select-sm" data-passageiro-van>
                             <option value="">Selecione</option>

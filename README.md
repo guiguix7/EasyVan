@@ -25,10 +25,11 @@ O projeto estÃ¡ funcional para desenvolvimento local e possui:
 - tema claro/escuro com preferÃªncia persistida;
 - criaÃ§Ã£o de contas restrita ao Administrador, com perfil operacional de Aluno/Motorista criado ou vinculado na mesma transaÃ§Ã£o;
 - modelo operacional atual: Linhas recorrentes, organizacao e presencas com estado explicito;
-- gestao de Linhas com passageiros geocodificados e alocacao manual por van/motorista;
+- gestao de Linhas com pontos operacionais de embarque e alocacao manual por van/motorista;
 - GeraÃ§Ã£o diÃ¡ria idempotente de viagens e presenÃ§as para uma janela configurÃ¡vel (padrÃ£o de 14 dias Ãºteis);
 - ConfirmaÃ§Ã£o ou cancelamento pelo aluno atÃ© o prazo: ida Ã s 21h do dia anterior; volta duas horas antes da saÃ­da. O servidor bloqueia respostas fora do limite.
 - interface Razor responsiva com Bootstrap, jQuery e CSS prÃ³prio;
+- painel do motorista agrupado por ponto, pendentes separados e links Google Maps segmentados;
 - integracao Google Maps com roteirizacao no servidor e fallback aproximado sem chave;
 - imagem Docker pronta para publicaÃ§Ã£o em ambiente que forneÃ§a a porta 8080.
 
@@ -44,7 +45,7 @@ O painel administrativo (`/Administrador`) Ã© um centro de acompanhamento oper
 
 - **Visao geral**: vans, motoristas, alunos, Linhas recorrentes e viagens do dia;
 - **SituaÃ§Ã£o das viagens**: distribuiÃ§Ã£o por estado (Planejada, Confirmada, Agendada, Em andamento, Finalizada, Cancelada);
-- **Alertas operacionais**: capacidade, alocacao ausente e A5 quando nao houver passageiros confirmados;
+- **Alertas operacionais A1–A6**: capacidade, atribuição ausente, prazo sem resposta, aluno sem ponto operacional, viagem sem confirmados e van indisponível;
 - **AÃ§Ãµes prioritÃ¡rias**: atalhos para vans em manutenÃ§Ã£o, viagens em andamento, resolver alertas, gerenciar cadastros;
 - **Atividade recente**: operaÃ§Ãµes registradas no histÃ³rico de auditoria com data, responsÃ¡vel e descriÃ§Ã£o.
 
@@ -167,7 +168,7 @@ dotnet build
 dotnet test
 ```
 
-O projeto inclui **133 testes automatizados** cobrindo:
+O projeto inclui **142 testes automatizados** cobrindo:
 
 - Hash de senhas PBKDF2 (legado e atual);
 - ValidaÃ§Ã£o de senha (6 a 20 caracteres);
@@ -239,7 +240,9 @@ Consulte [`docs/database-postgresql.md`](docs/database-postgresql.md) para confi
 
 O fluxo recomendado agora Ã© cadastrar uma **Linha** uma vez em `/Linhas/Create`: nome, origem/destino, dias, chegada na ida, saÃ­da na volta, sentidos, alunos e alocaÃ§Ã£o manual de alunos por van/motorista. O sistema gera ocorrÃªncias diÃ¡rias para atÃ© 14 dias Ãºteis e inicializa a presenÃ§a como SemResposta. A capacidade Ã© validada por van e no conjunto.
 
-A roteirizaÃ§Ã£o usa somente alunos confirmados, calcula e armazena ordem/ETA e reutiliza o resultado enquanto o hash do conjunto nÃ£o muda. Com `GoogleMaps__ApiKey` configurada, chama a Routes API; sem chave, usa um roteirizador aproximado local e exibe aviso. A navegaÃ§Ã£o externa usa links Google Maps em trechos. GeocodificaÃ§Ã£o de endereÃ§os exige chave Google; endereÃ§os devem ser dados de teste sem informaÃ§Ã£o pessoal real.
+A roteirizaÃ§Ã£o usa somente pontos operacionais de alunos confirmados, calcula e armazena ordem/ETA e reutiliza o resultado enquanto o hash do conjunto nÃ£o muda. EndereÃ§os residenciais nÃ£o sÃ£o fallback para a rota. Com `GoogleMaps__ApiKey` configurada, chama a Routes API; sem chave, usa um roteirizador aproximado local e exibe aviso. O motorista recebe passageiros agrupados por ponto, pendentes em seÃ§Ã£o separada e links Google Maps segmentados em atÃ© trÃªs waypoints mÃ³veis por trecho. Consulte [`spec/fase-4-rotas-do-motorista.md`](spec/fase-4-rotas-do-motorista.md).
+
+O painel administrativo exibe a ocupação das próximas viagens e os alertas A1–A6, com regras concentradas no serviço operacional e testes automatizados. Consulte [`spec/fase-5-alertas-e-ocupacao.md`](spec/fase-5-alertas-e-ocupacao.md).
 
 As tabelas legadas de Rota/Parada/Agenda permanecem para compatibilidade histÃ³rica. Viagens ligadas a Linha nÃ£o sÃ£o criadas nem editadas manualmente. A migration `LinhasRecorrentesRoteirizacao` preserva o SQLite existente; aplique-a ao reiniciar a aplicaÃ§Ã£o. O isolamento por OrganizaÃ§Ã£oId agora Ã© aplicado por filtro global nas entidades operacionais.
 

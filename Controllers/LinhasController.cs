@@ -15,10 +15,12 @@ public sealed class LinhasController : Controller
     private readonly ApplicationDbContext _db;
     private readonly LinhaService _linhas;
     private readonly IGeocodificador? _geocodificador;
+    private readonly GoogleMapsOptions _googleMaps;
 
-    public LinhasController(ApplicationDbContext db, LinhaService linhas, IGeocodificador? geocodificador = null)
+    public LinhasController(ApplicationDbContext db, LinhaService linhas, GoogleMapsOptions googleMaps,
+        IGeocodificador? geocodificador = null)
     {
-        _db = db; _linhas = linhas; _geocodificador = geocodificador;
+        _db = db; _linhas = linhas; _googleMaps = googleMaps; _geocodificador = geocodificador;
     }
 
     public async Task<IActionResult> Index(CancellationToken ct)
@@ -110,8 +112,7 @@ public sealed class LinhasController : Controller
         var escolaPorUsuario = perfisAlunos.ToDictionary(a => a.UsuarioId, a => a.Escola);
         ViewData["Alunos"] = contasAlunos
             .Where(u => escolaPorUsuario.ContainsKey(u.Id))
-            .Select(u => new AlunoLinhaOpcaoViewModel(u.Id, u.Nome, escolaPorUsuario[u.Id], u.Endereco,
-                u.Lat.HasValue && u.Lng.HasValue))
+            .Select(u => new AlunoLinhaOpcaoViewModel(u.Id, u.Nome, escolaPorUsuario[u.Id]))
             .ToList();
         ViewData["Vans"] = await _db.Vans.AsNoTracking().Where(v => v.Status == "Operacional").OrderBy(v => v.Plate).ToListAsync(ct);
         ViewData["Motoristas"] = await _db.Motoristas.AsNoTracking().Where(m => m.Ativo).OrderBy(m => m.Nome).ToListAsync(ct);
@@ -125,6 +126,57 @@ public sealed class LinhasController : Controller
         await GeocodificarAsync(model.Origem, model.OrigemLat, model.OrigemLng,
             nameof(model.Origem), nameof(model.OrigemLat), nameof(model.OrigemLng),
             (endereco, ponto) => { model.Origem = endereco; model.OrigemLat = ponto.Lat; model.OrigemLng = ponto.Lng; }, ct);
+
+        foreach (var usuarioId in model.PassageirosIds.Distinct())
+        {
+            if (!model.PontosEmbarque.TryGetValue(usuarioId, out var ponto))
+            {
+                ponto = new PontoEmbarqueFormViewModel();
+                model.PontosEmbarque[usuarioId] = ponto;
+            }
+
+            if (string.IsNullOrWhiteSpace(ponto.Endereco))
+            {
+                ModelState.AddModelError($"PontosEmbarque[{usuarioId}].Endereco", "Informe o ponto de embarque operacional deste aluno.");
+                continue;
+            }
+
+            if (!ponto.Latitude.HasValue && !ponto.Longitude.HasValue
+                && (_geocodificador is null || !_googleMaps.Configurado))
+                continue;
+
+            if (ponto.Latitude.HasValue && ponto.Longitude.HasValue
+                && double.IsFinite(ponto.Latitude.Value) && double.IsFinite(ponto.Longitude.Value)
+                && ponto.Latitude is >= -90 and <= 90 && ponto.Longitude is >= -180 and <= 180)
+                continue;
+
+            if (_geocodificador is null)
+            {
+                ModelState.AddModelError($"PontosEmbarque[{usuarioId}].Endereco", "Não foi possível localizar este ponto. Configure o Google Maps e selecione o endereço novamente.");
+                continue;
+            }
+            if (!_googleMaps.Configurado)
+            {
+                ModelState.AddModelError($"PontosEmbarque[{usuarioId}].Endereco", "Não foi possível localizar este ponto. Configure o Google Maps e selecione o endereço novamente.");
+                continue;
+            }
+
+            try
+            {
+                var resultado = await _geocodificador.GeocodificarAsync(ponto.Endereco, ct);
+                ponto.Endereco = resultado.Endereco;
+                ponto.Latitude = resultado.Coordenada.Lat;
+                ponto.Longitude = resultado.Coordenada.Lng;
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException or TaskCanceledException)
+            {
+                ModelState.AddModelError($"PontosEmbarque[{usuarioId}].Endereco", "Não foi possível localizar este ponto. Confira o texto ou tente novamente.");
+            }
+        }
     }
 
     private async Task GeocodificarAsync(string endereco, double lat, double lng, string campoEndereco,
@@ -141,7 +193,10 @@ public sealed class LinhasController : Controller
         }
         if (_geocodificador is null)
         {
-            ModelState.AddModelError(campoEndereco, "Escolha o endereço no Google Maps ou configure a chave de geocodificação do servidor.");
+            return;
+        }
+        if (!_googleMaps.Configurado)
+        {
             return;
         }
 
@@ -156,7 +211,7 @@ public sealed class LinhasController : Controller
         }
         catch (Exception exception) when (exception is HttpRequestException or InvalidOperationException or TaskCanceledException)
         {
-            ModelState.AddModelError(campoEndereco, "Não foi possível localizar este endereço. Confira o texto ou tente novamente.");
+            ModelState.AddModelError(campoEndereco, "O Google Maps não conseguiu localizar este endereço. Confira o texto ou tente novamente.");
         }
     }
 

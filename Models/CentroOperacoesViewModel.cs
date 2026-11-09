@@ -30,15 +30,24 @@ namespace EasyVan.Models
 
         // --- Listas para exibição ---
         public List<Viagem> ProximasViagens { get; set; } = new();
+        public List<ViagemOcupacaoItemViewModel> OcupacaoProximasViagens { get; set; } = new();
         public List<Van> VansEmManutencao { get; set; } = new();
         public List<LogOperacao> AtividadeRecente { get; set; } = new();
 
         // --- Alertas operacionais ---
         public List<ValidacaoOperacional.ResultadoValidacao> Alertas { get; set; } = new();
         public int TotalAlertas => Alertas.Count;
-        public int AlertasImpeditivos => Alertas.Count(a => a.Gravidade == "Impeditivo");
-        public int AlertasAvisos => Alertas.Count(a => a.Gravidade == "Aviso");
+        public int AlertasImpeditivos => Alertas.Count(a => a.Gravidade is "Impeditivo" or "Alta");
+        public int AlertasAvisos => Alertas.Count(a => a.Gravidade is "Aviso" or "Média");
 
         public bool TemAlertas => Alertas.Any();
+    }
+
+    public sealed record ViagemOcupacaoItemViewModel(
+        Viagem Viagem, int Confirmados, int Ausentes, int SemResposta, int? Capacidade)
+    {
+        public int? PercentualOcupacao => Capacidade is > 0
+            ? (int)Math.Round(Confirmados * 100d / Capacidade.Value)
+            : null;
     }
 }

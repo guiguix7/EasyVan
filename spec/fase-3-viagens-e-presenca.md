@@ -3,56 +3,55 @@
 | Campo | Valor |
 |---|---|
 | Fase | 3 — viagens diárias e presença |
-| Status | Implementada em 08/11/2026 |
-| Dependência | Fases 1 e 2 aplicadas |
+| Status | Implementada; fluxo atual integrado a Linhas recorrentes |
+| Data de revisão | 08/11/2026 |
+| Dependências | Fases 1 e 2 aplicadas |
 
 ## Objetivo
 
-Gerar viagens a partir das agendas ativas e permitir que o aluno altere sua resposta até o prazo definido, mantendo as datas de calendário em `America/Sao_Paulo` e os instantes de resposta em UTC.
+Gerar viagens e presenças a partir das Linhas recorrentes e permitir que cada aluno confirme ou cancele ida e volta até o prazo, preservando a data local de calendário e registrando o instante da resposta em UTC.
 
-## Escopo e decisões
+## Regras e fluxo atual
 
-- Serviço idempotente gera uma viagem por agenda ativa e data cujo dia da semana corresponda à agenda. Rota, sentido, horário, van padrão e motorista vinculado à van são copiados para a viagem; sem alocação, as FKs opcionais permanecem nulas para o A2.
-- Uma rotina hospedada gera a janela ao iniciar a aplicação e recalcula os próximos dias a cada 15 minutos; agendas novas ou alteradas entram no ciclo rapidamente e reinicializações recuperam o período. O horizonte é configurável.
-- Índice único `(HorarioRotaId, Data)` evita duplicidade também sob concorrência; viagens manuais/legadas com `HorarioRotaId = NULL` continuam permitidas.
-- Ida: pode alterar até 21h do dia anterior. Volta: pode alterar até duas horas antes do horário de saída. Opções são configuráveis por seção de configuração/variável de ambiente.
-- Como RN06/`OrganizacaoId` foi adiado, a configuração de prazo é única para a organização padrão nesta versão; não existe configuração por organização ainda.
-- Viagem legada sem sentido informado usa o mais cedo entre os dois limites, sem inferir se era ida ou volta.
-- O aluno pode mudar entre Confirmado e Ausente até o limite. Depois disso o endpoint bloqueia a alteração mesmo que a página esteja aberta; `RespondidoEm` e coluna legada são atualizados em UTC.
-- A geração inicial de presenças reutiliza `PresencaViagemService` existente e a seleção de vínculos definida na Fase 1.
+- `GeracaoViagensHostedService` roda no início da aplicação e, por padrão, a cada 15 minutos. Calcula uma janela de 14 dias úteis inclusiva, sem considerar feriados municipais, e processa cada `OrganizacaoId`.
+- Para cada Linha ativa, dia da semana configurado, sentido ativo e alocação de van, `GeracaoViagensLinhaService` cria uma ocorrência. Passageiros da van alocada recebem presença `SemResposta`.
+- A geração pode ser repetida. Índices únicos e checagem antes da gravação protegem contra duplicidade; conflitos concorrentes são reconhecidos como ocorrência já existente.
+- O gerador legado de `HorarioRota` permanece ativo para compatibilidade com cadastros antigos. Novos fluxos administrativos usam Linha; rotas, agendas e viagens legadas permanecem disponíveis para histórico.
+- Ida: o aluno pode alterar a resposta até 21h do dia anterior. Volta: até duas horas antes do horário de saída. Os valores padrão são configuráveis em `PrazoPresenca` (`HorarioLimiteIda` e `AntecedenciaLimiteVolta`). Nesta versão, a configuração é comum às organizações.
+- `PrazoPresencaService` compara o prazo com o horário de `America/Sao_Paulo`. O endpoint `HomeController.ConfirmarPresenca` valida novamente o prazo no servidor e grava `RespondidoEm` em UTC; página aberta antes do limite não permite contornar o bloqueio.
+- Viagens sem sentido legado usam o mais cedo entre os limites de ida e volta quando há horário de saída. Sem horário, a resposta fica bloqueada com orientação.
+- A presença do aluno altera o conjunto de confirmados usado pela roteirização da Linha; mudança no conjunto invalida o hash e permite recálculo.
 
-## Fora de escopo
+## Escopo fora desta fase
 
-Alertas A3–A6 e painel correspondente (Fase 5), agrupamento de passageiros por parada e waypoints (Fase 4), configuração por organização e implementação de `OrganizacaoId` (RN06), notificações e otimização de rotas.
+Alertas A3–A6 e painel completo (Fase 5), experiência visual de passageiros agrupados por parada e validação de rotas longas no Maps (Fase 4), configuração de prazo independente por organização e feriados municipais. GPS em tempo real, push e cobrança permanecem fora do MVP.
 
-## Interfaces de teste confirmadas
+## Critérios de aceite e cobertura
 
-- Serviços públicos de geração e avaliação de prazo: datas, dias, sentido, idempotência, limites e timezone.
-- Ação MVC `HomeController.ConfirmarPresenca`: autorização do aluno pelo vínculo com a presença, bloqueio após o prazo e gravação da resposta.
-- SQLite em memória como banco real dos testes de integração; relógio controlado por `TimeProvider`.
+- Gerar ocorrências para dias, sentidos e alocações ativos; manter idempotência e não gerar para dias/sentidos desativados.
+- Inicializar presenças como `SemResposta` e preservar respostas já registradas ao reexecutar o worker.
+- Permitir resposta exatamente até o limite e bloquear após, tanto para ida quanto volta, inclusive em POST direto.
+- Usar datas de calendário locais em São Paulo e instantes UTC para `RespondidoEm`.
+- Testes automatizados cobrem geração/idempotência, isolamento entre organizações, limites e ação MVC.
+- Build e suíte xUnit passam.
 
-## Critérios de aceite
+## Verificação desta revisão
 
-- Gera viagem para cada dia/sentido da agenda dentro da janela; ignora agendas/dias inativos e não duplica em reexecução ou concorrência.
-- Viagem gerada inclui presenças iniciais e herda van/motorista quando configurados.
-- Ida permite resposta exatamente até 21h do dia anterior e bloqueia após; volta permite exatamente até saída menos duas horas e bloqueia após.
-- Hora do servidor e calendário usam `America/Sao_Paulo`; `RespondidoEm` é UTC.
-- A interface mostra o prazo e deixa claro quando a resposta foi encerrada; o servidor mantém a regra mesmo com POST manual.
-- Testes cobrem sucesso e casos-limite dos serviços e da ação MVC. Build/test passam.
+- `dotnet build --nologo`: êxito, 0 avisos e 0 erros.
+- `dotnet test tests\\EasyVan.Tests\\EasyVan.Tests.csproj --nologo`: 134 aprovados, 0 falhas na revisão da Fase 3.
+- A primeira execução concorrente de build e teste disputou um arquivo intermediário em `obj`; a suíte passou quando executada isoladamente.
 
-## Resultado da implementação
+## Teste manual
 
-- `GeracaoViagemService` gera uma viagem por agenda ativa/data/dia correspondente e prepara presencas; a rotina hospedada recupera a janela ao iniciar e verifica o dia local a cada 15 minutos.
-- Horizonte padrao: sete dias inclusivos, configuravel em `GeracaoViagens`. Indices unicos por agenda/data protegem contra duplicidade concorrente.
-- `PrazoPresencaService` aplica 21h do dia anterior na ida e duas horas antes da saida na volta; limites configuraveis em `PrazoPresenca`. A resposta do aluno e bloqueada no endpoint depois do limite.
-- Viagens legadas sem sentido usam o mais cedo entre os dois limites quando ha horario; sem horario ficam bloqueadas com orientacao.
-- Datas de viagem sao datas de calendario local em Sao Paulo; instantes `RespondidoEm` permanecem UTC. Consultas de hoje no painel do aluno/motorista e no Centro de Operacoes comparam datas locais.
-- Migration `20261108220412_GeracaoViagensDiarias` substitui o indice de agenda por um indice unico em agenda/data. Aplicada ao SQLite local apos backup; migration de banco vazio coberta pelos testes. PostgreSQL real nao estava configurado.
-- Build sem avisos/erros; 125 testes aprovados.
+1. Como Administrador, crie uma Linha com dias úteis, ida e volta, alunos e alocação de van; confirme as viagens geradas para até 14 dias úteis.
+2. Reexecute o gerador/reinicie a aplicação e confira que não surgem ocorrências duplicadas nem respostas duplicadas.
+3. Como Aluno, confirme e cancele ida/volta antes do limite; após o limite, envie também um POST com a página já aberta e confirme o bloqueio.
+4. Confira que aluno sem resposta permanece pendente, não é contado como confirmado e não aparece como presente.
+5. Como Motorista, confira as viagens atribuídas à sua operação; a apresentação e o agrupamento detalhado por parada seguem a Fase 4.
 
-### Verificação manual
+## Decisões e limitações
 
-1. Entrar como Administrador, criar agenda ativa para hoje e conferir a viagem no calendario. Reabrir a aplicacao e confirmar que nao ha duplicacao.
-2. Entrar como Aluno, confirmar e cancelar antes do limite; verificar que a resposta persiste.
-3. Repetir apos o limite, inclusive enviando POST com a pagina aberta; o servidor deve recusar e a tela deve indicar o encerramento.
-4. Testar ida e volta e ajustar `PrazoPresenca__HorarioLimiteIda` / `PrazoPresenca__AntecedenciaLimiteVolta`; configurar horizonte em `GeracaoViagens__HorizonteDias`.
+- A janela de 14 dias úteis exclui sábado e domingo, mas não feriados.
+- Os limites são globais nesta versão, embora o worker e os dados sejam processados no escopo da organização.
+- A regra de pendência e os horários sugeridos devem ser validados com administradores reais.
+- A geração por agenda legada foi mantida para compatibilidade; Linha é o fluxo recomendado para novas operações.

@@ -37,6 +37,7 @@ namespace EasyVan.Models
         public IReadOnlyList<LinhaAlunoViagem> Alunos { get; set; } = Array.Empty<LinhaAlunoViagem>();
         public MapaRotaViewModel? Mapa { get; set; }
         public IReadOnlyList<ViagemParada> ParadasCalculadas { get; set; } = Array.Empty<ViagemParada>();
+        public IReadOnlyList<ParadaMotoristaViewModel> ParadasAgrupadas { get; set; } = Array.Empty<ParadaMotoristaViewModel>();
         public IReadOnlyList<TrechoGoogleMapsViewModel> Trechos { get; set; } = Array.Empty<TrechoGoogleMapsViewModel>();
         public string? AvisoRoteirizacao { get; set; }
     }

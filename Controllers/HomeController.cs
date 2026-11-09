@@ -216,7 +216,7 @@ public class HomeController : Controller
         var viagens = await _db.Viagens
             .Include(v => v.Van)
             .Include(v => v.Rota)
-            .Include(v => v.Linha)
+            .Include(v => v.Linha)!.ThenInclude(l => l!.Passageiros).ThenInclude(p => p.Usuario)
             .Include(v => v.Presencas)!.ThenInclude(p => p.Aluno)
             .Where(v => v.MotoristaId == motorista.Id && v.Status != "Cancelada")
             .ToListAsync();
@@ -256,31 +256,29 @@ public class HomeController : Controller
             Alunos = v.Presencas
                 .Where(p => p.Aluno != null)
                 .OrderBy(p => p.Aluno!.Nome)
-                .Select(p => new LinhaAlunoViagem
+                .Select(p =>
                 {
-                    PresencaId = p.Id,
-                    AlunoId = p.AlunoId,
-                    Nome = p.Aluno!.Nome,
-                    Endereco = vinculosPorRota
+                    var usuarioId = p.UsuarioId ?? p.Aluno!.UsuarioId;
+                    var pontoLinha = usuarioId.HasValue
+                        ? v.Linha?.Passageiros.FirstOrDefault(passageiro => passageiro.UsuarioId == usuarioId.Value)
+                        : null;
+                    var vinculo = vinculosPorRota
                         .Where(x => x.RotaId == v.RotaId && x.AlunoId == p.AlunoId
                             && x.Sentido == (v.Sentido ?? SentidoViagem.Ida) && x.Ativo && x.Parada?.Ativo == true)
                         .OrderBy(x => x.Parada!.Ordem)
-                        .Select(x => x.Parada!.Endereco)
-                        .FirstOrDefault(),
-                    ParadaEndereco = vinculosPorRota
-                        .Where(x => x.RotaId == v.RotaId && x.AlunoId == p.AlunoId
-                            && x.Sentido == (v.Sentido ?? SentidoViagem.Ida) && x.Ativo && x.Parada?.Ativo == true)
-                        .OrderBy(x => x.Parada!.Ordem)
-                        .Select(x => x.Parada!.Endereco)
-                        .FirstOrDefault(),
-                    OrdemParada = vinculosPorRota
-                        .Where(x => x.RotaId == v.RotaId && x.AlunoId == p.AlunoId
-                            && x.Sentido == (v.Sentido ?? SentidoViagem.Ida) && x.Ativo && x.Parada?.Ativo == true)
-                        .Select(x => (int?)x.Parada!.Ordem)
-                        .FirstOrDefault(),
-                    Telefone = p.Aluno.Telefone,
-                    Presente = p.Presente,
-                    Status = p.Status
+                        .FirstOrDefault();
+                    return new LinhaAlunoViagem
+                    {
+                        PresencaId = p.Id,
+                        AlunoId = p.AlunoId,
+                        Nome = p.Aluno!.Nome,
+                        Endereco = pontoLinha?.EnderecoEmbarque ?? vinculo?.Parada?.Endereco,
+                        ParadaEndereco = pontoLinha?.EnderecoEmbarque ?? vinculo?.Parada?.Endereco,
+                        OrdemParada = vinculo is null ? null : vinculo.Parada?.Ordem,
+                        Telefone = p.Aluno.Telefone,
+                        Presente = p.Presente,
+                        Status = p.Status
+                    };
                 })
                 .ToList(),
             Mapa = v.LinhaId.HasValue || v.Rota == null ? null : new MapaRotaViewModel
@@ -298,6 +296,8 @@ public class HomeController : Controller
                     .ToList()
             },
             ParadasCalculadas = rotaPorViagem.GetValueOrDefault(v.Id).Paradas ?? Array.Empty<ViagemParada>(),
+            ParadasAgrupadas = AgrupamentoParadasMotorista.Agrupar(
+                rotaPorViagem.GetValueOrDefault(v.Id).Paradas ?? Array.Empty<ViagemParada>()),
             Trechos = v.Linha is null ? Array.Empty<TrechoGoogleMapsViewModel>()
                 : GoogleMapsLinkService.CriarTrechos(v.Linha, v.Sentido ?? SentidoViagem.Ida,
                     rotaPorViagem.GetValueOrDefault(v.Id).Paradas ?? Array.Empty<ViagemParada>()),

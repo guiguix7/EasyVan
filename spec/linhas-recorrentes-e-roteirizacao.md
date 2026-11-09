@@ -5,7 +5,7 @@ Data: 08/11/2026. Esta especificação substitui, para novas operações, a cria
 ## Conceitos e fluxo
 
 - O Admin cria uma Linha recorrente com nome, origem, destino geocodificados, dias, sentidos, horários, alunos selecionados, alocação manual por van e motorista e capacidade validada.
-- Origem e destino são informados por endereço ou selecionados no Google Maps; latitude/longitude são dados internos e nunca campos para o administrador preencher. O cadastro de aluno inclui a escola, exibida junto ao nome na seleção de passageiros da Linha.
+- Origem, destino e embarques são informados por endereço ou selecionados no Google Maps; latitude/longitude são dados internos e nunca campos para o administrador preencher. Sem as chaves do Maps, os endereços podem ser salvos, mas a navegação por rota aguarda a localização dos pontos. O cadastro de aluno inclui a escola, exibida junto ao nome na seleção de passageiros da Linha.
 - A volta pode terminar na garagem (ponto de partida da van) ou no endereço do último aluno da ordem calculada; a tela explica esse efeito sem exigir que o usuário conheça conceitos de coordenadas ou roteirização.
 - Viagens são ocorrências por data, sentido e van, geradas até 14 dias úteis. Índice único + verificação anterior tornam a geração idempotente.
 - Presenças são criadas como SemResposta. Só alunos confirmados viram paradas calculadas; hash ordenado de IDs/data/sentido permite reuso da rota.

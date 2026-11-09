@@ -88,7 +88,8 @@ public sealed class LinhasRecorrentesTests
         db.Linhas.Add(linha);
         await db.SaveChangesAsync();
         db.LinhasVans.Add(new LinhaVan { LinhaId = linha.Id, VanId = van.Id, MotoristaId = motorista.Id });
-        db.LinhasPassageiros.Add(new LinhaPassageiro { LinhaId = linha.Id, VanId = van.Id, UsuarioId = usuario.Id });
+        db.LinhasPassageiros.Add(new LinhaPassageiro { LinhaId = linha.Id, VanId = van.Id, UsuarioId = usuario.Id,
+            EnderecoEmbarque = "Ponto de embarque A", LatitudeEmbarque = -23.56, LongitudeEmbarque = -46.63 });
         await db.SaveChangesAsync();
 
         var gerador = new GeracaoViagensLinhaService(db, TimeProvider.System);
@@ -129,6 +130,10 @@ public sealed class LinhasRecorrentesTests
             Origem = "origem", OrigemLat = -23.5, OrigemLng = -46.6,
             DiasSemana = DiasSemana.Segunda, TemIda = true, TemVolta = false,
             PassageirosIds = ids, VansIds = new List<int> { van.Id },
+            PontosEmbarque = ids.ToDictionary(id => id, _ => new PontoEmbarqueFormViewModel
+            {
+                Endereco = "Ponto operacional", Latitude = -23.5, Longitude = -46.6
+            }),
             MotoristasPorVan = new Dictionary<int, int?> { [van.Id] = motorista.Id }
         };
 
@@ -142,6 +147,41 @@ public sealed class LinhasRecorrentesTests
     }
 
     [Fact]
+    public async Task LinhaSalvaEnderecoDeEmbarqueSemCoordenadas()
+    {
+        using var db = TestesInfra.CriarBanco();
+        var (motorista, _, van) = TestesInfra.CriarReferencias(db);
+        var usuario = new Usuarios
+        {
+            Nome = "Aluno sem coordenada", Email = "aluno-sem-coordenada@easyvan.local", RoleManager = "Aluno", Ativo = true
+        };
+        db.Usuarios.Add(usuario);
+        await db.SaveChangesAsync();
+        db.Alunos.Add(new Aluno { Nome = usuario.Nome, Email = usuario.Email, Ativo = true, UsuarioId = usuario.Id });
+        await db.SaveChangesAsync();
+
+        var formulario = new LinhaFormViewModel
+        {
+            Nome = "Linha por endereço", Origem = "Garagem de teste", Destino = "Campus de teste",
+            DiasSemana = DiasSemana.Segunda, TemIda = true, TemVolta = false,
+            PassageirosIds = new List<int> { usuario.Id }, VansIds = new List<int> { van.Id },
+            MotoristasPorVan = new Dictionary<int, int?> { [van.Id] = motorista.Id },
+            PontosEmbarque = new Dictionary<int, PontoEmbarqueFormViewModel>
+            {
+                [usuario.Id] = new() { Endereco = "Rua de teste, 10" }
+            }
+        };
+
+        var resultado = await new LinhaService(db).SalvarAsync(formulario);
+
+        Assert.True(resultado.Sucesso, resultado.Erro);
+        var ponto = await db.LinhasPassageiros.SingleAsync();
+        Assert.Equal("Rua de teste, 10", ponto.EnderecoEmbarque);
+        Assert.Null(ponto.LatitudeEmbarque);
+        Assert.Null(ponto.LongitudeEmbarque);
+    }
+
+    [Fact]
     public async Task FalhaDoGoogleGeraOrdemAproximadaESeguraNovasChamadasPorCincoMinutos()
     {
         using var db = TestesInfra.CriarBanco();
@@ -149,7 +189,7 @@ public sealed class LinhasRecorrentesTests
         var usuario = new Usuarios
         {
             Nome = "Aluno teste", Email = "aluno-rota@easyvan.local", RoleManager = "Aluno", Ativo = true,
-            Lat = -23.56, Lng = -46.63
+            Lat = -23.10, Lng = -46.10
         };
         db.Usuarios.Add(usuario);
         await db.SaveChangesAsync();
@@ -165,7 +205,8 @@ public sealed class LinhasRecorrentesTests
         db.Linhas.Add(linha);
         await db.SaveChangesAsync();
         db.LinhasVans.Add(new LinhaVan { LinhaId = linha.Id, VanId = van.Id, MotoristaId = motorista.Id });
-        db.LinhasPassageiros.Add(new LinhaPassageiro { LinhaId = linha.Id, VanId = van.Id, UsuarioId = usuario.Id });
+        db.LinhasPassageiros.Add(new LinhaPassageiro { LinhaId = linha.Id, VanId = van.Id, UsuarioId = usuario.Id,
+            EnderecoEmbarque = "Ponto de embarque A", LatitudeEmbarque = -23.56, LongitudeEmbarque = -46.63 });
         await db.SaveChangesAsync();
         var data = new DateTime(2026, 11, 9);
         await new GeracaoViagensLinhaService(db, TimeProvider.System).GerarPeriodoAsync(data, data);
@@ -183,7 +224,10 @@ public sealed class LinhasRecorrentesTests
         Assert.True(segundo.Reutilizada);
         Assert.Equal(1, apiIndisponivel.Chamadas);
         Assert.Equal("Fallback", (await db.Viagens.FindAsync(viagem.Id))!.StatusRoteirizacao);
-        Assert.Single(await db.ViagensParadas.Where(p => p.ViagemId == viagem.Id).ToListAsync());
+        var paradas = await db.ViagensParadas.Where(p => p.ViagemId == viagem.Id).ToListAsync();
+        Assert.Single(paradas);
+        Assert.Equal(-23.56, paradas[0].LatitudeEmbarque);
+        Assert.Equal(-46.63, paradas[0].LongitudeEmbarque);
     }
 
     private sealed class RoteirizadorIndisponivel : IRoteirizador

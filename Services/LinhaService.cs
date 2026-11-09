@@ -42,6 +42,12 @@ public sealed class LinhaService
             VansIds = linha.Vans.Select(v => v.VanId).ToList(),
             MotoristasPorVan = linha.Vans.ToDictionary(v => v.VanId, v => (int?)v.MotoristaId),
             VanPorPassageiro = linha.Passageiros.ToDictionary(p => p.UsuarioId, p => (int?)p.VanId),
+            PontosEmbarque = linha.Passageiros.ToDictionary(p => p.UsuarioId, p => new PontoEmbarqueFormViewModel
+            {
+                Endereco = p.EnderecoEmbarque,
+                Latitude = p.LatitudeEmbarque,
+                Longitude = p.LongitudeEmbarque
+            }),
             Ativa = linha.Ativa
         };
     }
@@ -65,8 +71,18 @@ public sealed class LinhaService
             return Erro("Selecione um motorista ativo da sua organização para cada van.", passageiroIds.Length, vans.Values.Sum(v => v.Capacity));
         if (passageiroIds.Length != formulario.PassageirosIds.Count || usuarios.Count != passageiroIds.Length)
             return Erro("Há alunos duplicados, inativos ou que não pertencem à sua organização.", passageiroIds.Length, vans.Values.Sum(v => v.Capacity));
-        if (usuarios.Values.Any(u => Usuarios.NormalizeRole(u.RoleManager) != "Aluno" || !u.Lat.HasValue || !u.Lng.HasValue))
-            return Erro("Todos os alunos selecionados precisam ter conta ativa e endereço geocodificado.", passageiroIds.Length, vans.Values.Sum(v => v.Capacity));
+        if (usuarios.Values.Any(u => Usuarios.NormalizeRole(u.RoleManager) != "Aluno"))
+            return Erro("Todos os passageiros selecionados precisam ter perfil de aluno.", passageiroIds.Length, vans.Values.Sum(v => v.Capacity));
+        foreach (var usuarioId in passageiroIds)
+        {
+            if (!formulario.PontosEmbarque.TryGetValue(usuarioId, out var ponto)
+                || string.IsNullOrWhiteSpace(ponto.Endereco))
+                return Erro("Informe o endereço do ponto de embarque operacional de cada aluno selecionado.", passageiroIds.Length, vans.Values.Sum(v => v.Capacity));
+            if (ponto.Latitude.HasValue != ponto.Longitude.HasValue
+                || (ponto.Latitude.HasValue && (!double.IsFinite(ponto.Latitude.Value) || !double.IsFinite(ponto.Longitude!.Value)
+                    || ponto.Latitude is < -90 or > 90 || ponto.Longitude is < -180 or > 180)))
+                return Erro("O ponto de embarque localizado está inválido. Selecione o endereço no Google Maps novamente.", passageiroIds.Length, vans.Values.Sum(v => v.Capacity));
+        }
         var usuariosAluno = await _db.Alunos.Where(a => a.Ativo && a.UsuarioId.HasValue && passageiroIds.Contains(a.UsuarioId.Value))
             .Select(a => a.UsuarioId!.Value).ToListAsync(cancellationToken);
         if (usuariosAluno.Distinct().Count() != passageiroIds.Length)
@@ -136,7 +152,17 @@ public sealed class LinhaService
         foreach (var vanId in vanIds)
             linha.Vans.Add(new LinhaVan { VanId = vanId, MotoristaId = formulario.MotoristasPorVan[vanId]!.Value });
         foreach (var (usuarioId, vanId) in alocacao)
-            linha.Passageiros.Add(new LinhaPassageiro { UsuarioId = usuarioId, VanId = vanId });
+        {
+            var ponto = formulario.PontosEmbarque[usuarioId];
+            linha.Passageiros.Add(new LinhaPassageiro
+            {
+                UsuarioId = usuarioId,
+                VanId = vanId,
+                EnderecoEmbarque = ponto.Endereco!.Trim(),
+                LatitudeEmbarque = ponto.Latitude,
+                LongitudeEmbarque = ponto.Longitude
+            });
+        }
 
         await _db.SaveChangesAsync(cancellationToken);
         var hojeLocal = DateTime.SpecifyKind(DateTime.UtcNow.AddHours(-3).Date, DateTimeKind.Unspecified);

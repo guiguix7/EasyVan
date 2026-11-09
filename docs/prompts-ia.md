@@ -41,3 +41,40 @@ Este arquivo mantÃ©m o histÃ³rico de prompts e resultados utilizados no dese
 - **Resultado:** coordenadas deixaram de ser campos visíveis e são mantidas internamente; origem/destino aceitam endereço e seleção pelo Google Maps quando configurada; a escolha do fim da volta foi reescrita em linguagem operacional; Escola foi incluída no cadastro/edição/detalhes/lista de alunos e na seleção da Linha. Migration `EscolaDoAluno` adiciona coluna opcional.
 - **Aceito/ajustado:** o campo Escola é opcional, até 160 caracteres; contas antigas continuam válidas com escola não informada. Endereços podem ser digitados ou selecionados no autocomplete Google disponível quando a chave do navegador estiver configurada.
 - **Verificação:** teste de persistência da escola adicionado; build e suíte executados nesta tarefa.
+
+## 08/11/2026 — Revisão da Fase 2 e consolidação da Fase 3
+
+- **Prompt:** leitura dos PDFs “EasyVan — Relatório da Ideia e do MVP” e “EasyVan — Roteiros de uso por perfil”; revisão da Fase 2; se aprovada, início da Fase 3 com aprovação explícita. O usuário também forneceu instruções de desenvolvimento/revisão, regras RN01–RN06, alertas A1–A6, fases e roteiro manual.
+- **Resultado:** PDFs comparados ao estado do repositório. Fase 2 revisada com CRUD protegido, validação de relações/histórico e testes de autorização. A implementação atual já contém o fluxo da Fase 3 integrado a Linhas recorrentes; foram conferidos worker multi-organização, janela de 14 dias úteis, geração idempotente, presenças SemResposta, limites de ida/volta e validação do POST do aluno. A spec da Fase 3 foi reescrita para refletir esse fluxo e o README foi atualizado para 134 testes.
+- **Aceito/ajustado:** mantida a configuração de prazo global nesta versão, conforme o estado documentado do repositório; mantida a geração de agenda legada por compatibilidade. O roteiro manual dos três perfis foi alinhado ao modelo atual de Linha.
+- **Verificação:** `dotnet build --nologo` passou sem avisos/erros; `dotnet test tests\\EasyVan.Tests\\EasyVan.Tests.csproj --nologo` passou com 134 testes. Uma execução paralela inicial de build/teste disputou arquivo temporário; a execução sequencial passou.
+
+## 08/11/2026 — Fase 4: visão do motorista e Google Maps
+
+- **Prompt:** “prossiga para a proxima fase”.
+- **Resultado:** completada a visão do motorista por ponto operacional, com passageiros confirmados agrupados por coordenadas, ETA, alunos sem resposta em seção separada e links Maps segmentados. Cada ponto de embarque passou a ser cadastrado separadamente do endereço residencial; a rota e o link usam somente os dados operacionais. Gerada a migration `Fase4PontosDeEmbarque` sem backfill residencial e atualizadas a spec da Fase 4 e a documentação do produto.
+- **Aceito/ajustado:** pontos antigos nulos permanecem sem rota até a Administração cadastrar o ponto operacional. Links móveis usam até três paradas intermediárias por trecho; trechos seguintes começam no destino anterior.
+- **Verificação:** build Release sem avisos/erros; 137 testes aprovados. Cobertura nova inclui agrupamento de passageiros, segmentação de links, ausência de rota sem ponto operacional e uso do ponto operacional no fallback.
+
+
+## 08/11/2026 — Correção do formulário de Linha e Fase 5
+
+- **Prompt:** corrigir o erro mostrado em `/Linhas/Create` no anexo e, depois, seguir para a próxima fase.
+- **Resultado:** a causa observada era ausência das chaves Google Maps no ambiente. O formulário agora explica a configuração ausente e oferece campos de latitude/longitude para destino, origem e pontos operacionais; o controller informa corretamente quando geocodificação não está disponível, sem classificar isso como endereço inválido. Implementados no painel a ocupação das próximas viagens e os alertas A1–A6 em serviço, com cobertura automatizada; criada `spec/fase-5-alertas-e-ocupacao.md`.
+- **Aceito/ajustado:** não foram adicionadas chaves ou dependências. Com as chaves ausentes, o fluxo usa coordenadas manuais; autocomplete/geocodificação continuam dependentes das chaves correspondentes.
+- **Verificação:** build Release sem avisos/erros; 141 testes aprovados.
+
+## 08/11/2026 — Teste manual do CRUD administrativo
+
+- **Prompt:** “recompilei e reiniciei, teste o CRUD de tudo, linha, vans, motoristas, alunos, TUDO.”
+- **Resultado:** no ambiente local de desenvolvimento, criados registros temporários para verificar inclusão, listagem, edição e desativação/reativação de Linha, motorista e aluno; também foi testada a edição de van e conta de usuário. A van temporária QAT-9087 foi excluída após autorização explícita. Os cadastros com histórico/conta vinculada impedem exclusão definitiva conforme as proteções existentes. Formulários vazios exibiram validação obrigatória.
+- **Problema encontrado:** o painel administrativo falhava no SQLite ao ordenar viagens por `TimeSpan` na consulta EF. A ordenação foi movida para memória após carregar a janela limitada de viagens e foi adicionado teste de regressão SQLite.
+- **Verificação:** `dotnet build --nologo -c Release` passou sem avisos/erros; `dotnet test tests\EasyVan.Tests\EasyVan.Tests.csproj --nologo -c Release` passou com 142 testes. O processo web que estava aberto ainda precisa ser reiniciado para carregar a correção do painel.
+- **Limite do teste manual:** foram exercitados os CRUDs administrativos citados acima; telas/ações específicas de aluno e motorista não foram validadas com sessões desses perfis nesta rodada.
+
+## 08/11/2026 — Remoção dos campos de latitude e longitude
+
+- **Prompt:** “tira a latitude e longitude”.
+- **Resultado:** removidos os campos visíveis de coordenadas no formulário de Linha. Os valores permanecem ocultos e podem ser preenchidos pelo seletor do Google Maps; sem a integração, endereços podem ser salvos sem localização calculada e a tela do motorista não tenta traçar rota com coordenadas padrão inválidas.
+- **Aceito/ajustado:** localização via Maps continua opcional para salvar os endereços e necessária para cálculo das rotas de navegação.
+- **Verificação:** teste automatizado adicionado para persistir ponto de embarque por endereço sem coordenadas; build Release e suíte executados nesta tarefa.

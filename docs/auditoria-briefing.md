@@ -152,3 +152,11 @@ Esta atualização complementa os achados históricos acima; não altera o escop
 ## Complemento de auditoria — linhas recorrentes (08/11/2026)
 
 A solicitação mais recente substituiu o fluxo de rota/parada manual por Linha recorrente. Foram adicionados modelo, geração de viagens, presença SemResposta, cache de roteirização por hash, integração Google com fallback e filtros globais por OrganizaçãoId. A migration `LinhasRecorrentesRoteirizacao` preserva dados legados. A verificação de segurança ainda exige teste de isolamento por organização, revisão das FKs compostas por organização e validação PostgreSQL antes de produção. Consulte `spec/linhas-recorrentes-e-roteirizacao.md`.
+
+
+## Atualização — Fases 4 e 5 (08/11/2026)
+
+- Fase 4 concluída: visão do motorista agrupada por ponto operacional, pendentes separados e links Maps segmentados; pontos de embarque cadastrados separadamente do endereço residencial. Migration `Fase4PontosDeEmbarque` criada.
+- Corrigida a validação enganosa em `Linhas/Create`: sem as chaves Google Maps, a tela agora permite informar coordenadas e explica a limitação. As chaves não estão configuradas neste ambiente, portanto autocomplete/geocodificação não foram validados aqui.
+- Fase 5 concluída: painel mostra ocupação por status e serviço avalia A1–A6; os testes de regras foram ampliados. Spec: `spec/fase-5-alertas-e-ocupacao.md`.
+- Verificação final: build Release sem avisos/erros; 141 testes aprovados. PostgreSQL real e isolamento multi-organização continuam pendentes.

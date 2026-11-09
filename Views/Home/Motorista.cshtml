@@ -96,6 +96,7 @@
                     var viagem = item.Viagem;
                     var hoje = viagem.Data == Model.Hoje;
                     var permitePresenca = viagem.Status == "EmAndamento" || (hoje && viagem.Status == "Agendada");
+                    var semResposta = item.Alunos.Where(aluno => aluno.Status == StatusPresenca.SemResposta).ToList();
 
                     <section class="ev-panel ev-panel--flush" aria-labelledby="viagem-@viagem.Id">
                         <div class="ev-detail-head ev-detail-head--panel">
@@ -137,7 +138,7 @@
                         {
                             <section class="ev-panel ev-panel--flush" aria-label="Rota calculada">
                                 <div class="ev-panel__head">
-                                    <div><h3>Paradas confirmadas</h3><p class="ev-panel__hint">Sequência calculada para esta viagem. @item.ParadasCalculadas.Count parada(s).</p></div>
+                                    <div><h3>Paradas confirmadas</h3><p class="ev-panel__hint">Sequência calculada para esta viagem. @item.ParadasAgrupadas.Count parada(s).</p></div>
                                     @if (viagem.HorarioSaidaSugerido.HasValue)
                                     {
                                         <span class="ev-badge ev-badge--info">Saída sugerida: @viagem.HorarioSaidaSugerido.Value.ToOffset(TimeSpan.FromHours(-3)).ToString("HH:mm")</span>
@@ -147,14 +148,20 @@
                                 {
                                     <div class="alert alert-warning m-3" role="status">@item.AvisoRoteirizacao</div>
                                 }
-                                @if (item.ParadasCalculadas.Any())
+                                @if (item.ParadasAgrupadas.Any())
                                 {
-                                    <ol class="list-group list-group-numbered list-group-flush">
-                                        @foreach (var parada in item.ParadasCalculadas)
+                                    <ol class="list-group list-group-flush" aria-label="Paradas de embarque em ordem">
+                                        @foreach (var parada in item.ParadasAgrupadas)
                                         {
-                                            <li class="list-group-item d-flex justify-content-between gap-3">
-                                                <span><strong>@parada.Usuario?.Nome</strong><br /><span class="text-muted">@parada.Usuario?.Endereco</span></span>
-                                                <span class="badge text-bg-light align-self-start">@parada.EtaPrevisto.ToOffset(TimeSpan.FromHours(-3)).ToString("HH:mm")</span>
+                                            <li class="list-group-item d-flex justify-content-between align-items-start gap-3">
+                                                <div class="flex-grow-1">
+                                                    <strong>Parada @parada.Ordem</strong>
+                                                    <div class="text-muted text-break">@parada.Endereco</div>
+                                                    <ul class="mb-0 mt-1 ps-3">
+                                                        @foreach (var passageiro in parada.Passageiros) { <li>@passageiro</li> }
+                                                    </ul>
+                                                </div>
+                                                <span class="badge text-bg-light flex-shrink-0">@parada.EtaPrevisto.ToOffset(TimeSpan.FromHours(-3)).ToString("HH:mm")</span>
                                             </li>
                                         }
                                     </ol>
@@ -172,15 +179,30 @@
                                 }
                                 else
                                 {
-                                    <p class="p-3 mb-0">A rota será calculada quando o prazo de confirmação encerrar ou quando você abrir os detalhes da viagem.</p>
+                                    <p class="p-3 mb-0">Ainda não há paradas confirmadas com ponto de embarque operacional localizado.</p>
+                                }
+                            </section>
+                        }
+
+                        @if (semResposta.Count > 0)
+                        {
+                            <section class="p-3 border-top" aria-labelledby="pendentes-@viagem.Id">
+                                <h3 id="pendentes-@viagem.Id" class="h6 mb-2">Sem resposta <span class="ev-count">@semResposta.Count</span></h3>
+                                <p class="ev-panel__hint">Estes alunos ainda não confirmaram; confira o ponto de embarque antes de sair.</p>
+                                @foreach (var grupo in semResposta.GroupBy(aluno => string.IsNullOrWhiteSpace(aluno.ParadaEndereco) ? "Ponto de embarque não cadastrado" : aluno.ParadaEndereco!))
+                                {
+                                    <div class="mb-2">
+                                        <strong>@grupo.Key</strong>
+                                        <ul class="mb-0 ps-3">@foreach (var aluno in grupo) { <li>@aluno.Nome</li> }</ul>
+                                    </div>
                                 }
                             </section>
                         }
 
                         <div class="ev-panel__head">
                             <div>
-                                <h3>Alunos da viagem</h3>
-                                <p class="ev-panel__hint">Nome, local de embarque, horÃ¡rio e presenÃ§a.</p>
+                                <h3>Registro de embarque</h3>
+                                <p class="ev-panel__hint">Marque quem embarcou quando a viagem estiver em andamento.</p>
                             </div>
                             <span class="ev-count">@item.Alunos.Count</span>
                         </div>
@@ -197,7 +219,11 @@
                                                 <span class="ev-person__name">@aluno.Nome</span>
                                                 <span class="ev-person__sub">
                                                     <partial name="_Icon" model='"pin"' />
-                                                    @(string.IsNullOrWhiteSpace(aluno.ParadaEndereco) ? "Parada nÃ£o vinculada" : $"Parada {aluno.OrdemParada}: {aluno.ParadaEndereco}")
+                                                    @(string.IsNullOrWhiteSpace(aluno.ParadaEndereco)
+                                                        ? "Ponto de embarque não cadastrado"
+                                                        : aluno.OrdemParada.HasValue
+                                                            ? $"Parada {aluno.OrdemParada}: {aluno.ParadaEndereco}"
+                                                            : $"Ponto de embarque: {aluno.ParadaEndereco}")
                                                 </span>
                                                 @if (!string.IsNullOrWhiteSpace(aluno.Telefone))
                                                 {

@@ -36,8 +36,10 @@ public sealed class RoteirizacaoService
             .Where(p => p.Status == StatusPresenca.Confirmado)
             .Select(p => p.UsuarioId ?? p.Aluno?.UsuarioId)
             .Where(id => id.HasValue).Select(id => id!.Value).ToHashSet();
-        var paradas = candidatos.Where(p => confirmados.Contains(p.UsuarioId) && p.Usuario?.Lat.HasValue == true && p.Usuario.Lng.HasValue)
-            .Select(p => new ParadaRoteavel(p.UsuarioId, p.Usuario!.Nome, new Coordenada(p.Usuario.Lat!.Value, p.Usuario.Lng!.Value)))
+        var paradas = candidatos.Where(p => confirmados.Contains(p.UsuarioId)
+                && p.LatitudeEmbarque.HasValue && p.LongitudeEmbarque.HasValue)
+            .Select(p => new ParadaRoteavel(p.UsuarioId, p.Usuario?.Nome ?? "Passageiro",
+                new Coordenada(p.LatitudeEmbarque!.Value, p.LongitudeEmbarque!.Value)))
             .OrderBy(p => p.UsuarioId).ToArray();
         var hash = CriarHashConfirmados(confirmados, viagem.Data, viagem.Sentido ?? SentidoViagem.Ida);
 
@@ -51,18 +53,22 @@ public sealed class RoteirizacaoService
             return new ResultadoRecalculoRota(true, true, "O serviço de rotas falhou recentemente; mantendo a última rota válida.");
 
         var paradasAntigas = await _db.ViagensParadas.Where(p => p.ViagemId == viagemId).ToListAsync(ct);
-        if (paradas.Length == 0)
+        var pontosExtremosLocalizados = TemCoordenada(linha.OrigemLat, linha.OrigemLng)
+            && TemCoordenada(linha.DestinoLat, linha.DestinoLng);
+        if (paradas.Length == 0 || !pontosExtremosLocalizados)
         {
             _db.ViagensParadas.RemoveRange(paradasAntigas);
             viagem.HashConfirmados = hash;
             viagem.CalculadaEm = _time.GetUtcNow();
             viagem.RoteirizacaoFalhouEm = null;
-            viagem.StatusRoteirizacao = "SemConfirmados";
+            viagem.StatusRoteirizacao = confirmados.Count == 0 ? "SemConfirmados" : "SemPontosOperacionais";
             viagem.DistanciaMetros = null;
             viagem.DuracaoSegundos = null;
             viagem.HorarioSaidaSugerido = null;
             await _db.SaveChangesAsync(ct);
-            return new ResultadoRecalculoRota(true, false, "Nenhum passageiro confirmou; não há rota a calcular.");
+            return new ResultadoRecalculoRota(true, false, confirmados.Count == 0
+                ? "Nenhum passageiro confirmou; não há rota a calcular."
+                : "Há endereços sem localização suficiente para calcular a rota. Peça à administração para configurar a localização no Google Maps.");
         }
 
         try
@@ -110,13 +116,19 @@ public sealed class RoteirizacaoService
                     partida.AddSeconds(resultado.DuracaoSegundos), 0));
             _db.ViagensParadas.RemoveRange(paradasAntigas);
             foreach (var parada in novas)
+            {
+                var ponto = candidatos.FirstOrDefault(p => p.UsuarioId == parada.UsuarioId);
                 _db.ViagensParadas.Add(new ViagemParada
                 {
                     ViagemId = viagem.Id,
                     UsuarioId = parada.UsuarioId,
                     Ordem = parada.Ordem,
-                    EtaPrevisto = parada.EtaPrevisto
+                    EtaPrevisto = parada.EtaPrevisto,
+                    EnderecoEmbarque = ponto?.EnderecoEmbarque,
+                    LatitudeEmbarque = ponto?.LatitudeEmbarque,
+                    LongitudeEmbarque = ponto?.LongitudeEmbarque
                 });
+            }
             viagem.HashConfirmados = hash;
             viagem.CalculadaEm = _time.GetUtcNow();
             viagem.RoteirizacaoFalhouEm = null;
@@ -159,11 +171,17 @@ public sealed class RoteirizacaoService
                     estimativa.Paradas.Join(paradas, r => r.UsuarioId, p => p.UsuarioId, (_, p) => p).ToArray(),
                     saida, otimizarOrdem: false, cancellationToken: ct);
                 foreach (var parada in fallbackFinal.Paradas)
+                {
+                    var ponto = candidatos.FirstOrDefault(p => p.UsuarioId == parada.UsuarioId);
                     _db.ViagensParadas.Add(new ViagemParada
                     {
                         ViagemId = viagem.Id, UsuarioId = parada.UsuarioId,
-                        Ordem = parada.Ordem, EtaPrevisto = parada.EtaPrevisto
+                        Ordem = parada.Ordem, EtaPrevisto = parada.EtaPrevisto,
+                        EnderecoEmbarque = ponto?.EnderecoEmbarque,
+                        LatitudeEmbarque = ponto?.LatitudeEmbarque,
+                        LongitudeEmbarque = ponto?.LongitudeEmbarque
                     });
+                }
                 viagem.HashConfirmados = hash;
                 viagem.CalculadaEm = agora;
                 viagem.StatusRoteirizacao = "Fallback";
@@ -207,6 +225,11 @@ public sealed class RoteirizacaoService
         var carga = $"{data:yyyy-MM-dd}|{(int)sentido}|{string.Join(',', ids.Distinct().Order())}";
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(carga)));
     }
+
+    private static bool TemCoordenada(double latitude, double longitude) =>
+        double.IsFinite(latitude) && double.IsFinite(longitude)
+        && latitude is >= -90 and <= 90 && longitude is >= -180 and <= 180
+        && (latitude != 0 || longitude != 0);
 
     private DateTimeOffset LimiteLocal(Viagem viagem)
     {

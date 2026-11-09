@@ -143,7 +143,7 @@ dotnet ef database update
 ```
 
 Rode `dotnet build` depois de qualquer mudanÃ§a em C# ou Razor e `dotnet test` antes de entregar.
-Linha de base atual em 08/11/2026: build 0 avisos/0 erros; **133 testes aprovados** após a implementação de Linhas recorrentes.
+Linha de base atual em 08/11/2026: build 0 avisos/0 erros; **142 testes aprovados** após as Fases 4 e 5 e a correção de compatibilidade do painel com SQLite.
 
 ## 8. Estrutura
 
@@ -173,8 +173,8 @@ removido na Fase 0).
 | **1** | Modelo + migraÃ§Ãµes + `Organizacao` + seed (e `OrganizacaoId` nas entidades operacionais) | **Implementada em 08/11/2026**; ver `spec/fase-1-modelo.md`. MigraÃ§Ã£o SQLite validada em cÃ³pia e aplicada localmente; PostgreSQL real nÃ£o validado. | Executar validaÃ§Ã£o em PostgreSQL quando houver banco de teste |
 | **2** | Telas do Admin: vans, motoristas, rotas, paradas, alunos e vÃ­nculos | **Implementada**; isolamento por organizaÃ§Ã£o foi adiado conforme D6 aprovado na Fase 1 | CRUD persistido e protegido por perfil; RN06 tem filtro global; cobertura PostgreSQL real permanece pendente |
 | **3** | Geracao diaria + presenca com prazo | **Implementada em 08/11/2026**; janela idempotente de 14 dias úteis e limite configuravel | Build/test passam; ver `spec/fase-3-viagens-e-presenca.md` |
-| **4** | VisÃ£o do motorista por parada + Maps | **Parcial**: motorista vÃª o ponto operacional e mapa usa waypoints confirmados com otimizaÃ§Ã£o; falta teste de integraÃ§Ã£o/agrupamento visual e divisÃ£o de rotas longas | Link abre a rota correta |
-| **5** | Painel + alertas A1â€“A6 | **Parcial**: dashboard; A1/A2 parciais; A3â€“A6 ausentes | Cada alerta com teste |
+| **4** | Visão do motorista por parada + Maps | **Implementada**: agrupamento por ponto operacional, pendentes separados e links segmentados; ver `spec/fase-4-rotas-do-motorista.md` | Build e testes aprovados; configurar as chaves Google no ambiente para autocomplete/geocodificação |
+| **5** | Painel + alertas A1–A6 | **Implementada**: ocupação e A1–A6 no serviço operacional; ver `spec/fase-5-alertas-e-ocupacao.md` | Build e testes aprovados |
 | **6** | DocumentaÃ§Ã£o final, concorrentes, LGPD, plano comercial, piloto | **Pendente** | RelatÃ³rio completo e demo ensaiada |
 
 Trabalhe **uma fase por vez**. NÃ£o adiante fases nem implemente itens fora do MVP.
@@ -231,3 +231,8 @@ rotas protegidas (perfis e organizaÃ§Ãµes); roteiro manual com os 3 perfis.
 ## Estado atual â€” complemento de 08/11/2026
 
 Este complemento substitui afirmaÃ§Ãµes anteriores deste arquivo que indiquem ausÃªncia de `OrganizacaoId`, RN06 pendente, viagens manuais como fluxo principal ou agenda de sete dias. Agora hÃ¡ escopo global de consulta por `OrganizacaoId`, entidade `Linha`, alocaÃ§Ãµes de vans/alunos, geraÃ§Ã£o idempotente por 14 dias Ãºteis, presenÃ§a SemResposta e roteirizaÃ§Ã£o com hash/cache; `spec/linhas-recorrentes-e-roteirizacao.md` Ã© a fonte atual do fluxo. As tabelas de Rota/Parada/Agenda permanecem legadas para compatibilidade. O navegador e o servidor precisam de chaves Google separadas (`GoogleMaps__BrowserApiKey` e `GoogleMaps__ApiKey`) com restriÃ§Ãµes apropriadas. Ãšltima verificaÃ§Ã£o: build sem avisos/erros e 133 testes aprovados; validaÃ§Ã£o com PostgreSQL real ainda pendente.
+
+
+## Estado atual — Fases 4 e 5 (08/11/2026)
+
+A visão do motorista por ponto operacional, com passageiros agrupados e links Maps segmentados, foi concluída na Fase 4. Na Fase 5, o Centro de Operações apresenta ocupação e alertas A1–A6, calculados em serviço e cobertos por testes. A criação de Linha aceita coordenadas manuais quando não há chave Google Maps, e informa essa ausência em vez de acusar o endereço. A ordenação da ocupação ocorre em memória para compatibilidade com SQLite e `TimeSpan`. Build Release: zero avisos/erros; 142 testes aprovados. Consulte `spec/fase-4-rotas-do-motorista.md` e `spec/fase-5-alertas-e-ocupacao.md`. PostgreSQL real e isolamento multi-organização permanecem pendentes.

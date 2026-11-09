@@ -142,7 +142,54 @@
         </div>
     </section>
 
-    <!-- C. Alertas operacionais -->
+    <!-- C. Ocupação das próximas viagens -->
+    <section class="ev-panel ev-panel--flush" aria-labelledby="ocupacao-viagens">
+        <div class="ev-panel__head">
+            <div>
+                <h2 id="ocupacao-viagens">Ocupação das próximas viagens</h2>
+                <p class="ev-panel__hint">Confirmados em relação à capacidade; alunos sem resposta ficam separados.</p>
+            </div>
+        </div>
+        @if (Model.OcupacaoProximasViagens.Count == 0)
+        {
+            <div class="ev-empty ev-empty--compact">
+                <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"calendar"' /></span>
+                <p class="ev-empty__title">Nenhuma viagem próxima</p>
+                <p class="ev-empty__text">As viagens ativas dos próximos sete dias aparecerão aqui.</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="ev-table">
+                    <thead><tr><th>Viagem</th><th>Data</th><th>Confirmados / capacidade</th><th>Ausentes</th><th>Sem resposta</th></tr></thead>
+                    <tbody>
+                    @foreach (var item in Model.OcupacaoProximasViagens)
+                    {
+                        var nomeViagem = item.Viagem.Linha?.Nome ?? item.Viagem.Rota?.Nome ?? $"Viagem #{item.Viagem.Id}";
+                        <tr>
+                            <td><a asp-controller="Viagens" asp-action="Details" asp-route-id="@item.Viagem.Id">@nomeViagem</a><br /><span class="text-muted">@(item.Viagem.Sentido?.ToString() ?? "Sentido não informado")</span></td>
+                            <td>@item.Viagem.Data.ToString("dd/MM/yyyy")<br /><span class="text-muted">@(item.Viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Horário não informado")</span></td>
+                            <td>
+                                <strong>@item.Confirmados / @(item.Capacidade?.ToString() ?? "—")</strong>
+                                @if (item.PercentualOcupacao.HasValue)
+                                {
+                                    <div class="progress mt-1" role="progressbar" aria-label="Ocupação da viagem" aria-valuenow="@item.PercentualOcupacao.Value" aria-valuemin="0" aria-valuemax="100">
+                                        <div class="progress-bar" style="width: @Math.Min(item.PercentualOcupacao.Value, 100)%"></div>
+                                    </div>
+                                }
+                            </td>
+                            <td>@item.Ausentes</td>
+                            <td>@item.SemResposta</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <!-- D. Alertas operacionais -->
     <section class="ev-panel ev-panel--flush @(Model.TemAlertas ? "ev-panel--alertas" : "")" aria-labelledby="alertas">
         <div class="ev-panel__head">
             <div>
@@ -167,9 +214,12 @@
             <div class="ev-alertas-lista">
                 @foreach (var alerta in Model.Alertas)
                 {
-                    <div class="ev-alerta @(alerta.Gravidade == "Impeditivo" ? "ev-alerta--impeditivo" : "ev-alerta--aviso")">
+                    var gravidadeAlta = alerta.Gravidade is "Impeditivo" or "Alta";
+                    var gravidadeMedia = alerta.Gravidade is "Aviso" or "Média";
+                    var controladorAlerta = alerta.EntidadeTipo switch { "Aluno" => "Alunos", "Van" => "Vans", _ => "Viagens" };
+                    <div class="ev-alerta @(gravidadeAlta ? "ev-alerta--impeditivo" : "ev-alerta--aviso")">
                         <div class="ev-alerta__tipo">
-                            <span class="ev-badge @(alerta.Gravidade == "Impeditivo" ? "ev-badge--warning" : "ev-badge--info")">
+                            <span class="ev-badge @(gravidadeAlta ? "ev-badge--warning" : gravidadeMedia ? "ev-badge--info" : "ev-badge--neutral")">
                                 @alerta.Tipo
                             </span>
                         </div>
@@ -178,10 +228,10 @@
                             <p class="ev-alerta__descricao">@alerta.Descricao</p>
                         </div>
                         <div class="ev-alerta__acao">
-                            <span class="ev-alerta__gravidade @(alerta.Gravidade == "Impeditivo" ? "ev-alerta__gravidade--impeditivo" : "ev-alerta__gravidade--aviso")">
+                            <span class="ev-alerta__gravidade @(gravidadeAlta ? "ev-alerta__gravidade--impeditivo" : "ev-alerta__gravidade--aviso")">
                                 @alerta.Gravidade
                             </span>
-                            <a asp-action="Details" asp-controller="Viagens" asp-route-id="@alerta.EntidadeId"
+                            <a asp-action="Details" asp-controller="@controladorAlerta" asp-route-id="@alerta.EntidadeId"
                                class="btn btn-outline-secondary btn-sm">
                                 Ver registro
                             </a>

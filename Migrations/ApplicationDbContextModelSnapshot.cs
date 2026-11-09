@@ -190,8 +190,17 @@ namespace Gerenciamento_de_Van.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("EnderecoEmbarque")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("LatitudeEmbarque")
+                        .HasColumnType("REAL");
+
                     b.Property<int>("LinhaId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<double?>("LongitudeEmbarque")
+                        .HasColumnType("REAL");
 
                     b.Property<int>("OrganizacaoId")
                         .ValueGeneratedOnAdd()
@@ -724,8 +733,17 @@ namespace Gerenciamento_de_Van.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("EnderecoEmbarque")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTimeOffset>("EtaPrevisto")
                         .HasColumnType("TEXT");
+
+                    b.Property<double?>("LatitudeEmbarque")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("LongitudeEmbarque")
+                        .HasColumnType("REAL");
 
                     b.Property<int>("Ordem")
                         .HasColumnType("INTEGER");

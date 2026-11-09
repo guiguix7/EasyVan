@@ -24,6 +24,7 @@ public sealed class LinhaFormViewModel : IValidatableObject
     public List<int> VansIds { get; set; } = new();
     public Dictionary<int, int?> MotoristasPorVan { get; set; } = new();
     public Dictionary<int, int?> VanPorPassageiro { get; set; } = new();
+    public Dictionary<int, PontoEmbarqueFormViewModel> PontosEmbarque { get; set; } = new();
     public bool Ativa { get; set; } = true;
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -41,7 +42,22 @@ public sealed class LinhaFormViewModel : IValidatableObject
 
 public sealed record LinhaIndexItemViewModel(Linha Linha, int Passageiros, int Capacidade);
 public sealed record OpcaoVanViewModel(Van Van, int? MotoristaId);
-public sealed record AlunoLinhaOpcaoViewModel(int Id, string Nome, string? Escola, string? Endereco, bool EnderecoGeocodificado);
+public sealed class PontoEmbarqueFormViewModel
+{
+    [StringLength(300)] public string? Endereco { get; set; }
+    [Range(-90, 90)] public double? Latitude { get; set; }
+    [Range(-180, 180)] public double? Longitude { get; set; }
+}
+
+public sealed record AlunoLinhaOpcaoViewModel(int Id, string Nome, string? Escola);
+
+public sealed class ParadaMotoristaViewModel
+{
+    public int Ordem { get; init; }
+    public string Endereco { get; init; } = string.Empty;
+    public DateTimeOffset EtaPrevisto { get; init; }
+    public IReadOnlyList<string> Passageiros { get; init; } = Array.Empty<string>();
+}
 
 public sealed class LinhaDetalheViewModel
 {

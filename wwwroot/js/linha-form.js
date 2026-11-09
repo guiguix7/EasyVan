@@ -47,6 +47,15 @@
       lng.value = "";
     });
   });
+  form.querySelectorAll("[data-ponto-endereco]").forEach(function (address) {
+    var id = address.getAttribute("data-ponto-endereco");
+    var lat = document.getElementById("embarque-lat-" + id);
+    var lng = document.getElementById("embarque-lng-" + id);
+    address.addEventListener("input", function () {
+      if (lat) lat.value = "";
+      if (lng) lng.value = "";
+    });
+  });
   if (!key || !addressWidgets.length) return;
 
   function initialize() {

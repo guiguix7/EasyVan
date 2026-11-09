@@ -66,6 +66,26 @@ namespace EasyVan.Services
                 .Take(8)
                 .ToListAsync();
 
+            var viagensOcupacao = await _db.Viagens.AsNoTracking()
+                .Include(v => v.Van)
+                .Include(v => v.Rota)
+                .Include(v => v.Linha)
+                .Include(v => v.Presencas)
+                .Where(v => v.Data >= hojeLocal && v.Data < hojeLocal.AddDays(8)
+                    && v.Status != "Cancelada" && v.Status != "Finalizada" && v.Status != "Concluida")
+                .ToListAsync();
+            modelo.OcupacaoProximasViagens = viagensOcupacao
+                .OrderBy(v => v.Data)
+                .ThenBy(v => v.HoraInicio)
+                .ThenBy(v => v.Id)
+                .Take(12)
+                .Select(v => new ViagemOcupacaoItemViewModel(
+                v,
+                v.Presencas.Count(p => p.Status == StatusPresenca.Confirmado),
+                v.Presencas.Count(p => p.Status == StatusPresenca.Ausente),
+                v.Presencas.Count(p => p.Status == StatusPresenca.SemResposta),
+                v.Van?.Capacity)).ToList();
+
             // --- Vans em manutenção ---
             modelo.VansEmManutencao = await _db.Vans
                 .Where(v => v.Status == "Manutenção")
@@ -81,7 +101,7 @@ namespace EasyVan.Services
                 .ToListAsync();
 
             // --- Alertas operacionais ---
-            modelo.Alertas = _validacao.AnalisarAlertas().ToList();
+            modelo.Alertas = (await _validacao.AnalisarAlertasAsync()).ToList();
 
             return modelo;
         }

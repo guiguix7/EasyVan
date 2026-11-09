@@ -4,6 +4,8 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using EasyVan.Data;
 using EasyVan.Models;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace EasyVan.Services
 {
@@ -14,10 +16,12 @@ namespace EasyVan.Services
     public class ValidacaoOperacional
     {
         private readonly ApplicationDbContext _db;
+        private readonly PrazoPresencaService _prazoPresenca;
 
-        public ValidacaoOperacional(ApplicationDbContext db)
+        public ValidacaoOperacional(ApplicationDbContext db, PrazoPresencaService? prazoPresenca = null)
         {
             _db = db;
+            _prazoPresenca = prazoPresenca ?? new PrazoPresencaService(new PrazoPresencaOptions(), TimeProvider.System);
         }
 
         /// <summary>
@@ -37,15 +41,22 @@ namespace EasyVan.Services
         /// <summary>
         /// Analisa o estado atual do banco e retorna todos os alertas operacionais encontrados.
         /// </summary>
-        public IEnumerable<ResultadoValidacao> AnalisarAlertas()
+        public IEnumerable<ResultadoValidacao> AnalisarAlertas() =>
+            AnalisarAlertasAsync().GetAwaiter().GetResult();
+
+        public async Task<IReadOnlyList<ResultadoValidacao>> AnalisarAlertasAsync(CancellationToken cancellationToken = default)
         {
             var alertas = new List<ResultadoValidacao>();
 
-            var viagens = _db.Viagens.ToList();
-            var vans = _db.Vans.ToList();
-            var motoristas = _db.Motoristas.ToList();
-            var alunos = _db.Alunos.ToList();
-            var presencas = _db.PresencasViagem.ToList();
+            var viagens = await _db.Viagens.AsNoTracking().Include(v => v.Van).Include(v => v.Motorista)
+                .ToListAsync(cancellationToken);
+            var vans = await _db.Vans.AsNoTracking().ToListAsync(cancellationToken);
+            var alunos = await _db.Alunos.AsNoTracking().ToListAsync(cancellationToken);
+            var presencas = await _db.PresencasViagem.AsNoTracking().ToListAsync(cancellationToken);
+            var linhasPassageiros = await _db.LinhasPassageiros.AsNoTracking().Include(p => p.Linha)
+                .ToListAsync(cancellationToken);
+            var vinculos = await _db.VinculosAluno.AsNoTracking().Include(v => v.Rota).Include(v => v.Parada)
+                .ToListAsync(cancellationToken);
 
             // 1. Conflito de horário entre viagens do mesmo motorista
             alertas.AddRange(DetectarConflitoHorarioMotorista(viagens));
@@ -53,22 +64,97 @@ namespace EasyVan.Services
             // 2. Conflito de horário entre viagens da mesma van
             alertas.AddRange(DetectarConflitoHorarioVan(viagens));
 
-            // 3. Capacidade excedida (passageiros vinculados > capacidade da van)
+            // A1. Confirmados acima da capacidade.
             alertas.AddRange(DetectarCapacidadeExcedida(viagens, vans, presencas));
 
-            // 4. Viagem sem motorista associado
-            alertas.AddRange(DetectarViagemSemMotorista(viagens));
-
-            // 5. Viagem sem van associada
-            alertas.AddRange(DetectarViagemSemVan(viagens));
+            // A2. Viagem sem van ou motorista.
+            alertas.AddRange(DetectarViagemSemAlocacao(viagens));
 
             // 6. Viagem com dados obrigatórios ausentes ou inconsistentes
             alertas.AddRange(DetectarDadosInconsistentes(viagens));
 
-            // A5. Viagem sem nenhuma presença confirmada.
+            alertas.AddRange(DetectarPrazoEncerradoSemResposta(viagens, presencas));
+            alertas.AddRange(DetectarAlunosSemVinculo(alunos, linhasPassageiros, vinculos));
             alertas.AddRange(DetectarViagemSemConfirmados(viagens, presencas));
+            alertas.AddRange(DetectarVanForaDeOperacao(viagens));
 
             return alertas;
+        }
+
+        private IEnumerable<ResultadoValidacao> DetectarPrazoEncerradoSemResposta(
+            IReadOnlyCollection<Viagem> viagens, IReadOnlyCollection<PresencaViagem> presencas)
+        {
+            foreach (var viagem in viagens.Where(v => v.Status is not ("Cancelada" or "Finalizada" or "Concluida")))
+            {
+                var pendentes = presencas.Count(p => p.ViagemId == viagem.Id && p.Status == StatusPresenca.SemResposta);
+                if (pendentes == 0 || _prazoPresenca.Avaliar(viagem).PodeAlterar) continue;
+
+                yield return new ResultadoValidacao(
+                    true, "A3", "Prazo encerrado com alunos sem resposta",
+                    $"{pendentes} aluno(s) ainda não responderam à viagem de {viagem.Data:dd/MM/yyyy}.",
+                    "Média", viagem.Id, "Viagem", "Confirme a operação com os alunos que ainda não responderam.");
+            }
+        }
+
+        private static IEnumerable<ResultadoValidacao> DetectarAlunosSemVinculo(
+            IReadOnlyCollection<Aluno> alunos,
+            IReadOnlyCollection<LinhaPassageiro> passageirosLinha,
+            IReadOnlyCollection<VinculoAluno> vinculos)
+        {
+            var usuariosComPontoOperacional = passageirosLinha
+                .Where(p => p.Linha?.Ativa == true && !string.IsNullOrWhiteSpace(p.EnderecoEmbarque)
+                    && p.LatitudeEmbarque.HasValue && p.LongitudeEmbarque.HasValue
+                    && double.IsFinite(p.LatitudeEmbarque.Value) && double.IsFinite(p.LongitudeEmbarque.Value))
+                .Select(p => p.UsuarioId)
+                .ToHashSet();
+            var alunosComParadaLegada = vinculos
+                .Where(v => v.Ativo && v.Rota?.Ativo == true && v.Parada?.Ativo == true
+                    && v.Parada.RotaId == v.RotaId && v.Parada.Sentido == v.Sentido)
+                .Select(v => v.AlunoId)
+                .ToHashSet();
+
+            foreach (var aluno in alunos.Where(a => a.Ativo))
+            {
+                var temRotaEParada = (aluno.UsuarioId.HasValue && usuariosComPontoOperacional.Contains(aluno.UsuarioId.Value))
+                    || alunosComParadaLegada.Contains(aluno.Id);
+                if (temRotaEParada) continue;
+
+                yield return new ResultadoValidacao(
+                    true, "A4", "Aluno ativo sem linha ou ponto de embarque",
+                    $"O cadastro de aluno #{aluno.Id} não tem vínculo ativo com uma linha e um ponto de embarque.",
+                    "Média", aluno.Id, "Aluno", "Vincule o aluno a uma linha e cadastre o ponto operacional de embarque.");
+            }
+        }
+
+        private static IEnumerable<ResultadoValidacao> DetectarViagemSemAlocacao(IEnumerable<Viagem> viagens)
+        {
+            foreach (var viagem in viagens.Where(v => v.Status is not ("Cancelada" or "Finalizada" or "Concluida")))
+            {
+                var semVan = !viagem.VanId.HasValue || viagem.Van is null;
+                var semMotorista = !viagem.MotoristaId.HasValue || viagem.Motorista is null;
+                if (!semVan && !semMotorista) continue;
+
+                var ausentes = new List<string>();
+                if (semVan) ausentes.Add("van");
+                if (semMotorista) ausentes.Add("motorista");
+                yield return new ResultadoValidacao(
+                    true, "A2", "Viagem sem van ou motorista",
+                    $"A viagem #{viagem.Id} em {viagem.Data:dd/MM/yyyy} está sem {string.Join(" e ", ausentes)}.",
+                    "Alta", viagem.Id, "Viagem", "Atribua a van e o motorista antes da operação.");
+            }
+        }
+
+        private static IEnumerable<ResultadoValidacao> DetectarVanForaDeOperacao(IEnumerable<Viagem> viagens)
+        {
+            foreach (var viagem in viagens.Where(v => v.Status is not ("Cancelada" or "Finalizada" or "Concluida")
+                         && v.VanId.HasValue && v.Van is not null
+                         && !string.Equals(v.Van.Status, "Operacional", StringComparison.OrdinalIgnoreCase)))
+            {
+                yield return new ResultadoValidacao(
+                    true, "A6", "Van indisponível atribuída à viagem",
+                    $"A van {viagem.Van!.Plate} está com status {viagem.Van.Status} na viagem de {viagem.Data:dd/MM/yyyy}.",
+                    "Alta", viagem.Id, "Viagem", "Atribua uma van operacional a esta viagem.");
+            }
         }
 
         private static IEnumerable<ResultadoValidacao> DetectarViagemSemConfirmados(
@@ -281,12 +367,12 @@ namespace EasyVan.Services
 
                 var totalPassageiros = presencas.Count(p =>
                     p.ViagemId == viagem.Id && p.Status == StatusPresenca.Confirmado);
-                if (totalPassageiros > van.Capacity)
+                if (viagem.Status is not ("Cancelada" or "Finalizada" or "Concluida") && totalPassageiros > van.Capacity)
                 {
                     alertas.Add(new ResultadoValidacao(
-                        true, "CapacidadeExcedida", "Capacidade excedida",
+                        true, "A1", "Capacidade excedida",
                         $"A viagem #{viagem.Id} tem {totalPassageiros} passageiro(s), mas a van {van.Plate} comporta {van.Capacity}.",
-                        "Impeditivo", viagem.Id, "Viagem", "Reduza passageiros ou troque a van."));
+                        "Alta", viagem.Id, "Viagem", "Reduza passageiros ou troque a van."));
                 }
             }
 
