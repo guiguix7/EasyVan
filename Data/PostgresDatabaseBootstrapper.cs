@@ -119,7 +119,9 @@ public static class PostgresDatabaseBootstrapper
                 if (tableName is null)
                     return Enumerable.Empty<(string Schema, string Table, string Column)>();
 
-                var schema = entityType.GetSchema() ?? "public";
+                // EF model metadata uses null for the default schema; the SQL
+                // lookup below resolves that same default schema explicitly as public.
+                var schema = entityType.GetSchema();
                 var storeObject = StoreObjectIdentifier.Table(tableName, schema);
 
                 return entityType.GetProperties()
@@ -127,7 +129,7 @@ public static class PostgresDatabaseBootstrapper
                         (Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType) == typeof(bool))
                     .Select(property => property.GetColumnName(storeObject))
                     .Where(column => !string.IsNullOrWhiteSpace(column))
-                    .Select(column => (Schema: schema, Table: tableName, Column: column!));
+                    .Select(column => (Schema: schema ?? "public", Table: tableName, Column: column!));
             })
             .Distinct()
             .ToArray();
