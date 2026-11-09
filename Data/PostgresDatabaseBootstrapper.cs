@@ -305,7 +305,8 @@ public static class PostgresDatabaseBootstrapper
                 var tableIdentifier = sqlHelper.DelimitIdentifier(key.Table, key.Schema);
                 var columnIdentifier = sqlHelper.DelimitIdentifier(key.Column);
                 var sequenceIdentifier = sqlHelper.DelimitIdentifier(sequenceName, key.Schema);
-                var sequenceRegclass = $"{key.Schema}.{sequenceName}".Replace("'", "''", StringComparison.Ordinal);
+                // Keep quoted mixed-case identifiers intact when resolving the regclass.
+                var sequenceRegclass = sequenceIdentifier.Replace("'", "''", StringComparison.Ordinal);
 
                 using var sequenceCommand = connection.CreateCommand();
                 sequenceCommand.CommandText = $"""
