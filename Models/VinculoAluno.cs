@@ -2,9 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EasyVan.Models
 {
-    public class VinculoAluno
+    public class VinculoAluno : IOrganizacaoScoped
     {
         public int Id { get; set; }
+        public int OrganizacaoId { get; set; } = 1;
 
         [Required(ErrorMessage = "O aluno é obrigatório.")]
         public int AlunoId { get; set; }

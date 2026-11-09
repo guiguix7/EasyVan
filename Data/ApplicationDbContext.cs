@@ -1,11 +1,29 @@
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using EasyVan.Models;
 
 namespace EasyVan.Data
 {
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        private int _organizacaoAtualId;
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : this(options, 1) { }
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor accessor)
+            : this(options, int.TryParse(accessor.HttpContext?.User.FindFirstValue("EasyVan:OrganizacaoId"), out var id) ? id : 1) { }
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, int organizacaoId) : base(options)
+        {
+            _organizacaoAtualId = organizacaoId > 0 ? organizacaoId : 1;
+        }
+
+        internal void DefinirOrganizacaoAtual(int organizacaoId)
+        {
+            if (organizacaoId <= 0) throw new ArgumentOutOfRangeException(nameof(organizacaoId));
+            _organizacaoAtualId = organizacaoId;
+        }
 
         public DbSet<Usuarios> Usuarios { get; set; }
         public DbSet<Van> Vans { get; set; }
@@ -19,10 +37,29 @@ namespace EasyVan.Data
         public DbSet<Parada> Paradas { get; set; }
         public DbSet<VinculoAluno> VinculosAluno { get; set; }
         public DbSet<LogOperacao> LogOperacao { get; set; }
+        public DbSet<Linha> Linhas { get; set; }
+        public DbSet<LinhaVan> LinhasVans { get; set; }
+        public DbSet<LinhaPassageiro> LinhasPassageiros { get; set; }
+        public DbSet<ViagemParada> ViagensParadas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Usuarios>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<Aluno>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<Motorista>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<Van>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<Rota>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<Viagem>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<PresencaViagem>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<HorarioRota>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<Parada>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<VinculoAluno>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<LogOperacao>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<Linha>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<LinhaVan>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<LinhaPassageiro>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
+            modelBuilder.Entity<ViagemParada>().HasQueryFilter(e => e.OrganizacaoId == _organizacaoAtualId);
             modelBuilder.Entity<Usuarios>(entity =>
             {
                 // E-mails são normalizados para minúsculas pela aplicação antes de salvar.
@@ -76,10 +113,10 @@ namespace EasyVan.Data
             modelBuilder.Entity<VinculoAluno>(entity =>
             {
                 entity.ToTable("VinculosAluno");
-                // O índice único parcial (um vínculo ativo por aluno/sentido) é criado na
-                // migration com SQL específico de cada provider; o modelo mantém apenas a busca.
                 entity.HasIndex(v => new { v.AlunoId, v.Sentido })
-                    .HasDatabaseName("IX_VinculosAluno_AlunoSentido");
+                    .IsUnique()
+                    .HasFilter(Database.IsNpgsql() ? "\"Ativo\" = TRUE" : "\"Ativo\" = 1")
+                    .HasDatabaseName("IX_VinculosAluno_AlunoSentidoAtivo");
                 entity.HasIndex(v => new { v.RotaId, v.Sentido, v.Ativo })
                     .HasDatabaseName("IX_VinculosAluno_RotaSentidoAtivo");
 
@@ -155,6 +192,11 @@ namespace EasyVan.Data
                 .HasForeignKey(v => v.HorarioRotaId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            modelBuilder.Entity<Viagem>()
+                .HasIndex(v => new { v.HorarioRotaId, v.Data })
+                .IsUnique()
+                .HasDatabaseName("IX_Viagens_HorarioRotaId_Data");
+
             modelBuilder.Entity<PresencaViagem>()
                 .Property(p => p.Status)
                 .HasDefaultValue(StatusPresenca.SemResposta);
@@ -174,6 +216,70 @@ namespace EasyVan.Data
                 .WithMany()
                 .HasForeignKey(p => p.AlunoId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<PresencaViagem>()
+                .HasOne(p => p.Usuario)
+                .WithMany()
+                .HasForeignKey(p => p.UsuarioId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Linha>(entity =>
+            {
+                entity.HasIndex(l => new { l.OrganizacaoId, l.Nome });
+                entity.HasIndex(l => new { l.OrganizacaoId, l.RotaLegadaId }).IsUnique();
+                entity.HasOne<Rota>().WithMany().HasForeignKey(l => l.RotaLegadaId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<LinhaVan>(entity =>
+            {
+                entity.HasIndex(v => new { v.LinhaId, v.VanId }).IsUnique();
+                entity.HasOne(v => v.Linha).WithMany(l => l.Vans).HasForeignKey(v => v.LinhaId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(v => v.Van).WithMany().HasForeignKey(v => v.VanId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(v => v.Motorista).WithMany().HasForeignKey(v => v.MotoristaId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<LinhaPassageiro>(entity =>
+            {
+                entity.HasIndex(p => new { p.LinhaId, p.UsuarioId }).IsUnique();
+                entity.HasOne(p => p.Linha).WithMany(l => l.Passageiros).HasForeignKey(p => p.LinhaId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(p => p.Usuario).WithMany().HasForeignKey(p => p.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(p => p.Van).WithMany().HasForeignKey(p => p.VanId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<ViagemParada>(entity =>
+            {
+                entity.HasIndex(p => new { p.ViagemId, p.Ordem }).IsUnique();
+                entity.HasIndex(p => new { p.ViagemId, p.UsuarioId }).IsUnique();
+                entity.HasOne(p => p.Viagem).WithMany(v => v.ParadasCalculadas).HasForeignKey(p => p.ViagemId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(p => p.Usuario).WithMany().HasForeignKey(p => p.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Viagem>().HasOne(v => v.Linha).WithMany().HasForeignKey(v => v.LinhaId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Viagem>().HasIndex(v => new { v.LinhaId, v.VanId, v.Data, v.Sentido })
+                .IsUnique().HasFilter("\"LinhaId\" IS NOT NULL").HasDatabaseName("IX_Viagens_LinhaVanDataSentido");
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                         .Where(t => typeof(IOrganizacaoScoped).IsAssignableFrom(t.ClrType)))
+            {
+                modelBuilder.Entity(entityType.ClrType).Property<int>(nameof(IOrganizacaoScoped.OrganizacaoId)).HasDefaultValue(1);
+            }
+        }
+
+        public override int SaveChanges()
+        {
+            AjustarOrganizacao();
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            AjustarOrganizacao();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void AjustarOrganizacao()
+        {
+            foreach (var entry in ChangeTracker.Entries<IOrganizacaoScoped>().Where(e => e.State == EntityState.Added))
+                entry.Entity.OrganizacaoId = _organizacaoAtualId;
         }
     }
 }

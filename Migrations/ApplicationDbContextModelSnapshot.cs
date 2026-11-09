@@ -35,10 +35,19 @@ namespace Gerenciamento_de_Van.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Escola")
+                        .HasMaxLength(160)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("Telefone")
                         .HasMaxLength(20)
@@ -70,6 +79,11 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<TimeSpan>("HorarioSaida")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
                     b.Property<int>("RotaId")
                         .HasColumnType("INTEGER");
 
@@ -91,6 +105,147 @@ namespace Gerenciamento_de_Van.Migrations
                         .HasDatabaseName("IX_HorariosRota_AgendaUnica");
 
                     b.ToTable("HorariosRota", (string)null);
+                });
+
+            modelBuilder.Entity("EasyVan.Models.Linha", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Ativa")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Destino")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("DestinoLat")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("DestinoLng")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("DiasSemana")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("FolgaMinutos")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<TimeSpan>("HorarioChegadaIda")
+                        .HasColumnType("TEXT");
+
+                    b.Property<TimeSpan>("HorarioSaidaVolta")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
+                    b.Property<string>("Origem")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("OrigemLat")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("OrigemLng")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("RotaLegadaId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("TemIda")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("TemVolta")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("VoltaTerminaNoUltimoAluno")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RotaLegadaId");
+
+                    b.HasIndex("OrganizacaoId", "Nome");
+
+                    b.HasIndex("OrganizacaoId", "RotaLegadaId")
+                        .IsUnique();
+
+                    b.ToTable("Linhas");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.LinhaPassageiro", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LinhaId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("VanId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.HasIndex("VanId");
+
+                    b.HasIndex("LinhaId", "UsuarioId")
+                        .IsUnique();
+
+                    b.ToTable("LinhasPassageiros");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.LinhaVan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("LinhaId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("MotoristaId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("VanId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MotoristaId");
+
+                    b.HasIndex("VanId");
+
+                    b.HasIndex("LinhaId", "VanId")
+                        .IsUnique();
+
+                    b.ToTable("LinhasVans");
                 });
 
             modelBuilder.Entity("EasyVan.Models.LogOperacao", b =>
@@ -117,6 +272,11 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<string>("InformacoesComplementares")
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("TipoOperacao")
                         .IsRequired()
@@ -159,6 +319,11 @@ namespace Gerenciamento_de_Van.Migrations
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("Telefone")
                         .HasMaxLength(20)
@@ -218,6 +383,11 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<int>("Ordem")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
                     b.Property<int>("RotaId")
                         .HasColumnType("INTEGER");
 
@@ -248,6 +418,11 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<string>("Observacao")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
                     b.Property<bool>("Presente")
                         .HasColumnType("INTEGER");
 
@@ -262,12 +437,17 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<bool?>("StatusConfirmacao")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ViagemId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AlunoId");
+
+                    b.HasIndex("UsuarioId");
 
                     b.HasIndex("ViagemId", "AlunoId")
                         .IsUnique();
@@ -295,6 +475,11 @@ namespace Gerenciamento_de_Van.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
                     b.Property<string>("Origem")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -320,14 +505,32 @@ namespace Gerenciamento_de_Van.Migrations
                         .HasMaxLength(254)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Endereco")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("FotoPerfil")
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("GeocodificadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("Lat")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("Lng")
+                        .HasColumnType("REAL");
 
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("PasswordHasher")
                         .IsRequired()
@@ -378,6 +581,11 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<int?>("MotoristaId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
                     b.Property<string>("Plate")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -416,6 +624,9 @@ namespace Gerenciamento_de_Van.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTimeOffset?>("CalculadaEm")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("Data")
                         .HasColumnType("TEXT");
 
@@ -425,7 +636,16 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<DateTime>("DataCriacao")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("DistanciaMetros")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("DuracaoSegundos")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("FimReal")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HashConfirmados")
                         .HasColumnType("TEXT");
 
                     b.Property<TimeSpan?>("HoraFim")
@@ -437,8 +657,14 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<int?>("HorarioRotaId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTimeOffset?>("HorarioSaidaSugerido")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("InicioReal")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("LinhaId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("MotoristaId")
                         .HasColumnType("INTEGER");
@@ -446,8 +672,16 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Property<string>("Observacao")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
                     b.Property<int>("RotaId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("RoteirizacaoFalhouEm")
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("Sentido")
                         .HasColumnType("INTEGER");
@@ -457,12 +691,14 @@ namespace Gerenciamento_de_Van.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("StatusRoteirizacao")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("VanId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("HorarioRotaId");
 
                     b.HasIndex("MotoristaId");
 
@@ -470,7 +706,52 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.HasIndex("VanId");
 
+                    b.HasIndex("HorarioRotaId", "Data")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Viagens_HorarioRotaId_Data");
+
+                    b.HasIndex("LinhaId", "VanId", "Data", "Sentido")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Viagens_LinhaVanDataSentido")
+                        .HasFilter("\"LinhaId\" IS NOT NULL");
+
                     b.ToTable("Viagens");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.ViagemParada", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("EtaPrevisto")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Ordem")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ViagemId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.HasIndex("ViagemId", "Ordem")
+                        .IsUnique();
+
+                    b.HasIndex("ViagemId", "UsuarioId")
+                        .IsUnique();
+
+                    b.ToTable("ViagensParadas");
                 });
 
             modelBuilder.Entity("EasyVan.Models.VinculoAluno", b =>
@@ -495,6 +776,11 @@ namespace Gerenciamento_de_Van.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("OrganizacaoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(1);
+
                     b.Property<int>("ParadaId")
                         .HasColumnType("INTEGER");
 
@@ -509,7 +795,9 @@ namespace Gerenciamento_de_Van.Migrations
                     b.HasIndex("ParadaId");
 
                     b.HasIndex("AlunoId", "Sentido")
-                        .HasDatabaseName("IX_VinculosAluno_AlunoSentido");
+                        .IsUnique()
+                        .HasDatabaseName("IX_VinculosAluno_AlunoSentidoAtivo")
+                        .HasFilter("\"Ativo\" = 1");
 
                     b.HasIndex("RotaId", "Sentido", "Ativo")
                         .HasDatabaseName("IX_VinculosAluno_RotaSentidoAtivo");
@@ -543,6 +831,69 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Navigation("Rota");
 
                     b.Navigation("VanPadrao");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.Linha", b =>
+                {
+                    b.HasOne("EasyVan.Models.Rota", null)
+                        .WithMany()
+                        .HasForeignKey("RotaLegadaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EasyVan.Models.LinhaPassageiro", b =>
+                {
+                    b.HasOne("EasyVan.Models.Linha", "Linha")
+                        .WithMany("Passageiros")
+                        .HasForeignKey("LinhaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EasyVan.Models.Usuarios", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EasyVan.Models.Van", "Van")
+                        .WithMany()
+                        .HasForeignKey("VanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Linha");
+
+                    b.Navigation("Usuario");
+
+                    b.Navigation("Van");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.LinhaVan", b =>
+                {
+                    b.HasOne("EasyVan.Models.Linha", "Linha")
+                        .WithMany("Vans")
+                        .HasForeignKey("LinhaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EasyVan.Models.Motorista", "Motorista")
+                        .WithMany()
+                        .HasForeignKey("MotoristaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EasyVan.Models.Van", "Van")
+                        .WithMany()
+                        .HasForeignKey("VanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Linha");
+
+                    b.Navigation("Motorista");
+
+                    b.Navigation("Van");
                 });
 
             modelBuilder.Entity("EasyVan.Models.LogOperacao", b =>
@@ -583,6 +934,11 @@ namespace Gerenciamento_de_Van.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("EasyVan.Models.Usuarios", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("EasyVan.Models.Viagem", "Viagem")
                         .WithMany("Presencas")
                         .HasForeignKey("ViagemId")
@@ -590,6 +946,8 @@ namespace Gerenciamento_de_Van.Migrations
                         .IsRequired();
 
                     b.Navigation("Aluno");
+
+                    b.Navigation("Usuario");
 
                     b.Navigation("Viagem");
                 });
@@ -618,6 +976,11 @@ namespace Gerenciamento_de_Van.Migrations
                         .HasForeignKey("HorarioRotaId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("EasyVan.Models.Linha", "Linha")
+                        .WithMany()
+                        .HasForeignKey("LinhaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("EasyVan.Models.Motorista", "Motorista")
                         .WithMany()
                         .HasForeignKey("MotoristaId")
@@ -636,11 +999,32 @@ namespace Gerenciamento_de_Van.Migrations
 
                     b.Navigation("HorarioRota");
 
+                    b.Navigation("Linha");
+
                     b.Navigation("Motorista");
 
                     b.Navigation("Rota");
 
                     b.Navigation("Van");
+                });
+
+            modelBuilder.Entity("EasyVan.Models.ViagemParada", b =>
+                {
+                    b.HasOne("EasyVan.Models.Usuarios", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EasyVan.Models.Viagem", "Viagem")
+                        .WithMany("ParadasCalculadas")
+                        .HasForeignKey("ViagemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+
+                    b.Navigation("Viagem");
                 });
 
             modelBuilder.Entity("EasyVan.Models.VinculoAluno", b =>
@@ -675,6 +1059,13 @@ namespace Gerenciamento_de_Van.Migrations
                     b.Navigation("Viagens");
                 });
 
+            modelBuilder.Entity("EasyVan.Models.Linha", b =>
+                {
+                    b.Navigation("Passageiros");
+
+                    b.Navigation("Vans");
+                });
+
             modelBuilder.Entity("EasyVan.Models.Parada", b =>
                 {
                     b.Navigation("Vinculos");
@@ -682,6 +1073,8 @@ namespace Gerenciamento_de_Van.Migrations
 
             modelBuilder.Entity("EasyVan.Models.Viagem", b =>
                 {
+                    b.Navigation("ParadasCalculadas");
+
                     b.Navigation("Presencas");
                 });
 #pragma warning restore 612, 618

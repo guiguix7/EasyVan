@@ -2,9 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EasyVan.Models
 {
-    public class Motorista
+    public class Motorista : IOrganizacaoScoped
     {
         public int Id { get; set; }
+        public int OrganizacaoId { get; set; } = 1;
 
         [Required(ErrorMessage = "O nome é obrigatório.")]
         [StringLength(120, ErrorMessage = "O nome deve ter no máximo 120 caracteres.")]

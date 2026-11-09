@@ -35,6 +35,12 @@
                     </div>
 
                     <div class="ev-field">
+                        <label asp-for="Escola" class="form-label">Escola onde estuda</label>
+                        <input asp-for="Escola" class="form-control" placeholder="Ex.: Fatec Zona Leste" autocomplete="organization" maxlength="160" />
+                        <span asp-validation-for="Escola" class="ev-form-validation"></span>
+                    </div>
+
+                    <div class="ev-field">
                         <label asp-for="Email" class="form-label">E-mail <span class="ev-required" aria-hidden="true">*</span></label>
                         <input asp-for="Email" class="form-control" type="email" placeholder="aluno@exemplo.com"
                                autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" />

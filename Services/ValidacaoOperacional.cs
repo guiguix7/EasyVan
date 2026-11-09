@@ -65,7 +65,26 @@ namespace EasyVan.Services
             // 6. Viagem com dados obrigatórios ausentes ou inconsistentes
             alertas.AddRange(DetectarDadosInconsistentes(viagens));
 
+            // A5. Viagem sem nenhuma presença confirmada.
+            alertas.AddRange(DetectarViagemSemConfirmados(viagens, presencas));
+
             return alertas;
+        }
+
+        private static IEnumerable<ResultadoValidacao> DetectarViagemSemConfirmados(
+            IEnumerable<Viagem> viagens, IReadOnlyCollection<PresencaViagem> presencas)
+        {
+            foreach (var viagem in viagens.Where(v => v.Status is not ("Cancelada" or "Finalizada" or "Concluida")))
+            {
+                var temConfirmado = presencas.Any(p => p.ViagemId == viagem.Id
+                    && p.Status == StatusPresenca.Confirmado);
+                if (temConfirmado) continue;
+
+                yield return new ResultadoValidacao(
+                    true, "A5", "Viagem sem passageiros confirmados",
+                    "Nenhum passageiro confirmou presença; a rota não será calculada até haver confirmações.",
+                    "Baixa", viagem.Id, "Viagem", "Acompanhe as respostas ou confirme a operação com os passageiros.");
+            }
         }
 
         /// <summary>

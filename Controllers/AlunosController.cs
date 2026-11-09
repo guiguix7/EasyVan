@@ -12,11 +12,13 @@ namespace EasyVan.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly IPasswordService _senha;
+        private readonly IGeocodificador? _geocodificador;
 
-        public AlunosController(ApplicationDbContext db, IPasswordService senha)
+        public AlunosController(ApplicationDbContext db, IPasswordService senha, IGeocodificador? geocodificador = null)
         {
             _db = db;
             _senha = senha;
+            _geocodificador = geocodificador;
         }
 
         public async Task<IActionResult> Index()
@@ -63,6 +65,14 @@ namespace EasyVan.Controllers
 
             if (!ModelState.IsValid) return View(model);
 
+            (string Endereco, Coordenada Coordenada)? enderecoGeo = null;
+            if (!string.IsNullOrWhiteSpace(model.Endereco) && _geocodificador != null)
+            {
+                try { enderecoGeo = await _geocodificador.GeocodificarAsync(model.Endereco); }
+                catch (InvalidOperationException ex) { ModelState.AddModelError(nameof(model.Endereco), ex.Message); }
+                if (!ModelState.IsValid) return View(model);
+            }
+
             await using var transacao = await _db.Database.BeginTransactionAsync();
 
             if (conta == null)
@@ -73,10 +83,20 @@ namespace EasyVan.Controllers
                     Email = email,
                     RoleManager = "Aluno",
                     PasswordHasher = _senha.Hash(model.Senha!),
-                    Tema = "claro"
+                    Tema = "claro",
+                    Ativo = model.Ativo,
+                    Endereco = enderecoGeo?.Endereco ?? model.Endereco,
+                    Lat = enderecoGeo?.Coordenada.Lat,
+                    Lng = enderecoGeo?.Coordenada.Lng,
+                    GeocodificadoEm = enderecoGeo.HasValue ? DateTimeOffset.UtcNow : null
                 };
                 _db.Usuarios.Add(conta);
                 await _db.SaveChangesAsync();
+            }
+            else
+            {
+                conta.Ativo = model.Ativo;
+                if (enderecoGeo.HasValue) AtualizarEndereco(conta, enderecoGeo.Value);
             }
 
             _db.Alunos.Add(new Aluno
@@ -85,6 +105,7 @@ namespace EasyVan.Controllers
                 Email = email,
                 Telefone = model.Telefone,
                 Endereco = model.Endereco,
+                Escola = model.Escola,
                 Ativo = model.Ativo,
                 UsuarioId = conta.Id
             });
@@ -108,6 +129,7 @@ namespace EasyVan.Controllers
                 Email = aluno.Email,
                 Telefone = aluno.Telefone,
                 Endereco = aluno.Endereco,
+                Escola = aluno.Escola,
                 Ativo = aluno.Ativo,
                 ContaVinculada = aluno.UsuarioId.HasValue,
                 EmailConta = aluno.Usuario?.Email
@@ -158,6 +180,16 @@ namespace EasyVan.Controllers
 
             if (!ModelState.IsValid) return View(model);
 
+            var enderecoMudou = !string.Equals(conta?.Endereco, model.Endereco, StringComparison.OrdinalIgnoreCase)
+                || (conta != null && (!conta.Lat.HasValue || !conta.Lng.HasValue));
+            (string Endereco, Coordenada Coordenada)? enderecoGeo = null;
+            if (enderecoMudou && !string.IsNullOrWhiteSpace(model.Endereco) && _geocodificador != null)
+            {
+                try { enderecoGeo = await _geocodificador.GeocodificarAsync(model.Endereco); }
+                catch (InvalidOperationException ex) { ModelState.AddModelError(nameof(model.Endereco), ex.Message); }
+                if (!ModelState.IsValid) return View(model);
+            }
+
             await using var transacao = await _db.Database.BeginTransactionAsync();
 
             if (conta == null)
@@ -168,7 +200,11 @@ namespace EasyVan.Controllers
                     Email = email,
                     RoleManager = "Aluno",
                     PasswordHasher = _senha.Hash(model.Senha!),
-                    Tema = "claro"
+                    Tema = "claro",
+                    Endereco = enderecoGeo?.Endereco ?? model.Endereco,
+                    Lat = enderecoGeo?.Coordenada.Lat,
+                    Lng = enderecoGeo?.Coordenada.Lng,
+                    GeocodificadoEm = enderecoGeo.HasValue ? DateTimeOffset.UtcNow : null
                 };
                 _db.Usuarios.Add(conta);
                 await _db.SaveChangesAsync();
@@ -177,6 +213,12 @@ namespace EasyVan.Controllers
             {
                 conta.Nome = model.Nome.Trim();
                 conta.Email = email;
+                conta.Ativo = model.Ativo;
+                if (enderecoGeo.HasValue) AtualizarEndereco(conta, enderecoGeo.Value);
+                else if (string.IsNullOrWhiteSpace(model.Endereco))
+                {
+                    conta.Endereco = null; conta.Lat = null; conta.Lng = null; conta.GeocodificadoEm = null;
+                }
                 if (!string.IsNullOrWhiteSpace(model.Senha))
                     conta.PasswordHasher = _senha.Hash(model.Senha);
             }
@@ -185,6 +227,7 @@ namespace EasyVan.Controllers
             existente.Email = email;
             existente.Telefone = model.Telefone;
             existente.Endereco = model.Endereco;
+            existente.Escola = model.Escola;
             existente.Ativo = model.Ativo;
             existente.UsuarioId = conta.Id;
 
@@ -221,6 +264,12 @@ namespace EasyVan.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                if (await _db.VinculosAluno.AnyAsync(v => v.AlunoId == id))
+                {
+                    TempData["Erro"] = "Este aluno possui vínculos atuais ou históricos. Desative o cadastro para preservar o histórico.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 _db.Alunos.Remove(aluno);
                 await _db.SaveChangesAsync();
                 TempData["Sucesso"] = "Aluno excluído.";
@@ -229,12 +278,21 @@ namespace EasyVan.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        private static void AtualizarEndereco(Usuarios conta, (string Endereco, Coordenada Coordenada) resultado)
+        {
+            conta.Endereco = resultado.Endereco;
+            conta.Lat = resultado.Coordenada.Lat;
+            conta.Lng = resultado.Coordenada.Lng;
+            conta.GeocodificadoEm = DateTimeOffset.UtcNow;
+        }
+
         private static void Normalizar(AlunoFormViewModel model)
         {
             model.Nome = (model.Nome ?? string.Empty).Trim();
             model.Email = Usuarios.NormalizeEmail(model.Email);
             model.Telefone = ValidacaoBrasil.NormalizarTelefone(model.Telefone);
             model.Endereco = ValidacaoBrasil.LimparTexto(model.Endereco, 200);
+            model.Escola = ValidacaoBrasil.LimparTexto(model.Escola, 160);
         }
     }
 }

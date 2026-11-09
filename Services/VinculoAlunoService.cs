@@ -32,6 +32,9 @@ namespace EasyVan.Services
             string? observacao = null,
             CancellationToken cancellationToken = default)
         {
+            if (!Enum.IsDefined(sentido))
+                return ResultadoVinculo.Falha("Selecione um sentido válido.");
+
             var aluno = await _db.Alunos.FirstOrDefaultAsync(a => a.Id == alunoId, cancellationToken);
             if (aluno is null)
                 return ResultadoVinculo.Falha("Aluno não encontrado.");

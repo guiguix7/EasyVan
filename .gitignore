@@ -66,3 +66,6 @@ user-secrets.json
 *.jks
 *.keystore
 *.kdbx
+
+# Fotos de perfil locais (dados pessoais)
+App_Data/perfis/

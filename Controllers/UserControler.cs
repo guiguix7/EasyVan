@@ -209,11 +209,29 @@ namespace EasyVan.Controllers
                 }
             }
 
+            if (papelAtual == "Administrador" && existente.Ativo && !model.Ativo)
+            {
+                if (UsuarioAtual(id))
+                {
+                    ModelState.AddModelError(nameof(model.Ativo), "Você não pode desativar a própria conta de administrador.");
+                }
+                else
+                {
+                    var outrosAdministradoresAtivos = await _db.Usuarios
+                        .Where(u => u.Id != id && u.Ativo)
+                        .ToListAsync();
+
+                    if (!outrosAdministradoresAtivos.Any(u => Usuarios.NormalizeRole(u.RoleManager) == "Administrador"))
+                        ModelState.AddModelError(nameof(model.Ativo), "Não é possível desativar o último administrador ativo.");
+                }
+            }
+
             if (!ModelState.IsValid) return View(model);
 
             existente.Nome = model.Nome.Trim();
             existente.Email = novoEmail;
             existente.RoleManager = novoPapel;
+            existente.Ativo = model.Ativo;
 
             if (!string.IsNullOrWhiteSpace(model.NovaSenha))
                 existente.PasswordHasher = _senha.Hash(model.NovaSenha);
@@ -304,8 +322,8 @@ namespace EasyVan.Controllers
             }
 
             var email = Usuarios.NormalizeEmail(model.Email);
-            var user = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
-            if (user == null || !_senha.Verificar(model.Password, user.PasswordHasher))
+            var user = await _db.Usuarios.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null || !user.Ativo || !_senha.Verificar(model.Password, user.PasswordHasher))
             {
                 ModelState.AddModelError(string.Empty, "E-mail ou senha inválidos.");
                 ModelState.Remove(nameof(model.Password));
@@ -326,6 +344,7 @@ namespace EasyVan.Controllers
                 new Claim(ClaimTypes.Name, user.Nome),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.RoleManager),
+                new Claim("EasyVan:OrganizacaoId", user.OrganizacaoId.ToString()),
                 new Claim("FotoPerfil", user.FotoPerfil ?? string.Empty),
             };
 

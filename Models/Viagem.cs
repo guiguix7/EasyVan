@@ -2,9 +2,18 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EasyVan.Models
 {
-    public class Viagem
+    public class Viagem : IOrganizacaoScoped
     {
         public int Id { get; set; }
+        public int OrganizacaoId { get; set; } = 1;
+        public int? LinhaId { get; set; }
+        public DateTimeOffset? CalculadaEm { get; set; }
+        public string? HashConfirmados { get; set; }
+        public int? DistanciaMetros { get; set; }
+        public long? DuracaoSegundos { get; set; }
+        public DateTimeOffset? HorarioSaidaSugerido { get; set; }
+        public DateTimeOffset? RoteirizacaoFalhouEm { get; set; }
+        public string StatusRoteirizacao { get; set; } = "Planejada";
 
         // Nulos apenas em viagens sem alocação (alerta A2) ou legado ainda não classificado.
         public int? VanId { get; set; }
@@ -18,7 +27,7 @@ namespace EasyVan.Models
 
         public int? HorarioRotaId { get; set; }
 
-        // Data prevista de partida, armazenada como meia-noite UTC do dia local.
+        // Data de calendário local (America/Sao_Paulo), sem conversão para instante UTC.
         [Required(ErrorMessage = "A data é obrigatória.")]
         public DateTime Data { get; set; } = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified);
 
@@ -49,5 +58,7 @@ namespace EasyVan.Models
         public Rota? Rota { get; set; }
         public HorarioRota? HorarioRota { get; set; }
         public ICollection<PresencaViagem> Presencas { get; set; } = new List<PresencaViagem>();
+        public ICollection<ViagemParada> ParadasCalculadas { get; set; } = new List<ViagemParada>();
+        public Linha? Linha { get; set; }
     }
 }

@@ -27,7 +27,11 @@ namespace EasyVan.Services
             if (horario.RotaId <= 0)
                 return ResultadoAgenda.Falha("Selecione a rota.");
 
-            if (horario.DiasSemana == DiasSemana.Nenhum)
+            if (!Enum.IsDefined(horario.Sentido))
+                return ResultadoAgenda.Falha("Selecione um sentido válido.");
+
+            const DiasSemana diasValidos = DiasSemana.DiasUteis | DiasSemana.Domingo | DiasSemana.Sabado;
+            if (horario.DiasSemana == DiasSemana.Nenhum || (horario.DiasSemana & ~diasValidos) != 0)
                 return ResultadoAgenda.Falha("Selecione ao menos um dia da semana.");
 
             if (horario.HorarioSaida < TimeSpan.Zero || horario.HorarioSaida >= TimeSpan.FromDays(1))
@@ -60,6 +64,9 @@ namespace EasyVan.Services
         {
             if (parada.RotaId <= 0)
                 return ResultadoAgenda.Falha("Selecione a rota.");
+
+            if (!Enum.IsDefined(parada.Sentido))
+                return ResultadoAgenda.Falha("Selecione um sentido válido.");
 
             if (parada.Ordem < 1)
                 return ResultadoAgenda.Falha("A ordem da parada deve ser maior que zero.");

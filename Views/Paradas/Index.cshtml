@@ -1,0 +1,65 @@
+@model IEnumerable<EasyVan.Models.Parada>
+
+@{
+    ViewData["Title"] = "Paradas";
+    var paradas = Model.ToList();
+}
+
+<section class="ev-page">
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Cadastros</p>
+            <h1>Paradas</h1>
+            <p class="ev-page-head__lead">Organize pontos de embarque e desembarque por rota e sentido.</p>
+        </div>
+        <div class="ev-page-head__actions">
+            <a asp-action="Create" class="btn btn-primary"><partial name="_Icon" model='"plus"' /> Nova parada</a>
+        </div>
+    </header>
+
+    @if (TempData["Erro"] is string erro) { <div class="ev-notice ev-notice--danger" role="alert">@erro</div> }
+    @if (TempData["Sucesso"] is string sucesso) { <div class="ev-notice ev-notice--success" role="status">@sucesso</div> }
+
+    @if (paradas.Count == 0)
+    {
+        <div class="ev-panel ev-empty">
+            <h2 class="ev-empty__title">Nenhuma parada cadastrada</h2>
+            <p class="ev-empty__text">Cadastre pontos por rota e sentido antes de vincular alunos.</p>
+            <a asp-action="Create" class="btn btn-primary">Cadastrar parada</a>
+        </div>
+    }
+    else
+    {
+        <section class="ev-panel ev-panel--flush ev-list-desktop" aria-label="Paradas cadastradas">
+            <div class="ev-table-scroll">
+                <table class="ev-table">
+                    <thead><tr><th>Rota</th><th>Sentido</th><th>Ordem</th><th>Parada</th><th>Horário</th><th>Status</th><th><span class="visually-hidden">Ações</span></th></tr></thead>
+                    <tbody>
+                    @foreach (var parada in paradas)
+                    {
+                        <tr>
+                            <td>@parada.Rota?.Nome</td>
+                            <td>@(parada.Sentido == EasyVan.Models.SentidoViagem.Ida ? "Ida" : "Volta")</td>
+                            <td>@parada.Ordem</td>
+                            <td><span class="ev-table__primary">@(parada.Nome ?? parada.Endereco)</span><span class="ev-table__secondary">@parada.Endereco</span></td>
+                            <td>@(parada.HorarioPrevisto?.ToString(@"hh\:mm") ?? "—")</td>
+                            <td><partial name="_StatusBadge" model='parada.Ativo ? "Ativa" : "Inativa"' /></td>
+                            <td class="is-actions"><div class="ev-row-actions"><a asp-action="Edit" asp-route-id="@parada.Id" class="ev-link-action">Editar</a><a asp-action="Delete" asp-route-id="@parada.Id" class="ev-link-action ev-link-action--danger">Excluir</a></div></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section class="ev-records ev-list-mobile" aria-label="Lista de paradas">
+            @foreach (var parada in paradas)
+            {
+                <article class="ev-record">
+                    <div class="ev-record__head"><div><h2 class="ev-record__title">@(parada.Nome ?? parada.Endereco)</h2><span class="ev-record__meta">@parada.Rota?.Nome · @(parada.Sentido == EasyVan.Models.SentidoViagem.Ida ? "Ida" : "Volta") · parada @parada.Ordem</span></div><partial name="_StatusBadge" model='parada.Ativo ? "Ativa" : "Inativa"' /></div>
+                    <p class="mb-0">@parada.Endereco</p>
+                    <div class="ev-record__actions"><a asp-action="Edit" asp-route-id="@parada.Id" class="btn btn-outline-secondary">Editar</a><a asp-action="Delete" asp-route-id="@parada.Id" class="btn btn-outline-danger">Excluir</a></div>
+                </article>
+            }
+        </section>
+    }
+</section>

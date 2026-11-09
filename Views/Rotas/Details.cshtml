@@ -1,11 +1,12 @@
-@model EasyVan.Models.Rota
+@model EasyVan.Models.RotaDetalhesViewModel
 
 @{
     ViewData["Title"] = "Detalhes da rota";
+    var rota = Model.Rota;
     var mapa = new EasyVan.Models.MapaRotaViewModel
     {
-        Origem = Model.Origem,
-        Destino = Model.Destino,
+        Origem = rota.Origem,
+        Destino = rota.Destino,
         Titulo = "Trajeto da rota"
     };
 }
@@ -18,27 +19,27 @@
 
     <header class="ev-detail-head">
         <div>
-            <p class="ev-eyebrow">Rota #@Model.Id</p>
+            <p class="ev-eyebrow">Rota #@rota.Id</p>
             <div class="ev-detail-head__identity">
-                <h1>@Model.Nome</h1>
-                <partial name="_StatusBadge" model='Model.Ativo ? "Ativa" : "Inativa"' />
+                <h1>@rota.Nome</h1>
+                <partial name="_StatusBadge" model='rota.Ativo ? "Ativa" : "Inativa"' />
             </div>
             <p class="ev-detail-head__meta">
                 <partial name="_Icon" model='"pin"' />
-                @Model.Origem
+                @rota.Origem
                 <partial name="_Icon" model='"arrow-right"' />
-                @Model.Destino
+                @rota.Destino
             </p>
         </div>
 
         @if (User.IsInRole("Administrador"))
         {
             <div class="ev-detail-actions">
-                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                <a asp-action="Edit" asp-route-id="@rota.Id" class="btn btn-primary">
                     <partial name="_Icon" model='"edit"' />
                     Editar
                 </a>
-                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
+                <a asp-action="Delete" asp-route-id="@rota.Id" class="btn btn-outline-danger">
                     <partial name="_Icon" model='"trash"' />
                     Excluir
                 </a>
@@ -57,23 +58,23 @@
             <dl class="ev-data">
                 <div class="ev-data__item">
                     <dt>Nome</dt>
-                    <dd>@Model.Nome</dd>
+                    <dd>@rota.Nome</dd>
                 </div>
                 <div class="ev-data__item">
                     <dt>Situação</dt>
-                    <dd>@(Model.Ativo ? "Ativa" : "Inativa")</dd>
+                    <dd>@(rota.Ativo ? "Ativa" : "Inativa")</dd>
                 </div>
                 <div class="ev-data__item">
                     <dt>Origem</dt>
-                    <dd>@Model.Origem</dd>
+                    <dd>@rota.Origem</dd>
                 </div>
                 <div class="ev-data__item">
                     <dt>Destino</dt>
-                    <dd>@Model.Destino</dd>
+                    <dd>@rota.Destino</dd>
                 </div>
                 <div class="ev-data__item ev-data__item--wide">
                     <dt>Descrição</dt>
-                    <dd>@(string.IsNullOrWhiteSpace(Model.Descricao) ? "Nenhuma descrição informada." : Model.Descricao)</dd>
+                    <dd>@(string.IsNullOrWhiteSpace(rota.Descricao) ? "Nenhuma descrição informada." : rota.Descricao)</dd>
                 </div>
             </dl>
         </section>
@@ -83,12 +84,12 @@
                 <div class="ev-panel__body">
                     <h2>Trajeto</h2>
                     <div class="ev-route-leg" aria-label="Trajeto da rota">
-                        <span class="ev-route-leg__stop">@Model.Origem</span>
+                        <span class="ev-route-leg__stop">@rota.Origem</span>
                         <partial name="_Icon" model='"arrow-right"' />
-                        <span class="ev-route-leg__stop ev-route-leg__stop--end">@Model.Destino</span>
+                        <span class="ev-route-leg__stop ev-route-leg__stop--end">@rota.Destino</span>
                     </div>
                     <p class="mt-3 mb-0">
-                        @if (Model.Ativo)
+                        @if (rota.Ativo)
                         {
                             <text>Esta rota pode ser selecionada ao criar novas viagens.</text>
                         }
@@ -100,6 +101,19 @@
                 </div>
             </section>
         </aside>
+    </div>
+
+    <div class="ev-detail-grid mt-4">
+        <section class="ev-panel ev-panel--flush" aria-labelledby="agenda-rota">
+            <div class="ev-panel__head"><div><h2 id="agenda-rota">Agendas</h2><p class="ev-panel__hint">Dias e horários de operação por sentido.</p></div><a asp-controller="HorariosRota" asp-action="Create" asp-route-rotaId="@rota.Id" class="btn btn-outline-primary">Adicionar agenda</a></div>
+            @if (Model.Horarios.Count == 0) { <p class="p-3 mb-0 text-muted">Nenhuma agenda cadastrada.</p> }
+            else { <ul class="list-group list-group-flush">@foreach (var horario in Model.Horarios) { <li class="list-group-item d-flex justify-content-between"><span>@(horario.Sentido == EasyVan.Models.SentidoViagem.Ida ? "Ida" : "Volta") · @EasyVan.Services.AgendaUi.FormatarDias(horario.DiasSemana)</span><span>@horario.HorarioSaida.ToString(@"hh\:mm") · @(horario.VanPadrao?.Plate ?? "Sem van padrão")</span></li> }</ul> }
+        </section>
+        <section class="ev-panel ev-panel--flush" aria-labelledby="paradas-rota">
+            <div class="ev-panel__head"><div><h2 id="paradas-rota">Paradas</h2><p class="ev-panel__hint">Pontos ordenados por sentido.</p></div><a asp-controller="Paradas" asp-action="Create" asp-route-rotaId="@rota.Id" class="btn btn-outline-primary">Adicionar parada</a></div>
+            @if (Model.Paradas.Count == 0) { <p class="p-3 mb-0 text-muted">Nenhuma parada cadastrada.</p> }
+            else { <ul class="list-group list-group-flush">@foreach (var parada in Model.Paradas) { <li class="list-group-item"><strong>@(parada.Sentido == EasyVan.Models.SentidoViagem.Ida ? "Ida" : "Volta") · @parada.Ordem.</strong> @(parada.Nome ?? parada.Endereco) <span class="text-muted">· @parada.Endereco</span></li> }</ul> }
+        </section>
     </div>
 
     <partial name="_MapaRota" model="mapa" />

@@ -12,9 +12,9 @@
             <p class="ev-page-head__lead">Acompanhamento operacional em tempo real com dados da frota, viagens e alertas.</p>
         </div>
         <div class="ev-page-head__actions">
-            <a asp-action="Index" asp-controller="Viagens" class="btn btn-primary">
+            <a asp-action="Create" asp-controller="Linhas" class="btn btn-primary">
                 <partial name="_Icon" model='"trip"' />
-                Nova viagem
+                Nova linha
             </a>
         </div>
     </header>
@@ -70,7 +70,7 @@
             </article>
             <article class="ev-metric">
                 <div class="ev-metric__top">
-                    <span class="ev-metric__label">Rotas</span>
+                    <span class="ev-metric__label">Linhas</span>
                     <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
                 </div>
                 <strong class="ev-metric__value">@Model.TotalRotas</strong>
@@ -231,9 +231,9 @@
                 <partial name="_Icon" model='"students"' />
                 Gerenciar alunos
             </a>
-            <a asp-action="Index" asp-controller="Rotas" class="btn btn-outline-secondary">
+                <a asp-action="Index" asp-controller="Linhas" class="btn btn-outline-secondary">
                 <partial name="_Icon" model='"route"' />
-                Gerenciar rotas
+                Gerenciar linhas
             </a>
         </div>
     </section>

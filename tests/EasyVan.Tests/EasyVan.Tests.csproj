@@ -20,4 +20,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Gerenciamento de Van.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\Views\Home\Administrador.cshtml" Link="Views\Home\Administrador.cshtml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

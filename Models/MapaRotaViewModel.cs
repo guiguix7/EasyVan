@@ -8,6 +8,8 @@ public class MapaRotaViewModel
 
     public string? Titulo { get; set; }
 
+    public IReadOnlyList<string> Paradas { get; set; } = Array.Empty<string>();
+
     public bool TemTrajeto =>
         !string.IsNullOrWhiteSpace(Origem) && !string.IsNullOrWhiteSpace(Destino);
 }

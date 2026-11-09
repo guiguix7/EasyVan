@@ -96,6 +96,7 @@
                             var viagem = presenca.Viagem!;
                             var passada = viagem.Data < Model.Hoje;
                             var encerrada = passada || viagem.Status is "Finalizada" or "Cancelada";
+                            var prazo = Model.PrazosPresenca.GetValueOrDefault(viagem.Id);
 
                             <li class="ev-attendance__item">
                                 <div class="ev-attendance__note">
@@ -151,8 +152,9 @@
                                         <span class="ev-badge ev-badge--warning"><span class="ev-badge__dot" aria-hidden="true"></span>Sem resposta</span>
                                     }
 
-                                    @if (!encerrada)
+                                    @if (!encerrada && prazo?.PodeAlterar == true)
                                     {
+                                        <p class="ev-record__meta mb-2">Você pode responder até @prazo.LimiteLocal?.ToString("dd/MM/yyyy 'às' HH:mm").</p>
                                         <div class="ev-confirm-actions">
                                             <form asp-controller="Home" asp-action="ConfirmarPresenca" method="post">
                                                 <input type="hidden" name="viagemId" value="@viagem.Id" />
@@ -169,6 +171,10 @@
                                                 </button>
                                             </form>
                                         </div>
+                                    }
+                                    else if (!encerrada && prazo != null)
+                                    {
+                                        <p class="ev-form-validation mb-0">@prazo.Mensagem @(prazo.LimiteLocal.HasValue ? $"Limite: {prazo.LimiteLocal:dd/MM/yyyy 'às' HH:mm}." : string.Empty)</p>
                                     }
                                 </div>
                             </li>

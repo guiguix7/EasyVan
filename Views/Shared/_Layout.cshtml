@@ -38,9 +38,9 @@
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#0F4C5C" />
     <meta name="description" content="EasyVan — gestão de transporte por vans: frota, rotas, horários e viagens em um só lugar." />
-    @if (GoogleMaps.Configurado)
+    @if (GoogleMaps.BrowserConfigurado)
     {
-        <meta name="google-maps-key" content="@GoogleMaps.ApiKey" />
+        <meta name="google-maps-key" content="@GoogleMaps.BrowserApiKey" />
     }
     <title>@tituloPagina · EasyVan</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -105,11 +105,11 @@
                                 <partial name="_Icon" model='"students"' />
                                 <span>Alunos</span>
                             </a>
-                            <a class="ev-nav__link @(controllerAtual == "Rotas" ? "is-active" : "")"
-                               asp-controller="Rotas" asp-action="Index"
-                               aria-current="@(controllerAtual == "Rotas" ? "page" : null)">
+                            <a class="ev-nav__link @(controllerAtual == "Linhas" ? "is-active" : "")"
+                               asp-controller="Linhas" asp-action="Index"
+                               aria-current="@(controllerAtual == "Linhas" ? "page" : null)">
                                 <partial name="_Icon" model='"route"' />
-                                <span>Rotas</span>
+                                <span>Linhas</span>
                             </a>
 
                             <p class="ev-nav__label">Administração</p>
@@ -298,7 +298,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    @if (GoogleMaps.Configurado)
+    @if (GoogleMaps.BrowserConfigurado)
     {
         <script src="~/js/maps.js" asp-append-version="true" defer></script>
     }

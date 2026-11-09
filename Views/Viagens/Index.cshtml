@@ -46,10 +46,13 @@
             </p>
         </div>
         <div class="ev-page-head__actions">
-            <a asp-action="Create" class="btn btn-primary">
-                <partial name="_Icon" model='"plus"' />
-                Nova viagem
-            </a>
+            @if (!ehMotorista)
+            {
+                <a asp-controller="Linhas" asp-action="Create" class="btn btn-primary">
+                    <partial name="_Icon" model='"plus"' />
+                    Nova linha
+                </a>
+            }
         </div>
     </header>
 

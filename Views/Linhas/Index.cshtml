@@ -1,0 +1,53 @@
+@model IReadOnlyList<EasyVan.Models.LinhaIndexItemViewModel>
+@{
+    ViewData["Title"] = "Linhas";
+}
+<section class="ev-page">
+    <header class="ev-page-head">
+        <div class="ev-page-head__text">
+            <p class="ev-eyebrow">Operação recorrente</p>
+            <h1>Linhas</h1>
+            <p class="ev-page-head__lead">Cadastre o plano uma vez. O sistema cria as viagens de acordo com os dias e sentidos selecionados.</p>
+        </div>
+        <div class="ev-page-head__actions">
+            <a asp-action="Create" class="btn btn-primary">Nova linha</a>
+        </div>
+    </header>
+
+    @if (TempData["Sucesso"] is string sucesso) { <div class="alert alert-success" role="status">@sucesso</div> }
+    @if (!Model.Any())
+    {
+        <section class="ev-panel ev-empty">
+            <h2 class="ev-empty__title">Nenhuma linha cadastrada</h2>
+            <p class="ev-empty__text">Comece criando uma linha recorrente, como “Fatec — seg a sex”.</p>
+            <a asp-action="Create" class="btn btn-primary">Nova linha</a>
+        </section>
+    }
+    else
+    {
+        <div class="ev-trip-list">
+            @foreach (var item in Model)
+            {
+                <article class="ev-panel ev-panel--flush">
+                    <div class="ev-panel__head">
+                        <div>
+                            <h2>@item.Linha.Nome</h2>
+                            <p class="ev-panel__hint">@item.Linha.Origem → @item.Linha.Destino</p>
+                            <p class="mb-0">@item.Passageiros passageiros · capacidade @item.Capacidade · @item.Linha.DiasSemana</p>
+                        </div>
+                        <span class="badge @(item.Linha.Ativa ? "text-bg-success" : "text-bg-secondary")">@(item.Linha.Ativa ? "Ativa" : "Inativa")</span>
+                    </div>
+                    <div class="ev-panel__actions">
+                        <a asp-action="Edit" asp-route-id="@item.Linha.Id" class="btn btn-outline-primary">Editar</a>
+                        @if (item.Linha.Ativa)
+                        {
+                            <form asp-action="Desativar" asp-route-id="@item.Linha.Id" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger">Desativar linha</button>
+                            </form>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

@@ -76,10 +76,15 @@ namespace EasyVan.Controllers
                     Email = email,
                     RoleManager = "Motorista",
                     PasswordHasher = _senha.Hash(model.Senha!),
-                    Tema = "claro"
+                    Tema = "claro",
+                    Ativo = model.Ativo
                 };
                 _db.Usuarios.Add(conta);
                 await _db.SaveChangesAsync();
+            }
+            else
+            {
+                conta.Ativo = model.Ativo;
             }
 
             _db.Motoristas.Add(new Motorista
@@ -183,6 +188,7 @@ namespace EasyVan.Controllers
             {
                 conta.Nome = model.Nome.Trim();
                 conta.Email = email;
+                conta.Ativo = model.Ativo;
                 if (!string.IsNullOrWhiteSpace(model.Senha))
                     conta.PasswordHasher = _senha.Hash(model.Senha);
             }

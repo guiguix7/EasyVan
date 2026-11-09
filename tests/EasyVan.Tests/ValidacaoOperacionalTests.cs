@@ -52,8 +52,8 @@ public class ValidacaoOperacionalTests : IDisposable
         return new Viagem
         {
             Id = id,
-            VanId = vanId,
-            MotoristaId = motoristaId,
+            VanId = vanId == 0 ? null : vanId,
+            MotoristaId = motoristaId == 0 ? null : motoristaId,
             RotaId = rotaId,
             Data = data,
             HoraInicio = horaInicio,
@@ -63,6 +63,28 @@ public class ValidacaoOperacionalTests : IDisposable
     }
 
     #endregion
+
+    [Fact]
+    public void AnalisarAlertas_GeraA5SomenteParaViagemSemConfirmadosEAtiva()
+    {
+        CriarReferencias();
+        var pendente = NovaViagem(801, 100, 10, 200, DateTime.Today.AddDays(1));
+        var confirmada = NovaViagem(802, 100, 10, 200, DateTime.Today.AddDays(2));
+        var cancelada = NovaViagem(803, 100, 10, 200, DateTime.Today.AddDays(3), status: "Cancelada");
+        _db.Viagens.AddRange(pendente, confirmada, cancelada);
+        _db.SaveChanges();
+        _db.PresencasViagem.AddRange(
+            new PresencaViagem { ViagemId = pendente.Id, AlunoId = 1, Status = StatusPresenca.SemResposta },
+            new PresencaViagem { ViagemId = confirmada.Id, AlunoId = 2, Status = StatusPresenca.Confirmado },
+            new PresencaViagem { ViagemId = cancelada.Id, AlunoId = 3, Status = StatusPresenca.SemResposta });
+        _db.SaveChanges();
+
+        var alertas = _validacao.AnalisarAlertas().Where(a => a.Tipo == "A5").ToList();
+
+        var alerta = Assert.Single(alertas);
+        Assert.Equal(pendente.Id, alerta.EntidadeId);
+        Assert.Equal("Baixa", alerta.Gravidade);
+    }
 
     #region Conflito de horário - Motorista
 
@@ -172,7 +194,7 @@ public class ValidacaoOperacionalTests : IDisposable
         for (var i = 1; i <= 11; i++)
         {
             _db.Alunos.Add(new Aluno { Id = i, Nome = $"Aluno {i}", Email = $"aluno{i}@test.com", Ativo = true });
-            _db.PresencasViagem.Add(new PresencaViagem { ViagemId = 1, AlunoId = i, Presente = false });
+            _db.PresencasViagem.Add(new PresencaViagem { ViagemId = 1, AlunoId = i, Status = StatusPresenca.Confirmado });
         }
         _db.SaveChanges();
 
@@ -196,7 +218,7 @@ public class ValidacaoOperacionalTests : IDisposable
         for (var i = 1; i <= 8; i++)
         {
             _db.Alunos.Add(new Aluno { Id = i, Nome = $"Aluno {i}", Email = $"aluno{i}@test.com", Ativo = true });
-            _db.PresencasViagem.Add(new PresencaViagem { ViagemId = 1, AlunoId = i, Presente = false });
+            _db.PresencasViagem.Add(new PresencaViagem { ViagemId = 1, AlunoId = i, Status = StatusPresenca.Confirmado });
         }
         _db.SaveChanges();
 
@@ -421,7 +443,7 @@ public class ValidacaoOperacionalTests : IDisposable
         for (var i = 1; i <= 11; i++)
         {
             _db.Alunos.Add(new Aluno { Id = i, Nome = $"Aluno {i}", Email = $"a{i}@test.com", Ativo = true });
-            _db.PresencasViagem.Add(new PresencaViagem { ViagemId = 1, AlunoId = i, Presente = false });
+            _db.PresencasViagem.Add(new PresencaViagem { ViagemId = 1, AlunoId = i, Status = StatusPresenca.Confirmado });
         }
         _db.SaveChanges();
 
@@ -440,7 +462,7 @@ public class ValidacaoOperacionalTests : IDisposable
         for (var i = 1; i <= 5; i++)
         {
             _db.Alunos.Add(new Aluno { Id = i, Nome = $"Aluno {i}", Email = $"a{i}@test.com", Ativo = true });
-            _db.PresencasViagem.Add(new PresencaViagem { ViagemId = 1, AlunoId = i, Presente = false });
+            _db.PresencasViagem.Add(new PresencaViagem { ViagemId = 1, AlunoId = i, Status = StatusPresenca.Confirmado });
         }
         _db.SaveChanges();
 

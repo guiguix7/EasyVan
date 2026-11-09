@@ -3,12 +3,12 @@
 | | |
 |---|---|
 | **Fase** | 1 — modelo de dados, migrações e seed |
-| **Status** | Proposta. Nenhuma migração foi criada ou aplicada. |
+| **Status** | Implementada em 08/11/2026; migration aplicada ao SQLite local após validação em cópia. Validação de execução PostgreSQL permanece pendente. |
 | **Depende de** | Fase 0 (base segura) |
 | **Relacionado** | `AGENTS.md`, `docs/auditoria-briefing.md`, `spec/filtros-e-busca.md` |
 
-> Objetivo: fechar a modelagem antes de gerar migrations. A implementação só começa depois da
-> aprovação das decisões da seção 9. Esta fase **não** implementa as telas novas da Fase 2, a geração
+> Objetivo: fechar a modelagem antes de gerar migrations. As decisões da seção 9 foram aprovadas em
+> 08/11/2026. Esta fase **não** implementa as telas novas da Fase 2, a geração
 > automática da Fase 3, a visão por parada da Fase 4 nem os alertas A3–A6 da Fase 5.
 
 ## 1. Entidades atuais
@@ -364,9 +364,11 @@ O repositório já teve 396 propriedades sem `;` nos `*.Designer.cs`/snapshot. D
 | `easyvan.db` no histórico Git | Alto se o repositório for público | Não fazer push antes da avaliação; reescrever histórico só com autorização e backup |
 | Escopo crescer para Fase 2/3 | Médio: atraso e retrabalho | Fase 1 entrega modelo + adaptações mínimas; telas e geração ficam para as fases seguintes |
 
-## 9. Decisões para aprovação
+## 9. Decisões aprovadas
 
-| # | Decisão proposta | Alternativa |
+Em 08/11/2026, o usuário aprovou seguir a proposta D1–D8. As decisões implementadas foram:
+
+| # | Decisão aprovada | Alternativa |
 |---|---|---|
 | D1 | Manter `Aluno` como pessoa e criar `VinculoAluno` para rota/parada/sentido, com histórico. | Colocar `RotaId`/`ParadaId` direto em `Aluno` (mais simples, menos flexível). |
 | D2 | Separar `Rota` (percurso) de `HorarioRota` (dias, horário, sentido, van padrão). | Guardar agenda na própria `Rota`, como no briefing original. |
@@ -381,7 +383,17 @@ O repositório já teve 396 propriedades sem `;` nos `*.Designer.cs`/snapshot. D
 
 - Migration aplica do zero no SQLite e no PostgreSQL.
 - Migration aplica sobre cópia dos dados atuais sem perder registros.
-- `dotnet build` sem avisos/erros e `dotnet test` com os 92 testes atuais + novos testes das regras.
+- `dotnet build` sem avisos/erros e `dotnet test` com regressão e novos testes das regras.
 - Seed de Development cria organização, agenda, paradas e vínculos explícitos.
 - Nenhuma tela nova da Fase 2, nenhuma geração automática e nenhum alerta A3–A6 implementado.
 - `docs/prompts-ia.md` atualizado com a decisão e o resultado.
+
+## 11. Resultado da implementação
+
+- `20261108011958_SincronizarModeloAtual` materializa as entidades/campos da proposta; `20261108211217_ConcluirFase1Modelo` migra respostas legadas para `Status`/`RespondidoEm` e impõe um vínculo ativo por aluno/sentido com índice único parcial.
+- `Organizacao` padrão é criada de forma idempotente; dados demonstrativos de agenda, paradas e vínculos só são criados em Development quando as tabelas centrais estão vazias, evitando associar registros legados a dados de exemplo.
+- Login e validação do cookie recusam usuários inativos; o CRUD de usuários sincroniza o estado e impede desativar a própria conta ou o último administrador ativo.
+- As regras de agenda/parada/vínculo e os respectivos testes estão em `Services/` e `tests/EasyVan.Tests/Fase1ModeloTests.cs`.
+- Validação feita: migrations aplicadas em banco SQLite vazio e em cópia do banco atual, com contagens preservadas, respostas `true/false/null` convertidas para `Confirmado/Ausente/SemResposta`, `PRAGMA foreign_key_check` vazio e `PRAGMA integrity_check = ok`; migration aplicada também ao SQLite local após backup em `%LOCALAPPDATA%\Temp\easyvan-fase1-backup.db`. Build: 0 avisos/erros; testes: 101 aprovados.
+- Na base local já existente, a inicialização criou a organização padrão; como as tabelas centrais tinham dados legados, nenhum horário, parada ou vínculo demonstrativo foi associado a esses registros. Os totais operacionais permaneceram iguais.
+- Não havia conexão PostgreSQL de teste configurada; a migration/provider PostgreSQL não foi executada contra um servidor real.

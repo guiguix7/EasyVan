@@ -2,9 +2,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EasyVan.Models
 {
-    public class PresencaViagem
+    public class PresencaViagem : IOrganizacaoScoped
     {
         public int Id { get; set; }
+        public int OrganizacaoId { get; set; } = 1;
+        public int? UsuarioId { get; set; }
 
         [Required(ErrorMessage = "A viagem é obrigatória.")]
         public int ViagemId { get; set; }
@@ -36,5 +38,6 @@ namespace EasyVan.Models
         // Propriedades de navegação
         public Viagem? Viagem { get; set; }
         public Aluno? Aluno { get; set; }
+        public Usuarios? Usuario { get; set; }
     }
 }

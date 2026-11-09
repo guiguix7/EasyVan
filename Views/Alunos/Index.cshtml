@@ -38,6 +38,7 @@
                     <thead>
                         <tr>
                             <th scope="col">Nome</th>
+                            <th scope="col">Escola</th>
                             <th scope="col">E-mail</th>
                             <th scope="col">Telefone</th>
                             <th scope="col">Endereço</th>
@@ -53,6 +54,7 @@
                                     <span class="ev-table__primary">@aluno.Nome</span>
                                     <span class="ev-table__secondary">Aluno #@aluno.Id</span>
                                 </td>
+                                <td>@(string.IsNullOrWhiteSpace(aluno.Escola) ? "—" : aluno.Escola)</td>
                                 <td>@aluno.Email</td>
                                 <td>@(string.IsNullOrWhiteSpace(aluno.Telefone) ? "—" : aluno.Telefone)</td>
                                 <td>@(string.IsNullOrWhiteSpace(aluno.Endereco) ? "—" : aluno.Endereco)</td>
@@ -95,6 +97,10 @@
                         <div class="ev-span-2">
                             <dt>E-mail</dt>
                             <dd>@aluno.Email</dd>
+                        </div>
+                        <div class="ev-span-2">
+                            <dt>Escola</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(aluno.Escola) ? "Não informada" : aluno.Escola)</dd>
                         </div>
                         <div>
                             <dt>Telefone</dt>

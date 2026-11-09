@@ -23,6 +23,9 @@ namespace EasyVan.Models
         [StringLength(200)]
         public string? Endereco { get; set; }
 
+        [StringLength(160, ErrorMessage = "O nome da escola deve ter no máximo 160 caracteres.")]
+        public string? Escola { get; set; }
+
         public bool Ativo { get; set; } = true;
 
         public bool ContaVinculada { get; set; }

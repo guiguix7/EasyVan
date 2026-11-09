@@ -15,11 +15,16 @@ public class HomeController : Controller
 {
     private readonly ApplicationDbContext _db;
     private readonly CentroOperacoesService _centroOperacoes;
+    private readonly PrazoPresencaService _prazoPresenca;
+    private readonly RoteirizacaoService? _roteirizacao;
 
-    public HomeController(ApplicationDbContext db, CentroOperacoesService centroOperacoes)
+    public HomeController(ApplicationDbContext db, CentroOperacoesService centroOperacoes, PrazoPresencaService prazoPresenca,
+        RoteirizacaoService? roteirizacao = null)
     {
         _db = db;
         _centroOperacoes = centroOperacoes;
+        _prazoPresenca = prazoPresenca;
+        _roteirizacao = roteirizacao;
     }
 
     // GET / — Login sem header. Se já estiver logado, redireciona pelo papel.
@@ -64,7 +69,7 @@ public class HomeController : Controller
         if (aluno == null)
             return View(new PainelAlunoViewModel());
 
-        var (inicioDoDia, _) = ObterIntervaloDoDiaNoFusoDeSaoPaulo();
+        var inicioDoDia = DateTime.SpecifyKind(_prazoPresenca.AgoraLocal().Date, DateTimeKind.Unspecified);
         var presencas = await _db.PresencasViagem
             .Include(p => p.Viagem)!.ThenInclude(v => v!.Rota)
             .Include(p => p.Viagem)!.ThenInclude(v => v!.Van)
@@ -83,11 +88,26 @@ public class HomeController : Controller
             .ThenByDescending(p => p.Viagem!.Id)
             .Take(8);
 
+        var listaPresencas = futuras.Concat(passadas).ToList();
+        var prazos = listaPresencas
+            .Where(p => p.Viagem != null)
+            .ToDictionary(p => p.ViagemId, p =>
+            {
+                var resultado = _prazoPresenca.Avaliar(p.Viagem!);
+                return new PrazoPresencaViewModel
+                {
+                    PodeAlterar = resultado.PodeAlterar,
+                    LimiteLocal = resultado.LimiteLocal,
+                    Mensagem = resultado.Mensagem
+                };
+            });
+
         return View(new PainelAlunoViewModel
         {
             Aluno = aluno,
-            Presencas = futuras.Concat(passadas).ToList(),
-            Hoje = ObterHojeLocal()
+            Presencas = listaPresencas,
+            PrazosPresenca = prazos,
+            Hoje = inicioDoDia
         });
     }
 
@@ -119,17 +139,17 @@ public class HomeController : Controller
             return RedirectToAction(nameof(Aluno));
         }
 
-        var (inicioDoDia, _) = ObterIntervaloDoDiaNoFusoDeSaoPaulo();
-        if (presenca.Viagem.Data < inicioDoDia)
+        var prazo = _prazoPresenca.Avaliar(presenca.Viagem);
+        if (!prazo.PodeAlterar)
         {
-            TempData["Erro"] = "Esta viagem já aconteceu e não aceita confirmação.";
+            TempData["Erro"] = prazo.Mensagem;
             return RedirectToAction(nameof(Aluno));
         }
 
         presenca.Status = vou ? StatusPresenca.Confirmado : StatusPresenca.Ausente;
-        presenca.RespondidoEm = DateTime.UtcNow;
+        presenca.RespondidoEm = prazo.AgoraUtc.UtcDateTime;
         presenca.StatusConfirmacao = vou;
-        presenca.ConfirmadoEm = DateTime.UtcNow;
+        presenca.ConfirmadoEm = prazo.AgoraUtc.UtcDateTime;
         await _db.SaveChangesAsync();
 
         TempData["Sucesso"] = vou
@@ -147,7 +167,7 @@ public class HomeController : Controller
 
         if (aluno != null)
         {
-            var (inicioDoDia, _) = ObterIntervaloDoDiaNoFusoDeSaoPaulo();
+            var inicioDoDia = DateTime.SpecifyKind(_prazoPresenca.AgoraLocal().Date, DateTimeKind.Unspecified);
             var proximaViagem = await _db.Viagens
                 .Include(v => v.Van)!.ThenInclude(van => van!.Rota)
                 .Include(v => v.Motorista)
@@ -196,11 +216,12 @@ public class HomeController : Controller
         var viagens = await _db.Viagens
             .Include(v => v.Van)
             .Include(v => v.Rota)
+            .Include(v => v.Linha)
             .Include(v => v.Presencas)!.ThenInclude(p => p.Aluno)
             .Where(v => v.MotoristaId == motorista.Id && v.Status != "Cancelada")
             .ToListAsync();
 
-        var (inicioDoDia, _) = ObterIntervaloDoDiaNoFusoDeSaoPaulo();
+        var inicioDoDia = DateTime.SpecifyKind(_prazoPresenca.AgoraLocal().Date, DateTimeKind.Unspecified);
         var ordenadas = viagens
             .Where(v => v.Data >= inicioDoDia)
             .OrderBy(v => v.Data)
@@ -211,6 +232,23 @@ public class HomeController : Controller
                 .ThenByDescending(v => v.Id)
                 .Take(8))
             .ToList();
+
+        var rotaPorViagem = new Dictionary<int, (IReadOnlyList<ViagemParada> Paradas, string? Aviso)>();
+        foreach (var viagem in ordenadas.Where(v => v.LinhaId.HasValue))
+        {
+            string? aviso = null;
+            if (_roteirizacao is not null)
+                aviso = (await _roteirizacao.RecalcularSeNecessarioAsync(viagem.Id)).Aviso;
+            var paradasCalculadas = await _db.ViagensParadas.Include(p => p.Usuario)
+                .Where(p => p.ViagemId == viagem.Id).OrderBy(p => p.Ordem).ToListAsync();
+            rotaPorViagem[viagem.Id] = (paradasCalculadas, aviso);
+        }
+
+        var rotasIds = ordenadas.Select(x => x.RotaId).Distinct().ToList();
+        var vinculosPorRota = await _db.VinculosAluno
+            .Where(v => v.Ativo && rotasIds.Contains(v.RotaId))
+            .Include(v => v.Parada)
+            .ToListAsync();
 
         var painel = ordenadas.Select(v => new ViagemDoMotorista
         {
@@ -223,19 +261,54 @@ public class HomeController : Controller
                     PresencaId = p.Id,
                     AlunoId = p.AlunoId,
                     Nome = p.Aluno!.Nome,
-                    Endereco = p.Aluno.Endereco,
+                    Endereco = vinculosPorRota
+                        .Where(x => x.RotaId == v.RotaId && x.AlunoId == p.AlunoId
+                            && x.Sentido == (v.Sentido ?? SentidoViagem.Ida) && x.Ativo && x.Parada?.Ativo == true)
+                        .OrderBy(x => x.Parada!.Ordem)
+                        .Select(x => x.Parada!.Endereco)
+                        .FirstOrDefault(),
+                    ParadaEndereco = vinculosPorRota
+                        .Where(x => x.RotaId == v.RotaId && x.AlunoId == p.AlunoId
+                            && x.Sentido == (v.Sentido ?? SentidoViagem.Ida) && x.Ativo && x.Parada?.Ativo == true)
+                        .OrderBy(x => x.Parada!.Ordem)
+                        .Select(x => x.Parada!.Endereco)
+                        .FirstOrDefault(),
+                    OrdemParada = vinculosPorRota
+                        .Where(x => x.RotaId == v.RotaId && x.AlunoId == p.AlunoId
+                            && x.Sentido == (v.Sentido ?? SentidoViagem.Ida) && x.Ativo && x.Parada?.Ativo == true)
+                        .Select(x => (int?)x.Parada!.Ordem)
+                        .FirstOrDefault(),
                     Telefone = p.Aluno.Telefone,
                     Presente = p.Presente,
                     Status = p.Status
                 })
-                .ToList()
+                .ToList(),
+            Mapa = v.LinhaId.HasValue || v.Rota == null ? null : new MapaRotaViewModel
+            {
+                Origem = v.Sentido == SentidoViagem.Volta ? v.Rota.Destino : v.Rota.Origem,
+                Destino = v.Sentido == SentidoViagem.Volta ? v.Rota.Origem : v.Rota.Destino,
+                Titulo = "Rota desta viagem",
+                Paradas = vinculosPorRota
+                    .Where(x => x.RotaId == v.RotaId && x.Sentido == (v.Sentido ?? SentidoViagem.Ida)
+                        && x.Parada?.Ativo == true
+                        && v.Presencas.Any(p => p.AlunoId == x.AlunoId && p.Status == StatusPresenca.Confirmado))
+                    .OrderBy(x => x.Parada!.Ordem)
+                    .Select(x => x.Parada!.Endereco)
+                    .Distinct()
+                    .ToList()
+            },
+            ParadasCalculadas = rotaPorViagem.GetValueOrDefault(v.Id).Paradas ?? Array.Empty<ViagemParada>(),
+            Trechos = v.Linha is null ? Array.Empty<TrechoGoogleMapsViewModel>()
+                : GoogleMapsLinkService.CriarTrechos(v.Linha, v.Sentido ?? SentidoViagem.Ida,
+                    rotaPorViagem.GetValueOrDefault(v.Id).Paradas ?? Array.Empty<ViagemParada>()),
+            AvisoRoteirizacao = rotaPorViagem.GetValueOrDefault(v.Id).Aviso
         }).ToList();
 
         return View(new PainelMotoristaViewModel
         {
             Motorista = motorista,
             Viagens = painel,
-            Hoje = ObterHojeLocal()
+            Hoje = _prazoPresenca.AgoraLocal().Date
         });
     }
 
@@ -308,22 +381,4 @@ public class HomeController : Controller
             : null;
     }
 
-    private static DateTime ObterHojeLocal()
-    {
-        var fuso = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-        return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, fuso).Date;
-    }
-
-    private static (DateTime InicioUtc, DateTime FimUtc) ObterIntervaloDoDiaNoFusoDeSaoPaulo()
-    {
-        var fuso = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-        var hojeLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, fuso).Date;
-        var inicioLocal = DateTime.SpecifyKind(hojeLocal, DateTimeKind.Unspecified);
-        var fimLocal = inicioLocal.AddDays(1);
-
-        return (
-            TimeZoneInfo.ConvertTimeToUtc(inicioLocal, fuso),
-            TimeZoneInfo.ConvertTimeToUtc(fimLocal, fuso)
-        );
-    }
 }

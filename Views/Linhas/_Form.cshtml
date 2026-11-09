@@ -1,0 +1,141 @@
+@model EasyVan.Models.LinhaFormViewModel
+@using EasyVan.Models
+@inject EasyVan.Services.GoogleMapsOptions GoogleMaps
+@{
+    var editing = Model.Id > 0;
+    var action = editing ? "Edit" : "Create";
+    var alunos = ViewData["Alunos"] as IReadOnlyList<AlunoLinhaOpcaoViewModel> ?? Array.Empty<AlunoLinhaOpcaoViewModel>();
+    var vans = ViewData["Vans"] as IReadOnlyList<Van> ?? Array.Empty<Van>();
+    var motoristas = ViewData["Motoristas"] as IReadOnlyList<Motorista> ?? Array.Empty<Motorista>();
+    var dias = new[] { ("Segunda", DiasSemana.Segunda), ("Terça", DiasSemana.Terca), ("Quarta", DiasSemana.Quarta),
+        ("Quinta", DiasSemana.Quinta), ("Sexta", DiasSemana.Sexta), ("Sábado", DiasSemana.Sabado), ("Domingo", DiasSemana.Domingo) };
+}
+<section class="ev-page">
+    <header class="ev-page-head">
+        <div class="ev-page-head__text"><p class="ev-eyebrow">Plano recorrente</p><h1>@(editing ? "Editar linha" : "Nova linha")</h1>
+            <p class="ev-page-head__lead">A linha guarda a agenda. Viagens diárias são geradas pelo sistema.</p></div>
+    </header>
+    <form asp-action="@action" asp-route-id="@(editing ? Model.Id : null)" method="post" class="ev-form-layout" data-linha-form>
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+        @if (ViewData["AvisoCapacidade"] is string aviso) { <div class="alert alert-warning" role="alert">@aviso</div> }
+
+        <section class="ev-panel">
+            <div class="ev-panel__body">
+                <h2>1. Linha, destino e ponto de partida</h2>
+                <div class="mb-3"><label asp-for="Nome" class="form-label">Nome da linha</label><input asp-for="Nome" class="form-control" placeholder="Fatec" /><span asp-validation-for="Nome" class="text-danger"></span></div>
+                <div class="mb-3">
+                    <label class="form-label" for="Destino">Destino exato</label>
+                    <input asp-for="Destino" id="Destino" class="form-control" placeholder="Digite o nome ou endereço completo" autocomplete="street-address" />
+                    @if (GoogleMaps.BrowserConfigurado)
+                    {
+                        <label class="form-label mt-2" for="busca-Destino">Ou escolha no Google Maps</label>
+                        <div id="busca-Destino" data-place-autocomplete data-address-target="Destino" data-lat-target="DestinoLat" data-lng-target="DestinoLng"></div>
+                    }
+                    <input asp-for="DestinoLat" type="hidden" />
+                    <input asp-for="DestinoLng" type="hidden" />
+                    <span asp-validation-for="Destino" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="Origem">Ponto de partida da van</label>
+                    <input asp-for="Origem" id="Origem" class="form-control" placeholder="Digite a garagem ou local de início" autocomplete="street-address" />
+                    @if (GoogleMaps.BrowserConfigurado)
+                    {
+                        <label class="form-label mt-2" for="busca-Origem">Ou escolha no Google Maps</label>
+                        <div id="busca-Origem" data-place-autocomplete data-address-target="Origem" data-lat-target="OrigemLat" data-lng-target="OrigemLng"></div>
+                    }
+                    <input asp-for="OrigemLat" type="hidden" />
+                    <input asp-for="OrigemLng" type="hidden" />
+                    <span asp-validation-for="Origem" class="text-danger"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="ev-panel"><div class="ev-panel__body">
+                <h2>2. Dias da semana</h2>
+                <fieldset class="mb-3"><legend class="form-label fs-6">Dias da semana</legend><div class="d-flex flex-wrap gap-3">
+                    @foreach (var (nome, flag) in dias) { <label class="form-check"><input type="checkbox" name="DiasSelecionados" value="@((int)flag)" class="form-check-input" checked="@((Model.DiasSemana & flag) != 0)" /><span class="form-check-label">@nome</span></label> }
+                </div></fieldset>
+        </div></section>
+
+        <section class="ev-panel"><div class="ev-panel__body">
+                <h2>3. Horários de ida e volta</h2>
+                <div class="row">
+                    <div class="col mb-3"><label asp-for="HorarioChegadaIda" class="form-label">Horário de chegada na ida</label><input asp-for="HorarioChegadaIda" type="time" class="form-control" value="@Model.HorarioChegadaIda.ToString(@"hh\:mm")" /></div>
+                    <div class="col mb-3"><label asp-for="HorarioSaidaVolta" class="form-label">Horário de saída na volta</label><input asp-for="HorarioSaidaVolta" type="time" class="form-control" value="@Model.HorarioSaidaVolta.ToString(@"hh\:mm")" /></div>
+                </div>
+                <div class="mb-3"><label asp-for="FolgaMinutos" class="form-label">Folga antes da chegada (minutos)</label><input asp-for="FolgaMinutos" class="form-control" /></div>
+            </div>
+        </section>
+
+        <section class="ev-panel">
+            <div class="ev-panel__body">
+                <h2>4. Passageiros</h2>
+                <p class="ev-panel__hint">Apenas alunos com conta ativa aparecem. O endereço de embarque ajuda a calcular o trajeto; confira também a escola de cada aluno.</p>
+                <p class="fw-semibold" aria-live="polite"><span data-contador-alunos>@Model.PassageirosIds.Count</span> aluno(s) selecionado(s)</p>
+                @if (!alunos.Any()) { <p class="alert alert-info">Não há alunos ativos vinculados a uma conta nesta organização.</p> }
+                @foreach (var aluno in alunos)
+                {
+                    <div class="border rounded p-2 mb-2" data-passageiro-row>
+                        <label class="form-check"><input type="checkbox" name="PassageirosIds" value="@aluno.Id" class="form-check-input" checked="@Model.PassageirosIds.Contains(aluno.Id)" data-passageiro-check /><span class="form-check-label">@aluno.Nome</span></label>
+                        <small class="text-muted d-block"><strong>Escola:</strong> @(string.IsNullOrWhiteSpace(aluno.Escola) ? "Não informada" : aluno.Escola)</small>
+                        <small class="text-muted d-block"><strong>Endereço de embarque:</strong> @(aluno.EnderecoGeocodificado ? aluno.Endereco : "Ainda não localizado")</small>
+                        <label class="form-label mt-2" for="van-aluno-@aluno.Id">Van do aluno (necessária com mais de uma van)</label>
+                        <select id="van-aluno-@aluno.Id" name="VanPorPassageiro[@aluno.Id]" class="form-select form-select-sm" data-passageiro-van>
+                            <option value="">Selecione</option>
+                            @foreach (var van in vans) { <option value="@van.Id" selected="@(Model.VanPorPassageiro.GetValueOrDefault(aluno.Id) == van.Id)">@van.Plate — @van.Capacity lugares</option> }
+                        </select>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <section class="ev-panel">
+            <div class="ev-panel__body">
+                <h2>5. Vans e motoristas</h2>
+                <p class="ev-panel__hint">A capacidade total precisa cobrir os passageiros. Com várias vans, cada aluno deve ser atribuído manualmente.</p>
+                <p class="fw-semibold" data-resumo-capacidade aria-live="polite"></p>
+                @foreach (var van in vans)
+                {
+                    <div class="border rounded p-2 mb-2" data-van-row data-capacidade="@van.Capacity">
+                        <label class="form-check"><input type="checkbox" name="VansIds" value="@van.Id" class="form-check-input" checked="@Model.VansIds.Contains(van.Id)" data-van-check /><span class="form-check-label">@van.Plate — @van.Modelo — @van.Capacity lugares</span></label>
+                        <label class="form-label mt-2" for="motorista-@van.Id">Motorista desta van</label>
+                        <select id="motorista-@van.Id" name="MotoristasPorVan[@van.Id]" class="form-select">
+                            <option value="">Selecione um motorista</option>
+                            @foreach (var motorista in motoristas) { <option value="@motorista.Id" selected="@(Model.MotoristasPorVan.GetValueOrDefault(van.Id) == motorista.Id)">@motorista.Nome</option> }
+                        </select>
+                    </div>
+                }
+                @if (editing) { <label class="form-check mt-3"><input asp-for="Ativa" class="form-check-input" /><span class="form-check-label">Linha ativa</span></label> }
+            </div>
+        </section>
+        <section class="ev-panel"><div class="ev-panel__body">
+            <h2>6. Sentidos</h2>
+            <fieldset class="mb-3"><legend class="form-label fs-6">Quais viagens a linha atende?</legend>
+                <label class="form-check form-check-inline"><input asp-for="TemIda" class="form-check-input" /><span class="form-check-label">Ida</span></label>
+                <label class="form-check form-check-inline"><input asp-for="TemVolta" class="form-check-input" /><span class="form-check-label">Volta</span></label>
+            </fieldset>
+            <fieldset class="mt-4">
+                <legend class="form-label fs-6">Depois de deixar os alunos na volta, para onde a van deve seguir?</legend>
+                <label class="form-check mb-2">
+                    <input type="radio" name="VoltaTerminaNoUltimoAluno" value="false" class="form-check-input" checked="@(!Model.VoltaTerminaNoUltimoAluno)" />
+                    <span class="form-check-label">Voltar para a garagem (ponto de partida cadastrado acima)</span>
+                </label>
+                <label class="form-check">
+                    <input type="radio" name="VoltaTerminaNoUltimoAluno" value="true" class="form-check-input" checked="@Model.VoltaTerminaNoUltimoAluno" />
+                    <span class="form-check-label">Terminar na casa do último aluno (sem voltar para a garagem)</span>
+                </label>
+                <p class="form-text mb-0">Escolha esta opção se a van não precisar voltar à garagem depois de deixar os alunos. O trajeto termina no endereço do último aluno da ordem calculada.</p>
+            </fieldset>
+        </div></section>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary">@(editing ? "Salvar alterações" : "Criar linha")</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</section>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/linha-form.js" asp-append-version="true"></script>
+}

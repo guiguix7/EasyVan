@@ -2,9 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EasyVan.Models
 {
-    public class Van
+    public class Van : IOrganizacaoScoped
     {
         public int Id { get; set; }
+        public int OrganizacaoId { get; set; } = 1;
 
         [Required(ErrorMessage = "Informe a placa.")]
         [StringLength(10, ErrorMessage = "A placa deve ter no máximo 10 caracteres.")]

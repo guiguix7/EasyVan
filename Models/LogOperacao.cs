@@ -6,9 +6,10 @@ namespace EasyVan.Models
     /// Registro de auditoria de operações relevantes no sistema.
     /// Não armazena senhas, hashes, tokens nem dados pessoais desnecessários.
     /// </summary>
-    public class LogOperacao
+    public class LogOperacao : IOrganizacaoScoped
     {
         public int Id { get; set; }
+        public int OrganizacaoId { get; set; } = 1;
 
         public int? UsuarioId { get; set; }
 

@@ -2,9 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EasyVan.Models
 {
-    public class Parada
+    public class Parada : IOrganizacaoScoped
     {
         public int Id { get; set; }
+        public int OrganizacaoId { get; set; } = 1;
 
         [Required(ErrorMessage = "A rota é obrigatória.")]
         public int RotaId { get; set; }

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,19 +17,22 @@ namespace EasyVan.Controllers
         private readonly PresencaViagemService _presencas;
         private readonly IAuditoriaService _auditoria;
         private readonly ILogger<ViagensController> _logger;
+        private readonly RoteirizacaoService? _roteirizacao;
 
         public ViagensController(
             ApplicationDbContext db,
             ValidacaoOperacional validacao,
             PresencaViagemService presencas,
             IAuditoriaService auditoria,
-            ILogger<ViagensController> logger)
+            ILogger<ViagensController> logger,
+            RoteirizacaoService? roteirizacao = null)
         {
             _db = db;
             _validacao = validacao;
             _presencas = presencas;
             _auditoria = auditoria;
             _logger = logger;
+            _roteirizacao = roteirizacao;
         }
 
         private string? NomeUsuarioLogado()
@@ -53,7 +56,7 @@ namespace EasyVan.Controllers
             return await _db.Motoristas.FirstOrDefaultAsync(m => m.UsuarioId == usuarioId.Value);
         }
 
-        // Lista de viagens. Admin vê todas; Motorista vê apenas as suas.
+        // Lista de viagens. Admin vÃª todas; Motorista vÃª apenas as suas.
         public async Task<IActionResult> Index(int? mes, int? ano)
         {
             var papel = PapelLogado();
@@ -77,8 +80,8 @@ namespace EasyVan.Controllers
                 consulta = consulta.Where(v => v.MotoristaId == motorista.Id);
             }
 
-            // A ordenação por TimeSpan não é traduzida pelo SQLite (coluna TEXT);
-            // ordenamos em memória para manter o mesmo resultado em SQLite e PostgreSQL.
+            // A ordenaÃ§Ã£o por TimeSpan nÃ£o Ã© traduzida pelo SQLite (coluna TEXT);
+            // ordenamos em memÃ³ria para manter o mesmo resultado em SQLite e PostgreSQL.
             var viagens = (await consulta.ToListAsync())
                 .OrderBy(v => v.Data)
                 .ThenBy(v => v.HoraInicio ?? TimeSpan.MaxValue)
@@ -96,8 +99,25 @@ namespace EasyVan.Controllers
                 .Include(v => v.Van)
                 .Include(v => v.Motorista)
                 .Include(v => v.Rota)
+                .Include(v => v.Linha)
                 .FirstOrDefaultAsync(v => v.Id == id);
             if (viagem == null) return NotFound();
+
+            string? avisoRota = null;
+            if (viagem.LinhaId.HasValue && _roteirizacao is not null)
+            {
+                var resultadoRota = await _roteirizacao.RecalcularSeNecessarioAsync(id);
+                avisoRota = resultadoRota.Aviso;
+                viagem = await _db.Viagens.Include(v => v.Linha).Include(v => v.Van).Include(v => v.Motorista)
+                    .Include(v => v.Rota).Include(v => v.ParadasCalculadas!).ThenInclude(p => p.Usuario)
+                    .FirstOrDefaultAsync(v => v.Id == id);
+                if (viagem is null) return NotFound();
+                ViewData["ParadasCalculadas"] = viagem.ParadasCalculadas?.OrderBy(p => p.Ordem).ToList() ?? new List<ViagemParada>();
+                var paradasCalculadas = (IReadOnlyList<ViagemParada>?)ViewData["ParadasCalculadas"]
+                    ?? Array.Empty<ViagemParada>();
+                ViewData["TrechosGoogleMaps"] = GoogleMapsLinkService.CriarTrechos(
+                    viagem.Linha!, viagem.Sentido ?? SentidoViagem.Ida, paradasCalculadas);
+            }
 
             if (PapelLogado() == "Motorista")
             {
@@ -116,138 +136,31 @@ namespace EasyVan.Controllers
 
             ViewData["AlunosDaViagem"] = alunosDaViagem;
             ViewData["Papel"] = PapelLogado();
+            ViewData["AvisoRoteirizacao"] = avisoRota;
             return View(viagem);
         }
 
         // Nova viagem (Admin ou Motorista).
-        public async Task<IActionResult> Create()
+        public Task<IActionResult> Create()
         {
-            var hoje = ViagemAgenda.AgoraLocal().Date;
-            var model = new ViagemFormViewModel
-            {
-                Data = hoje,
-                DataChegada = hoje,
-                HoraInicio = "07:00",
-                HoraFim = "08:00",
-                Sentido = SentidoViagem.Ida
-            };
-            await PrepararFormularioAsync(model);
-            return View(model);
+            return Task.FromResult<IActionResult>(RedirectToAction("Create", "Linhas")!);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ViagemFormViewModel model)
+        public Task<IActionResult> Create(ViagemFormViewModel model)
         {
-            if (PapelLogado() == "Motorista")
-            {
-                var motorista = await MotoristaDoUsuarioAsync();
-                if (motorista == null)
-                {
-                    ModelState.AddModelError(string.Empty, "Seu usuário ainda não está vinculado a um perfil de motorista. Solicite a associação ao administrador.");
-                }
-                else
-                {
-                    model.MotoristaId = motorista.Id;
-                }
-            }
-
-            await PrepararFormularioAsync(model);
-
-            if (!model.Sentido.HasValue)
-                ModelState.AddModelError(nameof(model.Sentido), "Selecione o sentido da viagem.");
-            if (!await _db.Vans.AnyAsync(v => v.Id == model.VanId))
-                ModelState.AddModelError(nameof(model.VanId), "Selecione uma van cadastrada.");
-            if (!await _db.Motoristas.AnyAsync(m => m.Id == model.MotoristaId && m.Ativo))
-                ModelState.AddModelError(nameof(model.MotoristaId), "Selecione um motorista ativo e cadastrado.");
-            if (!await _db.Rotas.AnyAsync(r => r.Id == model.RotaId && r.Ativo))
-                ModelState.AddModelError(nameof(model.RotaId), "Selecione uma rota ativa.");
-
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var errosAgenda = ViagemAgenda.ValidarPlanejamento(
-                model.Data,
-                model.HoraInicio,
-                model.DataChegada,
-                model.HoraFim,
-                exigirFuturo: true);
-
-            foreach (var erro in errosAgenda)
-            {
-                ModelState.AddModelError(string.Empty, erro);
-            }
-
-            if (errosAgenda.Count > 0)
-            {
-                return View(model);
-            }
-
-            if (!ValidacaoBrasil.HorarioValido(model.HoraInicio, out var inicio)
-                || !ValidacaoBrasil.HorarioValido(model.HoraFim, out var fim))
-            {
-                ModelState.AddModelError(string.Empty, "Use horários válidos no formato HH:mm.");
-                return View(model);
-            }
-
-            await using var transacao = await _db.Database.BeginTransactionAsync();
-
-            try
-            {
-                var viagem = new Viagem
-                {
-                    VanId = model.VanId,
-                    MotoristaId = model.MotoristaId,
-                    RotaId = model.RotaId,
-                    Sentido = model.Sentido,
-                    Data = DateTime.SpecifyKind(model.Data.Date, DateTimeKind.Unspecified),
-                    DataChegada = DateTime.SpecifyKind(model.DataChegada.Date, DateTimeKind.Unspecified),
-                    HoraInicio = inicio,
-                    HoraFim = fim,
-                    Observacao = ValidacaoBrasil.LimparTexto(model.Observacao, 500),
-                    Status = "Agendada",
-                    DataCriacao = DateTime.UtcNow
-                };
-
-                _db.Viagens.Add(viagem);
-                await _db.SaveChangesAsync();
-
-                var geracao = await CriarPresencasAsync(viagem.Id);
-
-                _auditoria.Registrar(
-                    UsuarioIdLogado(),
-                    NomeUsuarioLogado(),
-                    "Criacao",
-                    "Viagem",
-                    viagem.Id,
-                    $"Viagem criada para {ViagemAgenda.FormatarData(viagem.Data)} às {inicio:hh\\:mm}",
-                    $"VanId: {viagem.VanId}, MotoristaId: {viagem.MotoristaId}, RotaId: {viagem.RotaId}");
-
-                await _db.SaveChangesAsync();
-                await transacao.CommitAsync();
-
-                TempData["Sucesso"] = geracao.UsouFallback
-                    ? "Viagem agendada. Não há vínculos de alunos para esta rota e sentido; a lista de presença usou todos os alunos ativos."
-                    : "Viagem agendada com sucesso.";
-                return RedirectToAction(nameof(Details), new { id = viagem.Id });
-            }
-            catch (Exception ex)
-            {
-                await transacao.RollbackAsync();
-                _logger.LogError(ex, "Falha ao criar viagem. VanId={VanId}, MotoristaId={MotoristaId}, RotaId={RotaId}",
-                    model.VanId, model.MotoristaId, model.RotaId);
-                ModelState.AddModelError(string.Empty, "Não foi possível agendar a viagem. Verifique os dados e tente novamente.");
-                return View(model);
-            }
+            return Task.FromResult<IActionResult>(RedirectToAction("Create", "Linhas")!);
         }
 
-        // Edição de viagem ainda não iniciada. Datas passadas continuam bloqueadas.
+
+        // EdiÃ§Ã£o de viagem ainda nÃ£o iniciada. Datas passadas continuam bloqueadas.
         public async Task<IActionResult> Edit(int id)
         {
             var viagem = await _db.Viagens.FindAsync(id);
             if (viagem == null) return NotFound();
+            if (viagem.LinhaId.HasValue)
+                return RedirectToAction("Edit", "Linhas", new { id = viagem.LinhaId.Value });
 
             if (!await PodeOperarAsync(viagem))
                 return RedirectToAction("AcessoRestrito", "Home");
@@ -282,6 +195,8 @@ namespace EasyVan.Controllers
         {
             var viagem = await _db.Viagens.FindAsync(id);
             if (viagem == null) return NotFound();
+            if (viagem.LinhaId.HasValue)
+                return RedirectToAction("Edit", "Linhas", new { id = viagem.LinhaId.Value });
 
             if (!await PodeOperarAsync(viagem))
                 return RedirectToAction("AcessoRestrito", "Home");
@@ -299,7 +214,7 @@ namespace EasyVan.Controllers
                 var motorista = await MotoristaDoUsuarioAsync();
                 if (motorista == null)
                 {
-                    ModelState.AddModelError(string.Empty, "Seu usuário ainda não está vinculado a um perfil de motorista.");
+                    ModelState.AddModelError(string.Empty, "Seu usuÃ¡rio ainda nÃ£o estÃ¡ vinculado a um perfil de motorista.");
                 }
                 else
                 {
@@ -361,7 +276,7 @@ namespace EasyVan.Controllers
                     "Edicao",
                     "Viagem",
                     viagem.Id,
-                    $"Viagem editada para {ViagemAgenda.FormatarData(viagem.Data)} às {inicio:hh\\:mm}",
+                    $"Viagem editada para {ViagemAgenda.FormatarData(viagem.Data)} Ã s {inicio:hh\\:mm}",
                     $"Antes: {dataAnterior:dd/MM/yyyy} {horarioAnterior:hh\\:mm}; depois: {viagem.Data:dd/MM/yyyy} {inicio:hh\\:mm}");
 
                 await _db.SaveChangesAsync();
@@ -371,7 +286,7 @@ namespace EasyVan.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Falha ao editar viagem {ViagemId}", id);
-                ModelState.AddModelError(string.Empty, "Não foi possível atualizar a viagem. Tente novamente.");
+                ModelState.AddModelError(string.Empty, "NÃ£o foi possÃ­vel atualizar a viagem. Tente novamente.");
                 return View(model);
             }
         }
@@ -394,29 +309,29 @@ namespace EasyVan.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            // Validações operacionais antes de iniciar
+            // ValidaÃ§Ãµes operacionais antes de iniciar
             if (!viagem.VanId.HasValue || viagem.VanId.Value == 0)
             {
-                TempData["Erro"] = "Não é possível iniciar uma viagem sem van associada.";
+                TempData["Erro"] = "NÃ£o Ã© possÃ­vel iniciar uma viagem sem van associada.";
                 return RedirectToAction(nameof(Details), new { id });
             }
             if (!viagem.MotoristaId.HasValue || viagem.MotoristaId.Value == 0)
             {
-                TempData["Erro"] = "Não é possível iniciar uma viagem sem motorista associado.";
+                TempData["Erro"] = "NÃ£o Ã© possÃ­vel iniciar uma viagem sem motorista associado.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
             var van = await _db.Vans.FindAsync(viagem.VanId.Value);
             if (van == null)
             {
-                TempData["Erro"] = "Van associada não encontrada.";
+                TempData["Erro"] = "Van associada nÃ£o encontrada.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
             var motorista = await _db.Motoristas.FindAsync(viagem.MotoristaId.Value);
             if (motorista == null)
             {
-                TempData["Erro"] = "Motorista associado não encontrado.";
+                TempData["Erro"] = "Motorista associado nÃ£o encontrado.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
@@ -430,8 +345,8 @@ namespace EasyVan.Controllers
                 "MudancaEstado",
                 "Viagem",
                 viagem.Id,
-                $"Viagem iniciada: {viagem.Status} → EmAndamento",
-                $"Van: {van.Plate}, Motorista: {motorista.Nome}, Início real: {viagem.InicioReal:O}");
+                $"Viagem iniciada: {viagem.Status} â†’ EmAndamento",
+                $"Van: {van.Plate}, Motorista: {motorista.Nome}, InÃ­cio real: {viagem.InicioReal:O}");
 
             TempData["Sucesso"] = "Viagem iniciada com sucesso.";
             return RedirectToAction(nameof(Details), new { id });
@@ -469,8 +384,8 @@ namespace EasyVan.Controllers
                 "MudancaEstado",
                 "Viagem",
                 viagem.Id,
-                $"Viagem finalizada: {viagem.Status} → Finalizada",
-                $"Início real: {viagem.InicioReal:O}, Fim real: {viagem.FimReal:O}");
+                $"Viagem finalizada: {viagem.Status} â†’ Finalizada",
+                $"InÃ­cio real: {viagem.InicioReal:O}, Fim real: {viagem.FimReal:O}");
 
             TempData["Sucesso"] = "Viagem finalizada com sucesso.";
             return RedirectToAction(nameof(Details), new { id });
@@ -494,22 +409,22 @@ namespace EasyVan.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            // Validações antes da confirmação
+            // ValidaÃ§Ãµes antes da confirmaÃ§Ã£o
             if (!viagem.VanId.HasValue || viagem.VanId.Value == 0)
             {
-                TempData["Erro"] = "Não é possível confirmar uma viagem sem van associada.";
+                TempData["Erro"] = "NÃ£o Ã© possÃ­vel confirmar uma viagem sem van associada.";
                 return RedirectToAction(nameof(Details), new { id });
             }
             if (!viagem.MotoristaId.HasValue || viagem.MotoristaId.Value == 0)
             {
-                TempData["Erro"] = "Não é possível confirmar uma viagem sem motorista associado.";
+                TempData["Erro"] = "NÃ£o Ã© possÃ­vel confirmar uma viagem sem motorista associado.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
             var rotasExistem = await _db.Rotas.AnyAsync(r => r.Id == viagem.RotaId);
             if (!rotasExistem)
             {
-                TempData["Erro"] = "Rota associada não encontrada.";
+                TempData["Erro"] = "Rota associada nÃ£o encontrada.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
@@ -536,7 +451,7 @@ namespace EasyVan.Controllers
                 "MudancaEstado",
                 "Viagem",
                 viagem.Id,
-                $"Viagem #{viagem.Id} confirmada: {viagem.Status} → Confirmada",
+                $"Viagem #{viagem.Id} confirmada: {viagem.Status} â†’ Confirmada",
                 $"Van: {van?.Plate}, Motorista: {motorista?.Nome}, Data: {viagem.Data:dd/MM/yyyy}");
 
             TempData["Sucesso"] = "Viagem confirmada com sucesso.";
@@ -556,7 +471,7 @@ namespace EasyVan.Controllers
 
             if (viagem.Status is "Finalizada" or "Cancelada")
             {
-                TempData["Erro"] = $"Não é possível cancelar uma viagem já {viagem.Status.ToLower()}.";
+                TempData["Erro"] = $"NÃ£o Ã© possÃ­vel cancelar uma viagem jÃ¡ {viagem.Status.ToLower()}.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
@@ -570,14 +485,14 @@ namespace EasyVan.Controllers
                 "Cancelamento",
                 "Viagem",
                 viagem.Id,
-                $"Viagem #{viagem.Id} cancelada: {statusAnterior} → Cancelada",
+                $"Viagem #{viagem.Id} cancelada: {statusAnterior} â†’ Cancelada",
                 $"Data: {viagem.Data:dd/MM/yyyy}");
 
             TempData["Sucesso"] = "Viagem cancelada com sucesso.";
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        // Marcar presença de um aluno na viagem.
+        // Marcar presenÃ§a de um aluno na viagem.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarcarPresenca(int viagemId, int alunoId, bool presente, string? observacao)
@@ -590,7 +505,7 @@ namespace EasyVan.Controllers
 
             if (viagem.Status != "EmAndamento")
             {
-                TempData["Erro"] = "A presença só pode ser marcada enquanto a viagem está em andamento.";
+                TempData["Erro"] = "A presenÃ§a sÃ³ pode ser marcada enquanto a viagem estÃ¡ em andamento.";
                 return RedirectToAction(nameof(Details), new { id = viagemId });
             }
 
@@ -620,13 +535,13 @@ namespace EasyVan.Controllers
                 "Presenca",
                 "PresencaViagem",
                 existe?.Id ?? 0,
-                $"Presença {(presente ? "registrada" : "ausência registrada")} para aluno #{alunoId} na viagem #{viagemId}",
+                $"PresenÃ§a {(presente ? "registrada" : "ausÃªncia registrada")} para aluno #{alunoId} na viagem #{viagemId}",
                 $"Aluno: {aluno?.Nome}, Presente: {presente}");
 
             return RedirectToAction(nameof(Details), new { id = viagemId });
         }
 
-        // Inicializa a lista de presença para todos os alunos ativos (útil ao iniciar a viagem).
+        // Inicializa a lista de presenÃ§a para todos os alunos ativos (Ãºtil ao iniciar a viagem).
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> InicializarPresenca(int id)
@@ -639,14 +554,14 @@ namespace EasyVan.Controllers
 
             if (viagem.Status != "EmAndamento")
             {
-                TempData["Erro"] = "A presença só pode ser inicializada enquanto a viagem está em andamento.";
+                TempData["Erro"] = "A presenÃ§a sÃ³ pode ser inicializada enquanto a viagem estÃ¡ em andamento.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
             var geracao = await CriarPresencasAsync(id);
             TempData["Sucesso"] = geracao.UsouFallback
-                ? "Lista de presença preparada com todos os alunos ativos (não há vínculos para esta rota e sentido)."
-                : "Lista de presença preparada.";
+                ? "Lista de presenÃ§a preparada com todos os alunos ativos (nÃ£o hÃ¡ vÃ­nculos para esta rota e sentido)."
+                : "Lista de presenÃ§a preparada.";
 
             _auditoria.Registrar(
                 UsuarioIdLogado(),
@@ -654,7 +569,7 @@ namespace EasyVan.Controllers
                 "Atualizacao",
                 "Viagem",
                 id,
-                $"Lista de presença inicializada para viagem #{id}",
+                $"Lista de presenÃ§a inicializada para viagem #{id}",
                 $"Data: {DateTime.UtcNow:dd/MM/yyyy HH:mm}");
 
             return RedirectToAction(nameof(Details), new { id });
@@ -688,11 +603,11 @@ namespace EasyVan.Controllers
             }
 
             model.Vans = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
-                vans.Select(v => new { v.Id, Nome = $"{VanUi.Identificacao(v)} · {v.Capacity} lugares" }),
+                vans.Select(v => new { v.Id, Nome = $"{VanUi.Identificacao(v)} Â· {v.Capacity} lugares" }),
                 "Id", "Nome", model.VanId);
             model.Motoristas = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(motoristas, "Id", "Nome", model.MotoristaId);
             model.Rotas = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
-                rotas.Select(r => new { r.Id, Nome = $"{r.Nome} ({r.Origem} → {r.Destino})" }),
+                rotas.Select(r => new { r.Id, Nome = $"{r.Nome} ({r.Origem} â†’ {r.Destino})" }),
                 "Id", "Nome", model.RotaId);
             model.Sentidos = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
                 new[] { SentidoViagem.Ida, SentidoViagem.Volta },

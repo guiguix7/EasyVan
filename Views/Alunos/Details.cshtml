@@ -36,6 +36,7 @@
                     <partial name="_Icon" model='"edit"' />
                     Editar
                 </a>
+                <a asp-controller="VinculosAlunos" asp-action="Index" asp-route-alunoId="@Model.Id" class="btn btn-outline-primary">Gerenciar vínculos</a>
                 <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger">
                     <partial name="_Icon" model='"trash"' />
                     Excluir
@@ -56,6 +57,10 @@
                 <div class="ev-data__item">
                     <dt>Nome</dt>
                     <dd>@Model.Nome</dd>
+                </div>
+                <div class="ev-data__item">
+                    <dt>Escola onde estuda</dt>
+                    <dd>@(string.IsNullOrWhiteSpace(Model.Escola) ? "NÃ£o informada" : Model.Escola)</dd>
                 </div>
                 <div class="ev-data__item">
                     <dt>Situação</dt>

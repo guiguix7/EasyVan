@@ -1,0 +1,31 @@
+@model IEnumerable<EasyVan.Models.HorarioRota>
+@using EasyVan.Services
+@using EasyVan.Models
+@{
+    ViewData["Title"] = "Agenda das rotas";
+    var horarios = Model.ToList();
+}
+<section class="ev-page">
+    <header class="ev-page-head"><div class="ev-page-head__text"><p class="ev-eyebrow">Cadastros</p><h1>Agenda das rotas</h1><p class="ev-page-head__lead">Defina dias, sentido, horário de saída e van sugerida para cada rota.</p></div><div class="ev-page-head__actions"><a asp-action="Create" class="btn btn-primary"><partial name="_Icon" model='"plus"' /> Nova agenda</a></div></header>
+    @if (TempData["Erro"] is string erro) { <div class="ev-notice ev-notice--danger" role="alert">@erro</div> }
+    @if (TempData["Sucesso"] is string sucesso) { <div class="ev-notice ev-notice--success" role="status">@sucesso</div> }
+    @if (horarios.Count == 0)
+    {
+        <div class="ev-panel ev-empty"><h2 class="ev-empty__title">Nenhuma agenda cadastrada</h2><p class="ev-empty__text">Adicione uma agenda para cada sentido e horário de uma rota.</p><a asp-action="Create" class="btn btn-primary">Cadastrar agenda</a></div>
+    }
+    else
+    {
+        <section class="ev-panel ev-panel--flush ev-list-desktop" aria-label="Agendas cadastradas"><div class="ev-table-scroll"><table class="ev-table"><thead><tr><th>Rota</th><th>Sentido</th><th>Dias</th><th>Saída</th><th>Van padrão</th><th>Status</th><th><span class="visually-hidden">Ações</span></th></tr></thead><tbody>
+        @foreach (var horario in horarios)
+        {
+            <tr><td>@horario.Rota?.Nome</td><td>@(horario.Sentido == SentidoViagem.Ida ? "Ida" : "Volta")</td><td>@AgendaUi.FormatarDias(horario.DiasSemana)</td><td>@horario.HorarioSaida.ToString(@"hh\:mm")</td><td>@(horario.VanPadrao?.Plate ?? "Sem sugestão")</td><td><partial name="_StatusBadge" model='horario.Ativo ? "Ativa" : "Inativa"' /></td><td class="is-actions"><div class="ev-row-actions"><a asp-action="Edit" asp-route-id="@horario.Id" class="ev-link-action">Editar</a><a asp-action="Delete" asp-route-id="@horario.Id" class="ev-link-action ev-link-action--danger">Excluir</a></div></td></tr>
+        }
+        </tbody></table></div></section>
+        <section class="ev-records ev-list-mobile" aria-label="Lista de agendas">
+        @foreach (var horario in horarios)
+        {
+            <article class="ev-record"><div class="ev-record__head"><div><h2 class="ev-record__title">@horario.Rota?.Nome · @(horario.Sentido == SentidoViagem.Ida ? "Ida" : "Volta")</h2><span class="ev-record__meta">@AgendaUi.FormatarDias(horario.DiasSemana) às @horario.HorarioSaida.ToString(@"hh\:mm")</span></div><partial name="_StatusBadge" model='horario.Ativo ? "Ativa" : "Inativa"' /></div><p>Van padrão: @(horario.VanPadrao?.Plate ?? "Sem sugestão")</p><div class="ev-record__actions"><a asp-action="Edit" asp-route-id="@horario.Id" class="btn btn-outline-secondary">Editar</a><a asp-action="Delete" asp-route-id="@horario.Id" class="btn btn-outline-danger">Excluir</a></div></article>
+        }
+        </section>
+    }
+</section>

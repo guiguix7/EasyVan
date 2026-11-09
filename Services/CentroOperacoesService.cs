@@ -21,11 +21,8 @@ namespace EasyVan.Services
 
         public async Task<CentroOperacoesViewModel> ObterPainelAsync()
         {
-            var fuso = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
-            var hojeLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, fuso).Date;
-            var inicioDoDia = TimeZoneInfo.ConvertTimeToUtc(
-                DateTime.SpecifyKind(hojeLocal, DateTimeKind.Unspecified), fuso);
-            var fimDoDia = inicioDoDia.AddDays(1);
+            var hojeLocal = DateTime.SpecifyKind(ViagemAgenda.AgoraLocal().Date, DateTimeKind.Unspecified);
+            var amanhaLocal = hojeLocal.AddDays(1);
 
             var modelo = new CentroOperacoesViewModel();
 
@@ -42,8 +39,8 @@ namespace EasyVan.Services
             modelo.AlunosAtivos = await _db.Alunos.CountAsync(a => a.Ativo);
 
             // --- Rotas ---
-            modelo.TotalRotas = await _db.Rotas.CountAsync();
-            modelo.RotasAtivas = await _db.Rotas.CountAsync(r => r.Ativo);
+            modelo.TotalRotas = await _db.Linhas.CountAsync();
+            modelo.RotasAtivas = await _db.Linhas.CountAsync(r => r.Ativa);
 
             // --- Viagens por status ---
             modelo.ViagensPlanejadas = await _db.Viagens.CountAsync(v => v.Status == "Planejada");
@@ -54,14 +51,14 @@ namespace EasyVan.Services
             modelo.ViagensCanceladas = await _db.Viagens.CountAsync(v => v.Status == "Cancelada");
 
             // --- Viagens hoje ---
-            modelo.ViagensHoje = await _db.Viagens.CountAsync(v => v.Data >= inicioDoDia && v.Data < fimDoDia);
+            modelo.ViagensHoje = await _db.Viagens.CountAsync(v => v.Data >= hojeLocal && v.Data < amanhaLocal);
 
             // --- Próximas viagens (agendadas/confirmadas/em andamento a partir de hoje) ---
             modelo.ProximasViagens = await _db.Viagens
                 .Include(v => v.Van)
                 .Include(v => v.Motorista)
                 .Include(v => v.Rota)
-                .Where(v => v.Data >= inicioDoDia
+                .Where(v => v.Data >= hojeLocal
                     && (v.Status == "Planejada" || v.Status == "Confirmada"
                         || v.Status == "Agendada" || v.Status == "EmAndamento"))
                 .OrderBy(v => v.Data)

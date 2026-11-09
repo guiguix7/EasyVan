@@ -9,6 +9,23 @@ namespace EasyVan.Tests;
 
 public class PostgreSqlCompatibilityTests
 {
+    [Fact]
+    public void PostgreSqlModel_CriaIndiceParcialDeVinculoAtivoComPredicadoPostgres()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseNpgsql("Host=localhost;Database=easyvan_model_test;Username=test;Password=test")
+            .Options;
+
+        using var db = new ApplicationDbContext(options);
+        var schema = db.Database.GenerateCreateScript();
+        var migrations = db.GetService<IMigrator>().GenerateScript();
+
+        Assert.Contains("IX_VinculosAluno_AlunoSentidoAtivo", schema, StringComparison.Ordinal);
+        Assert.Contains("WHERE \"Ativo\" = TRUE", schema, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("WHERE \"Ativo\" = TRUE", migrations, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("WHERE \"Ativo\" = 1", migrations, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static DbContextOptions<ApplicationDbContext>? CreateOptions()
     {
         var connectionString = Environment.GetEnvironmentVariable("EASYVAN_TEST_POSTGRES");

@@ -1,0 +1,31 @@
+@model IEnumerable<EasyVan.Models.VinculoAluno>
+@using EasyVan.Models
+@{
+    ViewData["Title"] = "Vínculos de alunos";
+    var vinculos = Model.ToList();
+    var alunoId = ViewData["AlunoId"] as int?;
+}
+<section class="ev-page">
+    <header class="ev-page-head"><div class="ev-page-head__text"><p class="ev-eyebrow">Cadastros</p><h1>Vínculos de alunos</h1><p class="ev-page-head__lead">Cada aluno pode ter um vínculo ativo por sentido. Trocas preservam o histórico anterior.</p></div><div class="ev-page-head__actions"><a asp-action="Create" asp-route-alunoId="@alunoId" class="btn btn-primary"><partial name="_Icon" model='"plus"' /> Novo vínculo</a></div></header>
+    @if (TempData["Erro"] is string erro) { <div class="ev-notice ev-notice--danger" role="alert">@erro</div> }
+    @if (TempData["Sucesso"] is string sucesso) { <div class="ev-notice ev-notice--success" role="status">@sucesso</div> }
+    @if (vinculos.Count == 0)
+    {
+        <div class="ev-panel ev-empty"><h2 class="ev-empty__title">Nenhum vínculo cadastrado</h2><p class="ev-empty__text">Escolha um aluno, uma rota, uma parada e um sentido.</p><a asp-action="Create" asp-route-alunoId="@alunoId" class="btn btn-primary">Criar vínculo</a></div>
+    }
+    else
+    {
+        <section class="ev-panel ev-panel--flush ev-list-desktop" aria-label="Vínculos cadastrados"><div class="ev-table-scroll"><table class="ev-table"><thead><tr><th>Aluno</th><th>Sentido</th><th>Rota</th><th>Parada</th><th>Vigência</th><th>Status</th></tr></thead><tbody>
+        @foreach (var vinculo in vinculos)
+        {
+            <tr><td>@vinculo.Aluno?.Nome</td><td>@(vinculo.Sentido == SentidoViagem.Ida ? "Ida" : "Volta")</td><td>@vinculo.Rota?.Nome</td><td><span class="ev-table__primary">@(vinculo.Parada?.Nome ?? vinculo.Parada?.Endereco)</span><span class="ev-table__secondary">@vinculo.Parada?.Endereco</span></td><td>@(vinculo.DataInicio?.ToString("dd/MM/yyyy") ?? "—") – @(vinculo.DataFim?.ToString("dd/MM/yyyy") ?? "Atual")</td><td><partial name="_StatusBadge" model='vinculo.Ativo ? "Ativo" : "Encerrado"' /></td></tr>
+        }
+        </tbody></table></div></section>
+        <section class="ev-records ev-list-mobile" aria-label="Lista de vínculos">
+        @foreach (var vinculo in vinculos)
+        {
+            <article class="ev-record"><div class="ev-record__head"><div><h2 class="ev-record__title">@vinculo.Aluno?.Nome · @(vinculo.Sentido == SentidoViagem.Ida ? "Ida" : "Volta")</h2><span class="ev-record__meta">@vinculo.Rota?.Nome</span></div><partial name="_StatusBadge" model='vinculo.Ativo ? "Ativo" : "Encerrado"' /></div><p class="mb-0">@(vinculo.Parada?.Nome ?? vinculo.Parada?.Endereco)</p><span class="ev-record__meta">@(vinculo.DataInicio?.ToString("dd/MM/yyyy") ?? "—") – @(vinculo.DataFim?.ToString("dd/MM/yyyy") ?? "Atual")</span></article>
+        }
+        </section>
+    }
+</section>

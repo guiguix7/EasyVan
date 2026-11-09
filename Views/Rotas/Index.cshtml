@@ -24,6 +24,9 @@
         </div>
     </header>
 
+    @if (TempData["Erro"] is string erro) { <div class="ev-notice ev-notice--danger" role="alert">@erro</div> }
+    @if (TempData["Sucesso"] is string sucesso) { <div class="ev-notice ev-notice--success" role="status">@sucesso</div> }
+
     @if (rotas.Any())
     {
         <div class="ev-results">

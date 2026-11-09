@@ -1,5 +1,5 @@
-// EasyVan — mapa de trajeto com a Google Maps JavaScript API.
-// O mapa é opcional: sem chave configurada, o fallback em HTML permanece visível.
+// EasyVan â€” mapa de trajeto com a Google Maps JavaScript API.
+// O mapa Ã© opcional: sem chave configurada, o fallback em HTML permanece visÃ­vel.
 (function () {
   "use strict";
 
@@ -25,6 +25,8 @@
     var canvas = container.querySelector("[data-mapa-canvas]");
     var origem = container.getAttribute("data-origem");
     var destino = container.getAttribute("data-destino");
+    var paradas = [];
+    try { paradas = JSON.parse(container.getAttribute("data-paradas") || "[]"); } catch (_) { paradas = []; }
 
     if (!canvas || !origem || !destino || !window.google || !google.maps) {
       return;
@@ -38,51 +40,30 @@
       fullscreenControl: true
     });
 
-    var geocoder = new google.maps.Geocoder();
     var bounds = new google.maps.LatLngBounds();
-    var direcoes = new google.maps.DirectionsService();
-    var renderer = new google.maps.DirectionsRenderer({
-      suppressMarkers: true,
-      polylineOptions: { strokeColor: "#0f4c5c", strokeWeight: 5 }
-    });
-    renderer.setMap(mapa);
+    if (paradas.length > 25) { return; }
 
-    function geocodificar(endereco) {
-      return new Promise(function (resolve, reject) {
-        geocoder.geocode({ address: endereco, region: "BR" }, function (resultados, status) {
-          if (status === "OK" && resultados && resultados[0]) {
-            resolve(resultados[0].geometry.location);
-          } else {
-            reject(status);
-          }
+    google.maps.importLibrary("routes")
+      .then(function (biblioteca) {
+        return biblioteca.Route.computeRoutes({
+          origin: origem,
+          destination: destino,
+          intermediates: paradas.map(function (endereco) { return { location: endereco }; }),
+          travelMode: "DRIVING",
+          optimizeWaypointOrder: paradas.length > 1,
+          fields: ["path", "optimizedIntermediateWaypointIndices"]
         });
-      });
-    }
-
-    Promise.all([geocodificar(origem), geocodificar(destino)])
-      .then(function (pontos) {
-        bounds.extend(pontos[0]);
-        bounds.extend(pontos[1]);
+      })
+      .then(function (resultado) {
+        if (!resultado.routes || !resultado.routes.length) { throw new Error("Rota indisponível"); }
+        var rota = resultado.routes[0];
+        rota.createPolylines().forEach(function (linha) {
+          linha.setOptions({ strokeColor: "#0f4c5c", strokeWeight: 5 });
+          linha.setMap(mapa);
+          linha.getPath().forEach(function (ponto) { bounds.extend(ponto); });
+        });
         mapa.fitBounds(bounds);
-
-        new google.maps.Marker({ position: pontos[0], map: mapa, title: origem, label: "A" });
-        new google.maps.Marker({ position: pontos[1], map: mapa, title: destino, label: "B" });
-
         container.classList.add("is-ready");
-
-        direcoes.route(
-          {
-            origin: origem,
-            destination: destino,
-            travelMode: google.maps.TravelMode.DRIVING
-          },
-          function (resultado, status) {
-            if (status === "OK") {
-              renderer.setDirections(resultado);
-              mapa.fitBounds(bounds);
-            }
-          }
-        );
       })
       .catch(function () {
         container.classList.remove("is-ready");

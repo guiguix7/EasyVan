@@ -2,13 +2,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EasyVan.Models
 {
-    public class Aluno
+    public class Aluno : IOrganizacaoScoped
     {
         public int Id { get; set; }
+        public int OrganizacaoId { get; set; } = 1;
 
         [Required(ErrorMessage = "O nome é obrigatório.")]
         [StringLength(120, ErrorMessage = "O nome deve ter no máximo 120 caracteres.")]
         public string Nome { get; set; } = string.Empty;
+
+        [StringLength(160)]
+        public string? Escola { get; set; }
 
         [Required(ErrorMessage = "O email é obrigatório.")]
         [EmailAddress(ErrorMessage = "Informe um email válido.")]

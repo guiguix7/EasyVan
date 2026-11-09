@@ -1,0 +1,4 @@
+@model EasyVan.Models.HorarioRotaFormViewModel
+@{ ViewData["Title"] = "Editar agenda"; }
+<section class="ev-page"><a asp-action="Index" class="ev-back"><partial name="_Icon" model='"back"' /> Voltar para agenda</a><header class="ev-page-head"><div class="ev-page-head__text"><p class="ev-eyebrow">Agenda #@Model.Id</p><h1>Editar agenda</h1></div></header><form asp-action="Edit" asp-route-id="@Model.Id" method="post" class="ev-form-layout"><partial name="_Form" model="Model" /></form></section>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -20,6 +20,17 @@ namespace EasyVan.Data
             string? adminPassword = null)
         {
             var hasher = senha ?? new PasswordService();
+            var inicializarOperacaoDemo = seedDemoUsers
+                && !context.Vans.Any()
+                && !context.Motoristas.Any()
+                && !context.Alunos.Any()
+                && !context.Rotas.Any();
+
+            if (!context.Organizacoes.Any())
+            {
+                context.Organizacoes.Add(new Organizacao { Nome = "EasyVan", Ativo = true });
+                context.SaveChanges();
+            }
 
             // Vans (referência da spec de filtros e busca).
             if (seedDemoUsers && !context.Vans.Any())
@@ -223,6 +234,95 @@ namespace EasyVan.Data
 
             ReconciliarPerfis(context);
             VincularVans(context);
+            context.SaveChanges();
+
+            if (inicializarOperacaoDemo)
+                InicializarDadosOperacionaisDemo(context);
+        }
+
+        private static void InicializarDadosOperacionaisDemo(ApplicationDbContext context)
+        {
+            var rota = context.Rotas.OrderBy(r => r.Id).FirstOrDefault();
+            if (rota is null)
+                return;
+
+            if (!context.HorariosRota.Any())
+            {
+                var vanId = context.Vans.OrderBy(v => v.Id).Select(v => (int?)v.Id).FirstOrDefault();
+                context.HorariosRota.AddRange(
+                    new HorarioRota
+                    {
+                        RotaId = rota.Id,
+                        Sentido = SentidoViagem.Ida,
+                        DiasSemana = DiasSemana.DiasUteis,
+                        HorarioSaida = new TimeSpan(7, 0, 0),
+                        VanPadraoId = vanId,
+                        Ativo = true
+                    },
+                    new HorarioRota
+                    {
+                        RotaId = rota.Id,
+                        Sentido = SentidoViagem.Volta,
+                        DiasSemana = DiasSemana.DiasUteis,
+                        HorarioSaida = new TimeSpan(17, 30, 0),
+                        VanPadraoId = vanId,
+                        Ativo = true
+                    });
+            }
+
+            if (!context.Paradas.Any())
+            {
+                context.Paradas.AddRange(
+                    new Parada
+                    {
+                        RotaId = rota.Id,
+                        Sentido = SentidoViagem.Ida,
+                        Ordem = 1,
+                        Nome = "Ponto de embarque de demonstração",
+                        Endereco = "Centro — ponto de demonstração",
+                        HorarioPrevisto = new TimeSpan(6, 45, 0),
+                        Ativo = true
+                    },
+                    new Parada
+                    {
+                        RotaId = rota.Id,
+                        Sentido = SentidoViagem.Volta,
+                        Ordem = 1,
+                        Nome = "Ponto de desembarque de demonstração",
+                        Endereco = "Centro — ponto de demonstração",
+                        HorarioPrevisto = new TimeSpan(17, 45, 0),
+                        Ativo = true
+                    });
+            }
+
+            context.SaveChanges();
+
+            var aluno = context.Alunos.OrderBy(a => a.Id).FirstOrDefault();
+            if (aluno is null)
+                return;
+
+            var paradas = context.Paradas
+                .Where(p => p.RotaId == rota.Id)
+                .GroupBy(p => p.Sentido)
+                .ToDictionary(g => g.Key, g => g.OrderBy(p => p.Ordem).First());
+
+            foreach (var sentido in new[] { SentidoViagem.Ida, SentidoViagem.Volta })
+            {
+                if (!paradas.TryGetValue(sentido, out var parada)
+                    || context.VinculosAluno.Any(v => v.AlunoId == aluno.Id && v.Sentido == sentido && v.Ativo))
+                    continue;
+
+                context.VinculosAluno.Add(new VinculoAluno
+                {
+                    AlunoId = aluno.Id,
+                    RotaId = rota.Id,
+                    ParadaId = parada.Id,
+                    Sentido = sentido,
+                    Ativo = true,
+                    DataInicio = DateTime.SpecifyKind(DateTime.Today, DateTimeKind.Unspecified)
+                });
+            }
+
             context.SaveChanges();
         }
 

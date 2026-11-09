@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using EasyVan.Data;
@@ -11,6 +12,7 @@ using EasyVan.Services;
 using Supabase.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
 
 var isProduction = builder.Environment.IsProduction();
 var railwayVolumePath = builder.Configuration["RAILWAY_VOLUME_MOUNT_PATH"];
@@ -28,6 +30,8 @@ if (isProduction)
 }
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
 
 var configuredConnection = builder.Configuration.GetConnectionString("DefaultConnection");
 var rawConnectionString = configuredConnection;
@@ -64,13 +68,43 @@ builder.Services.AddScoped<PerfilUsuarioService>();
 builder.Services.AddScoped<AgendaRotaService>();
 builder.Services.AddScoped<VinculoAlunoService>();
 builder.Services.AddScoped<PresencaViagemService>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.Configure<PrazoPresencaOptions>(builder.Configuration.GetSection("PrazoPresenca"));
+builder.Services.AddScoped(provider => new PrazoPresencaService(
+    provider.GetRequiredService<IOptions<PrazoPresencaOptions>>().Value,
+    provider.GetRequiredService<TimeProvider>()));
+builder.Services.AddScoped<GeracaoViagemService>();
+builder.Services.AddScoped<GeracaoViagensLinhaService>();
+builder.Services.AddScoped<LinhaService>();
+builder.Services.Configure<GeracaoViagensOptions>(builder.Configuration.GetSection("GeracaoViagens"));
+builder.Services.AddHostedService<GeracaoViagensHostedService>();
 builder.Services.AddScoped<CentroOperacoesService>();
 builder.Services.AddSingleton(new GoogleMapsOptions
 {
     ApiKey = builder.Configuration["GoogleMaps:ApiKey"]
         ?? Environment.GetEnvironmentVariable("GOOGLE_MAPS_API_KEY")
+        ?? string.Empty,
+    BrowserApiKey = builder.Configuration["GoogleMaps:BrowserApiKey"]
+        ?? Environment.GetEnvironmentVariable("GOOGLE_MAPS_BROWSER_API_KEY")
         ?? string.Empty
 });
+builder.Services.AddScoped<IGeocodificador>(provider => new GoogleGeocodificador(
+    provider.GetRequiredService<IHttpClientFactory>().CreateClient(),
+    provider.GetRequiredService<GoogleMapsOptions>()));
+builder.Services.AddScoped<IRoteirizador>(provider =>
+{
+    var options = provider.GetRequiredService<GoogleMapsOptions>();
+    return options.Configurado
+        ? new GoogleRoteirizador(provider.GetRequiredService<IHttpClientFactory>().CreateClient(), options)
+        : new FakeRoteirizador();
+});
+builder.Services.AddScoped(provider => new RoteirizacaoService(
+    provider.GetRequiredService<ApplicationDbContext>(),
+    provider.GetRequiredService<IRoteirizador>(),
+    provider.GetRequiredService<TimeProvider>(),
+    provider.GetRequiredService<IOptions<PrazoPresencaOptions>>().Value,
+    provider.GetRequiredService<ILogger<RoteirizacaoService>>()));
+builder.Services.AddHostedService<RoteirizacaoHostedService>();
 
 var supabaseUrl = builder.Configuration["Supabase:Url"];
 var supabaseKey = builder.Configuration["Supabase:Key"];
@@ -121,7 +155,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 var usuario = await db.Usuarios.AsNoTracking()
                     .SingleOrDefaultAsync(u => u.Id == userId);
 
-                if (usuario == null)
+                if (usuario == null || !usuario.Ativo)
                 {
                     context.RejectPrincipal();
                     await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -140,6 +174,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 AtualizarClaim(identity, ClaimTypes.Email, usuario.Email, context);
                 AtualizarClaim(identity, ClaimTypes.Role, EasyVan.Models.Usuarios.NormalizeRole(usuario.RoleManager), context);
                 AtualizarClaim(identity, "FotoPerfil", usuario.FotoPerfil ?? string.Empty, context);
+                AtualizarClaim(identity, "EasyVan:OrganizacaoId", usuario.OrganizacaoId.ToString(), context);
 
                 var tema = EasyVan.Services.TemaUi.Normalizar(usuario.Tema);
                 if (context.HttpContext.Request.Cookies[EasyVan.Services.TemaUi.Cookie] != tema)

@@ -23,6 +23,7 @@ public class ViagensControllerTests
         var controller = new ViagensController(
             db,
             new ValidacaoOperacional(db),
+            new PresencaViagemService(db),
             auditoria ?? new AuditoriaFake(),
             NullLogger<ViagensController>.Instance);
 
@@ -31,15 +32,10 @@ public class ViagensControllerTests
     }
 
     [Fact]
-    public async Task CriarViagemComMotoristaExistenteGravaViagemEPresencas()
+    public async Task PostCriarViagemRedirecionaParaCadastroDaLinhaSemCriarViagemManual()
     {
         using var db = TestesInfra.CriarBanco();
         var (motorista, rota, van) = TestesInfra.CriarReferencias(db);
-        db.Alunos.AddRange(
-            new Aluno { Nome = "Ativo", Email = "ativo@easyvan.com", Ativo = true },
-            new Aluno { Nome = "Inativo", Email = "inativo@easyvan.com", Ativo = false });
-        await db.SaveChangesAsync();
-
         var controller = CriarController(db);
         var amanha = DateTime.Today.AddDays(1);
 
@@ -48,6 +44,7 @@ public class ViagensControllerTests
             VanId = van.Id,
             MotoristaId = motorista.Id,
             RotaId = rota.Id,
+            Sentido = SentidoViagem.Ida,
             Data = amanha,
             DataChegada = amanha,
             HoraInicio = "08:00",
@@ -55,18 +52,10 @@ public class ViagensControllerTests
         });
 
         var redirect = Assert.IsType<RedirectToActionResult>(resultado);
-        Assert.Equal(nameof(ViagensController.Details), redirect.ActionName);
-
-        var viagem = await db.Viagens.SingleAsync();
-        Assert.Equal(van.Id, viagem.VanId);
-        Assert.Equal(motorista.Id, viagem.MotoristaId);
-        Assert.Equal(new TimeSpan(8, 0, 0), viagem.HoraInicio!.Value);
-        Assert.Equal(new TimeSpan(9, 30, 0), viagem.HoraFim!.Value);
-        Assert.Equal("Agendada", viagem.Status);
-
-        var presencas = db.PresencasViagem.ToList();
-        Assert.Single(presencas);
-        Assert.Equal("Ativo", presencas[0].Aluno!.Nome);
+        Assert.Equal("Create", redirect.ActionName);
+        Assert.Equal("Linhas", redirect.ControllerName);
+        Assert.Empty(db.Viagens);
+        Assert.Empty(db.PresencasViagem);
     }
 
     [Fact]
@@ -82,14 +71,15 @@ public class ViagensControllerTests
             VanId = van.Id,
             MotoristaId = 999,
             RotaId = rota.Id,
+            Sentido = SentidoViagem.Ida,
             Data = amanha,
             DataChegada = amanha,
             HoraInicio = "08:00",
             HoraFim = "09:00"
         });
 
-        Assert.IsType<ViewResult>(resultado);
-        Assert.True(controller.ModelState.ContainsKey(nameof(ViagemFormViewModel.MotoristaId)));
+        var redirect = Assert.IsType<RedirectToActionResult>(resultado);
+        Assert.Equal("Linhas", redirect.ControllerName);
         Assert.Empty(db.Viagens);
     }
 
@@ -106,16 +96,15 @@ public class ViagensControllerTests
             VanId = van.Id,
             MotoristaId = motorista.Id,
             RotaId = rota.Id,
+            Sentido = SentidoViagem.Ida,
             Data = ontem,
             DataChegada = ontem,
             HoraInicio = "08:00",
             HoraFim = "09:00"
         });
 
-        Assert.IsType<ViewResult>(resultado);
-        Assert.Contains(
-            controller.ModelState[string.Empty]!.Errors,
-            e => e.ErrorMessage.Contains("anterior a hoje", StringComparison.OrdinalIgnoreCase));
+        var redirect = Assert.IsType<RedirectToActionResult>(resultado);
+        Assert.Equal("Linhas", redirect.ControllerName);
         Assert.Empty(db.Viagens);
     }
 
@@ -132,16 +121,15 @@ public class ViagensControllerTests
             VanId = van.Id,
             MotoristaId = motorista.Id,
             RotaId = rota.Id,
+            Sentido = SentidoViagem.Ida,
             Data = amanha,
             DataChegada = amanha,
             HoraInicio = "10:00",
             HoraFim = "09:00"
         });
 
-        Assert.IsType<ViewResult>(resultado);
-        Assert.Contains(
-            controller.ModelState[string.Empty]!.Errors,
-            e => e.ErrorMessage.Contains("posterior à partida", StringComparison.OrdinalIgnoreCase));
+        var redirect = Assert.IsType<RedirectToActionResult>(resultado);
+        Assert.Equal("Linhas", redirect.ControllerName);
         Assert.Empty(db.Viagens);
     }
 
@@ -242,6 +230,7 @@ public class ViagensControllerTests
             VanId = van.Id,
             MotoristaId = motorista.Id,
             RotaId = rota.Id,
+            Sentido = SentidoViagem.Ida,
             Data = novaData,
             DataChegada = novaData,
             HoraInicio = "10:00",

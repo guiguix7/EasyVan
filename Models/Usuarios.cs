@@ -2,9 +2,14 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EasyVan.Models
 {
-    public class Usuarios
+    public class Usuarios : IOrganizacaoScoped
     {
         public int Id { get; set; }
+        public int OrganizacaoId { get; set; } = 1;
+        [StringLength(300)] public string? Endereco { get; set; }
+        public double? Lat { get; set; }
+        public double? Lng { get; set; }
+        public DateTimeOffset? GeocodificadoEm { get; set; }
 
         [Required(ErrorMessage = "O nome é obrigatório.")]
         [StringLength(120)]
