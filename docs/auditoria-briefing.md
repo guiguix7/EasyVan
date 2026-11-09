@@ -157,6 +157,13 @@ A solicitação mais recente substituiu o fluxo de rota/parada manual por Linha 
 ## Atualização — Fases 4 e 5 (08/11/2026)
 
 - Fase 4 concluída: visão do motorista agrupada por ponto operacional, pendentes separados e links Maps segmentados; pontos de embarque cadastrados separadamente do endereço residencial. Migration `Fase4PontosDeEmbarque` criada.
-- Corrigida a validação enganosa em `Linhas/Create`: sem as chaves Google Maps, a tela agora permite informar coordenadas e explica a limitação. As chaves não estão configuradas neste ambiente, portanto autocomplete/geocodificação não foram validados aqui.
+- Naquele estado intermediário, corrigiu-se a validação enganosa em `Linhas/Create`: sem as chaves Google Maps, a tela permitia informar coordenadas. Em solicitação posterior, os campos visíveis de latitude/longitude foram removidos; endereço sem localização pode ser salvo, mas não produz rota navegável. As chaves não estão configuradas neste ambiente, portanto autocomplete/geocodificação não foram validados aqui.
 - Fase 5 concluída: painel mostra ocupação por status e serviço avalia A1–A6; os testes de regras foram ampliados. Spec: `spec/fase-5-alertas-e-ocupacao.md`.
-- Verificação final: build Release sem avisos/erros; 141 testes aprovados. PostgreSQL real e isolamento multi-organização continuam pendentes.
+- Verificação final daquela atualização: build Release sem avisos/erros; 141 testes aprovados. PostgreSQL real e isolamento multi-organização continuam pendentes.
+
+## Atualização — Fase 6 (08/11/2026)
+
+- Preparado `docs/fase-6-relatorio-final.md` com análise pública de concorrentes, posição do produto, hipótese comercial sem valor definido, análise técnica LGPD, protocolo de piloto e roteiro da demonstração.
+- A política `PRIVACY.md` foi alinhada à integração opcional com Google Maps, ao tratamento de endereços/pontos de embarque e às pendências do canal de direitos, retenção e operação com menores.
+- Entrevistas, piloto real e ensaio cronometrado não foram realizados; não há métricas ou depoimentos no repositório. PostgreSQL e validação multi-organização continuam pendentes.
+- A suíte está em 143 testes após alteração de endereço sem coordenadas.

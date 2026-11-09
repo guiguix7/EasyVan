@@ -143,7 +143,7 @@ dotnet ef database update
 ```
 
 Rode `dotnet build` depois de qualquer mudanÃ§a em C# ou Razor e `dotnet test` antes de entregar.
-Linha de base atual em 08/11/2026: build 0 avisos/0 erros; **142 testes aprovados** após as Fases 4 e 5 e a correção de compatibilidade do painel com SQLite.
+Linha de base atual em 08/11/2026: build 0 avisos/0 erros; **143 testes aprovados** após a correção de endereços de Linha sem coordenadas.
 
 ## 8. Estrutura
 
@@ -175,7 +175,7 @@ removido na Fase 0).
 | **3** | Geracao diaria + presenca com prazo | **Implementada em 08/11/2026**; janela idempotente de 14 dias úteis e limite configuravel | Build/test passam; ver `spec/fase-3-viagens-e-presenca.md` |
 | **4** | Visão do motorista por parada + Maps | **Implementada**: agrupamento por ponto operacional, pendentes separados e links segmentados; ver `spec/fase-4-rotas-do-motorista.md` | Build e testes aprovados; configurar as chaves Google no ambiente para autocomplete/geocodificação |
 | **5** | Painel + alertas A1–A6 | **Implementada**: ocupação e A1–A6 no serviço operacional; ver `spec/fase-5-alertas-e-ocupacao.md` | Build e testes aprovados |
-| **6** | DocumentaÃ§Ã£o final, concorrentes, LGPD, plano comercial, piloto | **Pendente** | RelatÃ³rio completo e demo ensaiada |
+| **6** | Documentação final, concorrentes, LGPD, plano comercial, piloto | **Parcial**: relatório de pesquisa, análise técnica LGPD, hipótese de negócio, protocolo de piloto e roteiro de demonstração preparados em `docs/fase-6-relatorio-final.md`; entrevistas, piloto real e ensaio cronometrado não foram executados. | Coletar evidências reais, revisar LGPD com responsável jurídico e ensaiar a demonstração |
 
 Trabalhe **uma fase por vez**. NÃ£o adiante fases nem implemente itens fora do MVP.
 
@@ -235,4 +235,8 @@ Este complemento substitui afirmaÃ§Ãµes anteriores deste arquivo que indique
 
 ## Estado atual — Fases 4 e 5 (08/11/2026)
 
-A visão do motorista por ponto operacional, com passageiros agrupados e links Maps segmentados, foi concluída na Fase 4. Na Fase 5, o Centro de Operações apresenta ocupação e alertas A1–A6, calculados em serviço e cobertos por testes. A criação de Linha aceita coordenadas manuais quando não há chave Google Maps, e informa essa ausência em vez de acusar o endereço. A ordenação da ocupação ocorre em memória para compatibilidade com SQLite e `TimeSpan`. Build Release: zero avisos/erros; 142 testes aprovados. Consulte `spec/fase-4-rotas-do-motorista.md` e `spec/fase-5-alertas-e-ocupacao.md`. PostgreSQL real e isolamento multi-organização permanecem pendentes.
+A visão do motorista por ponto operacional, com passageiros agrupados e links Maps segmentados, foi concluída na Fase 4. Na Fase 5, o Centro de Operações apresenta ocupação e alertas A1–A6, calculados em serviço e cobertos por testes. Endereços da Linha podem ser salvos sem coordenadas; a localização no Google Maps habilita o cálculo de rotas. A ordenação da ocupação ocorre em memória para compatibilidade com SQLite e `TimeSpan`. Build Release: zero avisos/erros; 143 testes aprovados. Consulte as specs das Fases 4 e 5. PostgreSQL real e validação operacional do isolamento multi-organização permanecem pendentes.
+
+## Fase 6 — documentação e validação (08/11/2026)
+
+Pesquisa de concorrentes e fontes oficiais de LGPD, hipótese comercial sem preço inventado, análise técnica de privacidade, protocolo de piloto e roteiro para demo foram consolidados em `docs/fase-6-relatorio-final.md`. Não há evidência de entrevistas, piloto ou ensaio real; a fase permanece parcial até a coleta desses dados e revisão do responsável jurídico.

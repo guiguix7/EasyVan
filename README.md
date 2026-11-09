@@ -124,7 +124,7 @@ $env:GoogleMaps__BrowserApiKey = "chave-restrita-por-referenciador"
 
 Quando o banco de produÃ§Ã£o estiver vazio, `EASYVAN_ADMIN_EMAIL` e `EASYVAN_ADMIN_PASSWORD` permitem criar o primeiro administrador. A aplicaÃ§Ã£o nÃ£o cria senha padrÃ£o em produÃ§Ã£o.
 
-`GoogleMaps__ApiKey` (ou `GOOGLE_MAPS_API_KEY`) ativa o Routes API e a geocodificaÃ§Ã£o no servidor. `GoogleMaps__BrowserApiKey` (ou `GOOGLE_MAPS_BROWSER_API_KEY`) ativa o autocomplete no navegador e deve ser restrita por HTTP referrer e APIs habilitadas. Use chaves separadas para navegador e servidor. Sem a chave de servidor, o sistema calcula uma ordem aproximada localmente; sem a chave do navegador, os campos de coordenadas permanecem disponÃ­veis para preenchimento manual.
+`GoogleMaps__ApiKey` (ou `GOOGLE_MAPS_API_KEY`) ativa o Routes API e a geocodificaÃ§Ã£o no servidor. `GoogleMaps__BrowserApiKey` (ou `GOOGLE_MAPS_BROWSER_API_KEY`) ativa o autocomplete no navegador e deve ser restrita por HTTP referrer e APIs habilitadas. Use chaves separadas para navegador e servidor. EndereÃ§os podem ser salvos sem as chaves, mas o cÃ¡lculo da rota exige pontos localizados; sem a chave do servidor, pontos localizados podem usar a ordem aproximada local.
 
 Em produÃ§Ã£o, as chaves do cookie do ASP.NET Core Data Protection sÃ£o persistidas em `/data/keys`. Esse diretÃ³rio deve estar em um volume persistente quando o ambiente reiniciar contÃªineres.
 
@@ -168,7 +168,7 @@ dotnet build
 dotnet test
 ```
 
-O projeto inclui **142 testes automatizados** cobrindo:
+O projeto inclui **143 testes automatizados** cobrindo:
 
 - Hash de senhas PBKDF2 (legado e atual);
 - ValidaÃ§Ã£o de senha (6 a 20 caracteres);
@@ -210,6 +210,8 @@ Consulte [SECURITY.md](SECURITY.md) para os controles, limitaÃ§Ãµes conhecid
 - [SeguranÃ§a](SECURITY.md)
 - [EspecificaÃ§Ã£o de filtros](spec/filtros-e-busca.md)
 - [Plano de testes](plan/03-plano-de-testes.md)
+- [RelatÃ³rio da Fase 6: produto, concorrÃªncia, LGPD e piloto](docs/fase-6-relatorio-final.md)
+- [Registro de prompts de IA](docs/prompts-ia.md)
 
 ## Equipe
 

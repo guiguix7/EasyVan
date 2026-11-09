@@ -27,7 +27,7 @@
     {
         <div class="ev-empty ev-empty--compact">
             <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
-            <h3 class="ev-empty__title">Trajeto nÃ£o informado</h3>
+            <h3 class="ev-empty__title">Trajeto não informado</h3>
             <p class="ev-empty__text">A rota precisa de origem e destino para exibir o mapa.</p>
         </div>
     }
@@ -35,13 +35,13 @@
     {
         <div class="ev-map" data-mapa-rota data-origem="@Model.Origem" data-destino="@Model.Destino" data-paradas="@System.Text.Json.JsonSerializer.Serialize(Model.Paradas)">
             <div class="ev-map__canvas" data-mapa-canvas role="img"
-                 aria-label="Mapa do trajeto de @Model.Origem atÃ© @Model.Destino"></div>
+                 aria-label="Mapa do trajeto de @Model.Origem até @Model.Destino"></div>
             <div class="ev-map__fallback" data-mapa-fallback>
                 <partial name="_Icon" model='"pin"' />
-                <p class="ev-map__fallback-title">Mapa interativo indisponÃ­vel</p>
+                <p class="ev-map__fallback-title">Mapa interativo indisponível</p>
                 <p class="ev-map__fallback-text">
-                    O trajeto continua disponÃ­vel como texto e no link do Google Maps.
-                    O mapa aparece quando a integraÃ§Ã£o estÃ¡ configurada e a API responde.
+                    O trajeto continua disponível como texto e no link do Google Maps.
+                    O mapa aparece quando a integração está configurada e a API responde.
                 </p>
                 <p class="ev-map__fallback-route">
                     <span>@Model.Origem</span>

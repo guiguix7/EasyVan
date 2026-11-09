@@ -19,11 +19,13 @@ A marca usa o logo existente em `wwwroot/images/logo.png`, com azul-petróleo e 
 | `--ev-superficie` | `#FFFFFF` | conteúdo e painéis |
 | `--ev-texto` | `#1F2933` | texto principal |
 | `--ev-texto-secundario` | `#52616B` | texto auxiliar |
+| `--ev-texto-tenue` | `#687781` | metadados e rótulos de apoio |
 | `--ev-linha` | `#DCE3E7` | bordas e divisórias |
 | `--ev-verde` | `#1B873F` | estado operacional |
 | `--ev-vermelho` | `#C0392B` | atenção e manutenção |
 
 Status nunca deve ser comunicado somente pela cor: use sempre o rótulo textual.
+O esquema de cores nativo do navegador acompanha o tema selecionado; placeholders usam a cor de texto auxiliar para manter contraste legível.
 
 ## Tipografia e forma
 
@@ -56,6 +58,7 @@ A navegação deve respeitar as rotas implementadas e nunca sugerir capacidades 
 - Até 767 px: uma coluna, controles grandes e cartões quando tabelas prejudicarem a leitura.
 - De 768 a 991 px: composição intermediária e navegação adaptada.
 - A partir de 992 px: maior densidade de informação e navegação persistente.
+- Em telas compactas e dispositivos com toque, ações compactas mantêm alvos de pelo menos 44 px.
 
 Evite overflow horizontal da página. Tabelas excepcionalmente largas podem ter rolagem própria. Alvos interativos devem buscar pelo menos 44 px.
 

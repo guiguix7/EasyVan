@@ -2,18 +2,58 @@
 
 @{
     ViewData["Title"] = "Centro de Operações";
+
+    var gruposAlerta = Model.Alertas
+        .GroupBy(a => new { a.Tipo, a.Titulo, a.Gravidade, a.AcaoRecomendada })
+        .Select(g => new
+        {
+            g.Key.Tipo,
+            g.Key.Titulo,
+            g.Key.Gravidade,
+            g.Key.AcaoRecomendada,
+            Total = g.Count(),
+            Itens = g.Take(6).ToList(),
+            Restantes = Math.Max(0, g.Count() - 6),
+            Impeditivo = g.Key.Gravidade == "Impeditivo"
+        })
+        .OrderByDescending(g => g.Impeditivo)
+        .ThenByDescending(g => g.Total)
+        .ToList();
+
+    var statusViagens = new (string Rotulo, int Total, string Variante)[]
+    {
+        ("Agendadas", Model.ViagensAgendadas, "agendada"),
+        ("Em andamento", Model.ViagensEmAndamento, "andamento"),
+        ("Confirmadas", Model.ViagensConfirmadas, "confirmada"),
+        ("Planejadas", Model.ViagensPlanejadas, "planejada"),
+        ("Finalizadas", Model.ViagensFinalizadas, "finalizada"),
+        ("Canceladas", Model.ViagensCanceladas, "cancelada")
+    };
+    var totalStatus = statusViagens.Sum(s => s.Total);
+    var resumoFrota = new (string Rotulo, int Total, string Detalhe, string Icone)[]
+    {
+        ("Vans", Model.TotalVans, $"{Model.VansOperacionais} operacionais · {Model.VansManutencao} em manutenção", "van"),
+        ("Motoristas", Model.TotalMotoristas, $"{Model.MotoristasAtivos} com conta ativa", "driver"),
+        ("Alunos", Model.TotalAlunos, $"{Model.AlunosAtivos} com conta ativa", "students"),
+        ("Linhas", Model.TotalRotas, $"{Model.RotasAtivas} em operação", "route"),
+        ("Viagens hoje", Model.ViagensHoje, "ocorrências do dia", "calendar")
+    };
 }
 
 <section class="ev-page">
     <header class="ev-page-head">
         <div class="ev-page-head__text">
-            <p class="ev-eyebrow">Centro de Operações</p>
-            <h1>Painel do Gestor</h1>
-            <p class="ev-page-head__lead">Acompanhamento operacional em tempo real com dados da frota, viagens e alertas.</p>
+            <p class="ev-eyebrow">Visão geral</p>
+            <h1>Centro de Operações</h1>
+            <p class="ev-page-head__lead">O que precisa de atenção, o que está em rota e a situação da frota em uma única leitura.</p>
         </div>
         <div class="ev-page-head__actions">
-            <a asp-action="Create" asp-controller="Linhas" class="btn btn-primary">
+            <a asp-action="Index" asp-controller="Viagens" class="btn btn-outline-secondary">
                 <partial name="_Icon" model='"trip"' />
+                Ver viagens
+            </a>
+            <a asp-action="Create" asp-controller="Linhas" class="btn btn-primary">
+                <partial name="_Icon" model='"plus"' />
                 Nova linha
             </a>
         </div>
@@ -34,122 +74,196 @@
         </div>
     }
 
-    <!-- A. Visão geral -->
-    <section class="ev-panel ev-panel--flush" aria-labelledby="visao-geral">
-        <div class="ev-panel__head">
-            <div>
-                <h2 id="visao-geral">Visão geral da operação</h2>
-                <p class="ev-panel__hint">Indicadores principais da frota e da equipe.</p>
+    <section class="ev-summary" aria-label="Resumo da operação">
+        @foreach (var item in resumoFrota)
+        {
+            <div class="ev-summary__item">
+                <span class="ev-summary__label">
+                    <partial name="_Icon" model="item.Icone" />
+                    @item.Rotulo
+                </span>
+                <strong class="ev-summary__value">@item.Total</strong>
+                <span class="ev-summary__hint">@item.Detalhe</span>
             </div>
-        </div>
-
-        <div class="ev-metrics ev-metrics--five" aria-label="Resumo operacional">
-            <article class="ev-metric">
-                <div class="ev-metric__top">
-                    <span class="ev-metric__label">Vans totais</span>
-                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"van"' /></span>
-                </div>
-                <strong class="ev-metric__value">@Model.TotalVans</strong>
-                <span class="ev-metric__hint">@Model.VansOperacionais operacionais · @Model.VansManutencao em manutenção</span>
-            </article>
-            <article class="ev-metric">
-                <div class="ev-metric__top">
-                    <span class="ev-metric__label">Motoristas</span>
-                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"driver"' /></span>
-                </div>
-                <strong class="ev-metric__value">@Model.TotalMotoristas</strong>
-                <span class="ev-metric__hint">@Model.MotoristasAtivos ativos</span>
-            </article>
-            <article class="ev-metric">
-                <div class="ev-metric__top">
-                    <span class="ev-metric__label">Alunos</span>
-                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
-                </div>
-                <strong class="ev-metric__value">@Model.TotalAlunos</strong>
-                <span class="ev-metric__hint">@Model.AlunosAtivos ativos</span>
-            </article>
-            <article class="ev-metric">
-                <div class="ev-metric__top">
-                    <span class="ev-metric__label">Linhas</span>
-                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"route"' /></span>
-                </div>
-                <strong class="ev-metric__value">@Model.TotalRotas</strong>
-                <span class="ev-metric__hint">@Model.RotasAtivas ativas</span>
-            </article>
-            <article class="ev-metric">
-                <div class="ev-metric__top">
-                    <span class="ev-metric__label">Viagens hoje</span>
-                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"calendar"' /></span>
-                </div>
-                <strong class="ev-metric__value">@Model.ViagensHoje</strong>
-                <span class="ev-metric__hint">agendadas para este dia</span>
-            </article>
-        </div>
+        }
     </section>
 
-    <!-- B. Situação das viagens -->
-    <section class="ev-panel ev-panel--flush" aria-labelledby="situacao-viagens">
-        <div class="ev-panel__head">
-            <div>
-                <h2 id="situacao-viagens">Situação das viagens</h2>
-                <p class="ev-panel__hint">Distribuição por estado do ciclo de vida.</p>
+    <div class="ev-dash-grid">
+        <section class="ev-panel ev-panel--flush" aria-labelledby="alertas">
+            <div class="ev-panel__head">
+                <div>
+                    <h2 id="alertas">Precisa de atenção</h2>
+                    <p class="ev-panel__hint">Inconsistências encontradas pelas regras de negócio, agrupadas por tipo.</p>
+                </div>
+                @if (Model.TemAlertas)
+                {
+                    <span class="ev-badge @(Model.AlertasImpeditivos > 0 ? "ev-badge--danger" : "ev-badge--warning")">
+                        @Model.TotalAlertas ocorrência(s)
+                    </span>
+                }
             </div>
-        </div>
 
-        <div class="ev-metrics ev-metrics--six" aria-label="Viagens por status">
-            <article class="ev-metric">
-                <div class="ev-metric__top">
-                    <span class="ev-metric__label">Planejadas</span>
-                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"calendar"' /></span>
+            @if (!Model.TemAlertas)
+            {
+                <div class="ev-empty ev-empty--compact">
+                    <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"check"' /></span>
+                    <h3 class="ev-empty__title">Nenhum alerta operacional</h3>
+                    <p class="ev-empty__text">Viagens, vans e motoristas estão consistentes neste momento.</p>
                 </div>
-                <strong class="ev-metric__value">@Model.ViagensPlanejadas</strong>
-            </article>
-            <article class="ev-metric">
-                <div class="ev-metric__top">
-                    <span class="ev-metric__label">Confirmadas</span>
-                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"check"' /></span>
+            }
+            else
+            {
+                <div class="ev-alert-groups">
+                    @foreach (var grupo in gruposAlerta)
+                    {
+                        <details class="ev-alert-group @(grupo.Impeditivo ? "ev-alert-group--impeditivo" : "ev-alert-group--aviso")">
+                            <summary class="ev-alert-group__summary">
+                                <span class="ev-alert-group__code">@grupo.Tipo</span>
+                                <span class="ev-alert-group__title">@grupo.Titulo</span>
+                                <span class="ev-alert-group__count" aria-label='@($"{grupo.Total} ocorrência(s)")'>@grupo.Total</span>
+                                <partial name="_Icon" model='"chevron-right"' />
+                            </summary>
+                            <div class="ev-alert-group__body">
+                                @if (!string.IsNullOrWhiteSpace(grupo.AcaoRecomendada))
+                                {
+                                    <p class="ev-alert-group__action">@grupo.AcaoRecomendada</p>
+                                }
+                                <ul class="ev-alert-list">
+                                    @foreach (var alerta in grupo.Itens)
+                                    {
+                                        var controladorAlerta = alerta.EntidadeTipo switch
+                                        {
+                                            "Aluno" => "Alunos",
+                                            "Van" => "Vans",
+                                            "Motorista" => "Motoristas",
+                                            _ => "Viagens"
+                                        };
+                                        <li class="ev-alert-list__item">
+                                            <span>@alerta.Descricao</span>
+                                            @if (alerta.EntidadeId.HasValue)
+                                            {
+                                                <a asp-action="Details" asp-controller="@controladorAlerta" asp-route-id="@alerta.EntidadeId"
+                                                   class="ev-alert-list__link">
+                                                    Ver registro
+                                                    <span class="visually-hidden">@alerta.Descricao</span>
+                                                </a>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
+                                @if (grupo.Restantes > 0)
+                                {
+                                    <p class="ev-alert-group__more">Mais @grupo.Restantes ocorrência(s) do mesmo tipo não listadas aqui.</p>
+                                }
+                            </div>
+                        </details>
+                    }
                 </div>
-                <strong class="ev-metric__value">@Model.ViagensConfirmadas</strong>
-            </article>
-            <article class="ev-metric">
-                <div class="ev-metric__top">
-                    <span class="ev-metric__label">Agendadas</span>
-                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"clock"' /></span>
-                </div>
-                <strong class="ev-metric__value">@Model.ViagensAgendadas</strong>
-            </article>
-            <article class="ev-metric">
-                <div class="ev-metric__top">
-                    <span class="ev-metric__label">Em andamento</span>
-                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"trip"' /></span>
-                </div>
-                <strong class="ev-metric__value">@Model.ViagensEmAndamento</strong>
-            </article>
-            <article class="ev-metric">
-                <div class="ev-metric__top">
-                    <span class="ev-metric__label">Finalizadas</span>
-                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"check"' /></span>
-                </div>
-                <strong class="ev-metric__value">@Model.ViagensFinalizadas</strong>
-            </article>
-            <article class="ev-metric">
-                <div class="ev-metric__top">
-                    <span class="ev-metric__label">Canceladas</span>
-                    <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"x"' /></span>
-                </div>
-                <strong class="ev-metric__value">@Model.ViagensCanceladas</strong>
-            </article>
-        </div>
-    </section>
+            }
+        </section>
 
-    <!-- C. Ocupação das próximas viagens -->
+        <div class="ev-dash-side">
+            <section class="ev-panel ev-panel--flush" aria-labelledby="situacao-viagens">
+                <div class="ev-panel__head">
+                    <div>
+                        <h2 id="situacao-viagens">Situação das viagens</h2>
+                        <p class="ev-panel__hint">Distribuição por estado do ciclo de vida.</p>
+                    </div>
+                </div>
+
+                @if (totalStatus > 0)
+                {
+                    <div class="ev-status-bar" role="img"
+                         aria-label="@string.Join("; ", statusViagens.Where(s => s.Total > 0).Select(s => $"{s.Rotulo}: {s.Total}"))">
+                        @foreach (var item in statusViagens.Where(s => s.Total > 0))
+                        {
+                            <span class="ev-status-bar__segment ev-status-bar__segment--@item.Variante" style="flex:@(item.Total) 1 0;"></span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="ev-status-bar__empty">Nenhuma viagem registrada até agora.</p>
+                }
+
+                <dl class="ev-status-legend">
+                    @foreach (var item in statusViagens)
+                    {
+                        <div class="ev-status-legend__item @(item.Total == 0 ? "is-zero" : "")">
+                            <dt>
+                                <span class="ev-status-legend__dot ev-status-legend__dot--@item.Variante" aria-hidden="true"></span>
+                                @item.Rotulo
+                            </dt>
+                            <dd>@item.Total</dd>
+                        </div>
+                    }
+                </dl>
+            </section>
+
+            <section class="ev-panel ev-panel--flush" aria-labelledby="acoes-prioritarias">
+                <div class="ev-panel__head">
+                    <div>
+                        <h2 id="acoes-prioritarias">Atalhos</h2>
+                        <p class="ev-panel__hint">Acessos frequentes da rotina administrativa.</p>
+                    </div>
+                </div>
+
+                <ul class="ev-shortcuts">
+                    @if (Model.VansEmManutencao.Any())
+                    {
+                        <li>
+                            <a asp-action="Index" asp-controller="Vans" class="ev-shortcut">
+                                <partial name="_Icon" model='"wrench"' />
+                                <span>Vans em manutenção</span>
+                                <span class="ev-shortcut__count">@Model.VansEmManutencao.Count</span>
+                            </a>
+                        </li>
+                    }
+                    @if (Model.ViagensEmAndamento > 0)
+                    {
+                        <li>
+                            <a asp-action="Index" asp-controller="Viagens" class="ev-shortcut">
+                                <partial name="_Icon" model='"trip"' />
+                                <span>Viagens em andamento</span>
+                                <span class="ev-shortcut__count">@Model.ViagensEmAndamento</span>
+                            </a>
+                        </li>
+                    }
+                    <li>
+                        <a asp-action="Index" asp-controller="Motoristas" class="ev-shortcut">
+                            <partial name="_Icon" model='"driver"' />
+                            <span>Motoristas</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-action="Index" asp-controller="Alunos" class="ev-shortcut">
+                            <partial name="_Icon" model='"students"' />
+                            <span>Alunos</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-action="Index" asp-controller="Linhas" class="ev-shortcut">
+                            <partial name="_Icon" model='"route"' />
+                            <span>Linhas</span>
+                        </a>
+                    </li>
+                </ul>
+            </section>
+        </div>
+    </div>
+
     <section class="ev-panel ev-panel--flush" aria-labelledby="ocupacao-viagens">
         <div class="ev-panel__head">
             <div>
                 <h2 id="ocupacao-viagens">Ocupação das próximas viagens</h2>
                 <p class="ev-panel__hint">Confirmados em relação à capacidade; alunos sem resposta ficam separados.</p>
             </div>
+            <a asp-action="Index" asp-controller="Viagens" class="ev-panel__link">
+                Todas as viagens
+                <partial name="_Icon" model='"arrow-right"' />
+            </a>
         </div>
+
         @if (Model.OcupacaoProximasViagens.Count == 0)
         {
             <div class="ev-empty ev-empty--compact">
@@ -160,135 +274,48 @@
         }
         else
         {
-            <div class="table-responsive">
+            <div class="ev-table-scroll">
                 <table class="ev-table">
-                    <thead><tr><th>Viagem</th><th>Data</th><th>Confirmados / capacidade</th><th>Ausentes</th><th>Sem resposta</th></tr></thead>
-                    <tbody>
-                    @foreach (var item in Model.OcupacaoProximasViagens)
-                    {
-                        var nomeViagem = item.Viagem.Linha?.Nome ?? item.Viagem.Rota?.Nome ?? $"Viagem #{item.Viagem.Id}";
+                    <thead>
                         <tr>
-                            <td><a asp-controller="Viagens" asp-action="Details" asp-route-id="@item.Viagem.Id">@nomeViagem</a><br /><span class="text-muted">@(item.Viagem.Sentido?.ToString() ?? "Sentido não informado")</span></td>
-                            <td>@item.Viagem.Data.ToString("dd/MM/yyyy")<br /><span class="text-muted">@(item.Viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Horário não informado")</span></td>
-                            <td>
-                                <strong>@item.Confirmados / @(item.Capacidade?.ToString() ?? "—")</strong>
-                                @if (item.PercentualOcupacao.HasValue)
-                                {
-                                    <div class="progress mt-1" role="progressbar" aria-label="Ocupação da viagem" aria-valuenow="@item.PercentualOcupacao.Value" aria-valuemin="0" aria-valuemax="100">
-                                        <div class="progress-bar" style="width: @Math.Min(item.PercentualOcupacao.Value, 100)%"></div>
-                                    </div>
-                                }
-                            </td>
-                            <td>@item.Ausentes</td>
-                            <td>@item.SemResposta</td>
+                            <th>Viagem</th>
+                            <th>Data</th>
+                            <th>Confirmados</th>
+                            <th>Ausentes</th>
+                            <th>Sem resposta</th>
                         </tr>
-                    }
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.OcupacaoProximasViagens)
+                        {
+                            var nomeViagem = item.Viagem.Linha?.Nome ?? item.Viagem.Rota?.Nome ?? $"Viagem #{item.Viagem.Id}";
+                            <tr>
+                                <td>
+                                    <a class="ev-table__primary" asp-controller="Viagens" asp-action="Details" asp-route-id="@item.Viagem.Id">@nomeViagem</a>
+                                    <span class="ev-table__secondary">@(item.Viagem.Sentido?.ToString() ?? "Sentido não informado")</span>
+                                </td>
+                                <td>
+                                    <span class="ev-table__primary">@item.Viagem.Data.ToString("dd/MM")</span>
+                                    <span class="ev-table__secondary">@(item.Viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Horário não informado")</span>
+                                </td>
+                                <td>
+                                    <span class="ev-occupancy">
+                                        <span class="ev-occupancy__value">@item.Confirmados<small>/@(item.Capacidade?.ToString() ?? "—")</small></span>
+                                        <span class="ev-occupancy__meter" aria-hidden="true">
+                                            <span class="ev-occupancy__fill" style="width:@(Math.Min(item.PercentualOcupacao ?? 0, 100))%"></span>
+                                        </span>
+                                    </span>
+                                </td>
+                                <td class="ev-num">@item.Ausentes</td>
+                                <td class="ev-num">@item.SemResposta</td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
         }
     </section>
 
-    <!-- D. Alertas operacionais -->
-    <section class="ev-panel ev-panel--flush @(Model.TemAlertas ? "ev-panel--alertas" : "")" aria-labelledby="alertas">
-        <div class="ev-panel__head">
-            <div>
-                <h2 id="alertas">Alertas operacionais</h2>
-                <p class="ev-panel__hint">Inconsistências identificadas automaticamente no banco de dados.</p>
-            </div>
-            <span class="ev-badge @(Model.AlertasImpeditivos > 0 ? "ev-badge--warning" : "ev-badge--neutral")">
-                @Model.TotalAlertas alerta(s)
-            </span>
-        </div>
-
-        @if (!Model.TemAlertas)
-        {
-            <div class="ev-empty ev-empty--compact">
-                <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"check"' /></span>
-                <h3 class="ev-empty__title">Nenhum alerta operacional</h3>
-                <p class="ev-empty__text">Todas as viagens, vans e motoristas estão consistentes.</p>
-            </div>
-        }
-        else
-        {
-            <div class="ev-alertas-lista">
-                @foreach (var alerta in Model.Alertas)
-                {
-                    var gravidadeAlta = alerta.Gravidade is "Impeditivo" or "Alta";
-                    var gravidadeMedia = alerta.Gravidade is "Aviso" or "Média";
-                    var controladorAlerta = alerta.EntidadeTipo switch { "Aluno" => "Alunos", "Van" => "Vans", _ => "Viagens" };
-                    <div class="ev-alerta @(gravidadeAlta ? "ev-alerta--impeditivo" : "ev-alerta--aviso")">
-                        <div class="ev-alerta__tipo">
-                            <span class="ev-badge @(gravidadeAlta ? "ev-badge--warning" : gravidadeMedia ? "ev-badge--info" : "ev-badge--neutral")">
-                                @alerta.Tipo
-                            </span>
-                        </div>
-                        <div class="ev-alerta__conteudo">
-                            <h4 class="ev-alerta__titulo">@alerta.Titulo</h4>
-                            <p class="ev-alerta__descricao">@alerta.Descricao</p>
-                        </div>
-                        <div class="ev-alerta__acao">
-                            <span class="ev-alerta__gravidade @(gravidadeAlta ? "ev-alerta__gravidade--impeditivo" : "ev-alerta__gravidade--aviso")">
-                                @alerta.Gravidade
-                            </span>
-                            <a asp-action="Details" asp-controller="@controladorAlerta" asp-route-id="@alerta.EntidadeId"
-                               class="btn btn-outline-secondary btn-sm">
-                                Ver registro
-                            </a>
-                        </div>
-                    </div>
-                }
-            </div>
-        }
-    </section>
-
-    <!-- D. Ações prioritárias -->
-    <section class="ev-panel ev-panel--flush" aria-labelledby="acoes-prioritarias">
-        <div class="ev-panel__head">
-            <div>
-                <h2 id="acoes-prioritarias">Ações prioritárias</h2>
-                <p class="ev-panel__hint">Atalhos para corrigir problemas e acessar registros relacionados.</p>
-            </div>
-        </div>
-
-        <div class="ev-acoes-grid">
-            @if (Model.VansEmManutencao.Any())
-            {
-                <a asp-action="Index" asp-controller="Vans" class="btn btn-outline-secondary">
-                    <partial name="_Icon" model='"wrench"' />
-                    Vans em manutenção (@Model.VansEmManutencao.Count)
-                </a>
-            }
-            @if (Model.ViagensEmAndamento > 0)
-            {
-                <a asp-action="Index" asp-controller="Viagens" class="btn btn-outline-secondary">
-                    <partial name="_Icon" model='"trip"' />
-                    Viagens em andamento (@Model.ViagensEmAndamento)
-                </a>
-            }
-            @if (Model.AlertasImpeditivos > 0)
-            {
-                <a asp-action="Index" asp-controller="Viagens" class="btn btn-outline-secondary">
-                    <partial name="_Icon" model='"alert"' />
-                    Resolver alertas impeditivos (@Model.AlertasImpeditivos)
-                </a>
-            }
-            <a asp-action="Index" asp-controller="Motoristas" class="btn btn-outline-secondary">
-                <partial name="_Icon" model='"driver"' />
-                Gerenciar motoristas
-            </a>
-            <a asp-action="Index" asp-controller="Alunos" class="btn btn-outline-secondary">
-                <partial name="_Icon" model='"students"' />
-                Gerenciar alunos
-            </a>
-                <a asp-action="Index" asp-controller="Linhas" class="btn btn-outline-secondary">
-                <partial name="_Icon" model='"route"' />
-                Gerenciar linhas
-            </a>
-        </div>
-    </section>
-
-    <!-- E. Atividade recente -->
     <section class="ev-panel ev-panel--flush" aria-labelledby="atividade-recente">
         <div class="ev-panel__head">
             <div>
@@ -307,33 +334,34 @@
         }
         else
         {
-            <table class="ev-table">
-                <thead>
-                    <tr>
-                        <th>Data/Hora</th>
-                        <th>Operação</th>
-                        <th>Entidade</th>
-                        <th>ID</th>
-                        <th>Responsável</th>
-                        <th>Descrição</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var log in Model.AtividadeRecente)
-                    {
+            <div class="ev-table-scroll">
+                <table class="ev-table">
+                    <thead>
                         <tr>
-                            <td>@log.DataOperacao.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td>
-                                <span class="ev-badge ev-badge--info">@log.TipoOperacao</span>
-                            </td>
-                            <td>@log.Entidade</td>
-                            <td>@log.EntidadeId</td>
-                            <td>@(log.UsuarioNome ?? "Sistema")</td>
-                            <td>@log.Descricao</td>
+                            <th>Quando</th>
+                            <th>Operação</th>
+                            <th>Registro</th>
+                            <th>Responsável</th>
+                            <th>Descrição</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model.AtividadeRecente)
+                        {
+                            <tr>
+                                <td class="ev-nowrap">@log.DataOperacao.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td><span class="ev-badge ev-badge--info">@log.TipoOperacao</span></td>
+                                <td>
+                                    <span class="ev-table__primary">@log.Entidade</span>
+                                    <span class="ev-table__secondary">#@log.EntidadeId</span>
+                                </td>
+                                <td>@(log.UsuarioNome ?? "Sistema")</td>
+                                <td class="ev-table__wrap">@log.Descricao</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         }
     </section>
 </section>

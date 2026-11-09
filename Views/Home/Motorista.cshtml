@@ -23,9 +23,9 @@
 <section class="ev-page">
     <header class="ev-page-head">
         <div class="ev-page-head__text">
-            <p class="ev-eyebrow">Ãrea do motorista</p>
-            <h1>OlÃ¡, @(Model.Motorista?.Nome ?? User.Identity?.Name)</h1>
-            <p class="ev-page-head__lead">Acompanhe as suas viagens, os alunos confirmados e registre a presenÃ§a a bordo.</p>
+            <p class="ev-eyebrow">Área do motorista</p>
+            <h1>Olá, @(Model.Motorista?.Nome ?? User.Identity?.Name)</h1>
+            <p class="ev-page-head__lead">Acompanhe as suas viagens, os alunos confirmados e registre a presença a bordo.</p>
         </div>
         <div class="ev-page-head__actions">
             <a asp-controller="Viagens" asp-action="Index" class="btn btn-outline-secondary">
@@ -54,8 +54,8 @@
     {
         <section class="ev-panel ev-empty">
             <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"driver"' /></span>
-            <h2 class="ev-empty__title">Sua conta ainda nÃ£o estÃ¡ vinculada</h2>
-            <p class="ev-empty__text">PeÃ§a Ã  administraÃ§Ã£o para associar seu usuÃ¡rio ao cadastro de motorista. Enquanto isso, o painel fica sem viagens atribuÃ­das a vocÃª.</p>
+            <h2 class="ev-empty__title">Sua conta ainda não está vinculada</h2>
+            <p class="ev-empty__text">Peça à administração para associar seu usuário ao cadastro de motorista. Enquanto isso, o painel fica sem viagens atribuídas a você.</p>
             <a asp-controller="Home" asp-action="Privacy" class="btn btn-outline-secondary">Como tratamos seus dados</a>
         </section>
     }
@@ -64,11 +64,11 @@
         <div class="ev-metrics ev-metrics--three" aria-label="Resumo das viagens">
             <article class="ev-metric">
                 <div class="ev-metric__top">
-                    <span class="ev-metric__label">PrÃ³ximas viagens</span>
+                    <span class="ev-metric__label">Próximas viagens</span>
                     <span class="ev-metric__icon" aria-hidden="true"><partial name="_Icon" model='"calendar"' /></span>
                 </div>
                 <strong class="ev-metric__value">@proximas.Count</strong>
-                <span class="ev-metric__hint">atribuÃ­das a vocÃª</span>
+                <span class="ev-metric__hint">atribuídas a você</span>
             </article>
             <article class="ev-metric">
                 <div class="ev-metric__top">
@@ -109,23 +109,23 @@
                                     }
                                 </p>
                                 <div class="ev-detail-head__identity">
-                                    <h2 id="viagem-@viagem.Id">@(viagem.Rota?.Nome ?? "Rota nÃ£o informada")</h2>
+                                    <h2 id="viagem-@viagem.Id">@(viagem.Rota?.Nome ?? "Rota não informada")</h2>
                                     <partial name="_StatusBadge" model="viagem.Status" />
                                 </div>
                                 
                                 <p class="ev-detail-head__meta">
                                     <partial name="_Icon" model='"clock"' />
-                                    @(viagem.HoraInicio?.ToString(@"hh\:mm") ?? "HorÃ¡rio nÃ£o informado")
+                                    @(viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Horário não informado")
                                     @if (viagem.HoraFim.HasValue)
                                     {
-                                        <text>â€“@viagem.HoraFim.Value.ToString(@"hh\:mm")</text>
+                                        <text>–@viagem.HoraFim.Value.ToString(@"hh\:mm")</text>
                                     }
-                                    <span aria-hidden="true">Â·</span>
+                                    <span aria-hidden="true">·</span>
                                     <partial name="_Icon" model='"van"' />
-                                    @(viagem.Van?.Plate ?? "Van nÃ£o informada")
+                                    @(viagem.Van?.Plate ?? "Van não informada")
                                     @if (!string.IsNullOrWhiteSpace(viagem.Van?.Route))
                                     {
-                                        <text>â€” @viagem.Van.Route</text>
+                                        <text>— @viagem.Van.Route</text>
                                     }
                                 </p>
                             </div>
@@ -238,7 +238,7 @@
                                         <div class="ev-attendance__actions">
                                             <span class="ev-person__sub">
                                                 <partial name="_Icon" model='"clock"' />
-                                                @(viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Sem horÃ¡rio")
+                                                @(viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Sem horário")
                                             </span>
 
                                             @if (aluno.Status == StatusPresenca.Confirmado)
@@ -247,7 +247,7 @@
                                             }
                                             else if (aluno.Status == StatusPresenca.Ausente)
                                             {
-                                                <span class="ev-badge ev-badge--neutral"><span class="ev-badge__dot" aria-hidden="true"></span>NÃ£o vai</span>
+                                                <span class="ev-badge ev-badge--neutral"><span class="ev-badge__dot" aria-hidden="true"></span>Não vai</span>
                                             }
                                             else
                                             {
@@ -280,7 +280,7 @@
                             <div class="ev-empty ev-empty--compact">
                                 <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"students"' /></span>
                                 <p class="ev-empty__title">Nenhum aluno nesta viagem</p>
-                                <p class="ev-empty__text">A lista de presenÃ§a Ã© criada ao cadastrar a viagem com alunos ativos.</p>
+                                <p class="ev-empty__text">A lista de presença é criada ao cadastrar a viagem com alunos ativos.</p>
                             </div>
                         }
                         @if (item.Mapa != null)
@@ -295,8 +295,8 @@
         {
             <section class="ev-panel ev-empty">
                 <span class="ev-empty__icon" aria-hidden="true"><partial name="_Icon" model='"trip"' /></span>
-                <h2 class="ev-empty__title">Nenhuma viagem atribuÃ­da</h2>
-                <p class="ev-empty__text">Quando a administraÃ§Ã£o criar uma viagem com vocÃª como motorista, ela aparecerÃ¡ aqui.</p>
+                <h2 class="ev-empty__title">Nenhuma viagem atribuída</h2>
+                <p class="ev-empty__text">Quando a administração criar uma viagem com você como motorista, ela aparecerá aqui.</p>
             </section>
         }
     }

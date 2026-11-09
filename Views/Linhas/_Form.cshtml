@@ -16,7 +16,7 @@
         <div class="ev-page-head__text"><p class="ev-eyebrow">Plano recorrente</p><h1>@(editing ? "Editar linha" : "Nova linha")</h1>
             <p class="ev-page-head__lead">A linha guarda a agenda. Viagens diárias são geradas pelo sistema.</p></div>
     </header>
-    <form asp-action="@action" asp-route-id="@(editing ? Model.Id : null)" method="post" class="ev-form-layout" data-linha-form>
+    <form asp-action="@action" asp-route-id="@(editing ? Model.Id : null)" method="post" class="ev-form-main" data-linha-form>
         @Html.AntiForgeryToken()
         <input asp-for="Id" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>

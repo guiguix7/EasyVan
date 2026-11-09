@@ -10,6 +10,7 @@ O EasyVan é uma aplicação web em Razor Views, com interface em português do 
 - Garantir foco visível e navegação por teclado.
 - Usar rótulos textuais junto a cores para estados como operacional e manutenção.
 - Buscar alvos de toque de pelo menos 44 px em fluxos de uso móvel.
+- Em telas compactas e dispositivos com toque, botões compactos, ações de linha, opções da conta e controles de senha preservam área mínima de 44 px.
 - Preservar leitura em telas estreitas sem exigir rolagem horizontal da página.
 - Respeitar `prefers-reduced-motion` em animações e transições.
 - Manter contraste suficiente entre texto, fundo, controles e estados.

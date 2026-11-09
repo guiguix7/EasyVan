@@ -42,7 +42,7 @@ NÃ£o apresentar como existente aquilo que ainda nÃ£o estÃ¡ implementado. P
 - reservas e pagamentos;
 - notificaÃ§Ãµes push ou por e-mail;
 - administracao de multiplas organizacoes na interface;
-- integraÃ§Ã£o com catracas ou outros serviÃ§os externos;
+- integraÃ§Ã£o com catracas ou serviÃ§os externos alÃ©m do Google Maps;
 - mÃ©tricas de mercado, preÃ§os, depoimentos ou estudos de caso.
 
 Entidades operacionais carregam `OrganizacaoId` e consultas usam filtros globais para o escopo autenticado. Ainda nÃ£o hÃ¡ telas para administrar mÃºltiplas organizaÃ§Ãµes.
@@ -71,6 +71,10 @@ Entidades operacionais carregam `OrganizacaoId` e consultas usam filtros globais
 - ampliar testes de integraÃ§Ã£o HTTP e fluxos de autorizaÃ§Ã£o;
 - validar acessibilidade e comportamento visual em desktop e mobile;
 - validar a estratÃ©gia de administraÃ§Ã£o de mÃºltiplas organizaÃ§Ãµes e executar testes em PostgreSQL real.
+
+## ValidaÃ§Ã£o do produto
+
+O levantamento exploratÃ³rio de concorrentes, a anÃ¡lise tÃ©cnica inicial da LGPD, a hipÃ³tese comercial, o protocolo de piloto e o roteiro de demonstraÃ§Ã£o estÃ£o em [docs/fase-6-relatorio-final.md](docs/fase-6-relatorio-final.md). Ainda nÃ£o hÃ¡ entrevistas ou resultados de piloto registrados; nÃ£o hÃ¡ preÃ§o, economia ou satisfaÃ§Ã£o validados.
 
 ## Fluxo operacional atualizado â€” 08/11/2026
 
