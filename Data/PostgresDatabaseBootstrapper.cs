@@ -81,6 +81,9 @@ public static class PostgresDatabaseBootstrapper
 
         // The EasyVan app authenticates users with ASP.NET cookies, not Supabase Auth.
         // Public Supabase API roles must not query operational application tables.
+        // The migration history is included because the Supabase advisor reports any
+        // public table without RLS as exposed; the app connects as the table owner,
+        // which bypasses RLS, so enabling it does not affect migrations.
         db.Database.ExecuteSqlRaw("""
             DO $body$
             DECLARE app_table record;
@@ -89,7 +92,6 @@ public static class PostgresDatabaseBootstrapper
                     SELECT tablename
                     FROM pg_tables
                     WHERE schemaname = 'public'
-                      AND tablename <> '__EFMigrationsHistory'
                 LOOP
                     EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', app_table.tablename);
                 END LOOP;

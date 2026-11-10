@@ -1,6 +1,20 @@
 @model IReadOnlyList<EasyVan.Models.LinhaIndexItemViewModel>
+@using EasyVan.Models
 @{
     ViewData["Title"] = "Linhas";
+
+    static string DiasSemanaLabel(DiasSemana dias)
+    {
+        var partes = new List<string>();
+        if (dias.HasFlag(DiasSemana.Domingo)) partes.Add("Dom");
+        if (dias.HasFlag(DiasSemana.Segunda)) partes.Add("Seg");
+        if (dias.HasFlag(DiasSemana.Terca)) partes.Add("Ter");
+        if (dias.HasFlag(DiasSemana.Quarta)) partes.Add("Qua");
+        if (dias.HasFlag(DiasSemana.Quinta)) partes.Add("Qui");
+        if (dias.HasFlag(DiasSemana.Sexta)) partes.Add("Sex");
+        if (dias.HasFlag(DiasSemana.Sabado)) partes.Add("Sáb");
+        return partes.Count > 0 ? string.Join(" ", partes) : "—";
+    }
 }
 <section class="ev-page">
     <header class="ev-page-head">
@@ -33,7 +47,7 @@
                         <div>
                             <h2>@item.Linha.Nome</h2>
                             <p class="ev-panel__hint">@item.Linha.Origem → @item.Linha.Destino</p>
-                            <p class="mb-0">@item.Passageiros passageiros · capacidade @item.Capacidade · @item.Linha.DiasSemana</p>
+                            <p class="mb-0">@item.Passageiros passageiros · capacidade @item.Capacidade · @DiasSemanaLabel(item.Linha.DiasSemana)</p>
                         </div>
                         <span class="badge @(item.Linha.Ativa ? "text-bg-success" : "text-bg-secondary")">@(item.Linha.Ativa ? "Ativa" : "Inativa")</span>
                     </div>

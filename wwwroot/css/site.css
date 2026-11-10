@@ -1735,10 +1735,10 @@ button.ev-link-action {
   align-items: center;
   gap: 5px;
   padding: 3px 9px;
-  border: 1px solid #c5dce2;
+  border: 1px solid var(--ev-linha-forte);
   border-radius: var(--ev-raio-pill);
-  background: var(--ev-petroleo-claro);
-  color: var(--ev-petroleo-escuro);
+  background: var(--ev-superficie-suave);
+  color: var(--ev-texto-secundario);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -1774,6 +1774,7 @@ button.ev-link-action {
 }
 
 .ev-table-scroll {
+  position: relative;
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -1789,7 +1790,7 @@ button.ev-link-action {
 
 .ev-body .ev-table th,
 .ev-body .ev-table td {
-  padding: 13px 16px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--ev-linha);
   text-align: left;
   vertical-align: middle;
@@ -1904,6 +1905,7 @@ button.ev-link-action {
 .ev-record__meta {
   display: block;
   margin-top: 2px;
+  margin-bottom: 8px;
   color: var(--ev-texto-tenue);
   font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
@@ -2203,6 +2205,7 @@ button.ev-link-action {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  margin-top: 8px;
   color: var(--ev-texto);
   font-size: 0.9375rem;
   font-weight: 600;
@@ -2357,6 +2360,133 @@ button.ev-link-action {
 }
 
 /* --------------------------------------------------------------------------
+   11b. Paradas e pendentes (motorista)
+   -------------------------------------------------------------------------- */
+
+.ev-notice--tiny {
+  font-size: 0.875rem;
+}
+
+.ev-stop-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: 8px;
+}
+
+.ev-stop-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--ev-linha);
+  border-radius: var(--ev-raio-controle);
+  background: var(--ev-superficie);
+}
+
+.ev-stop__info {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.ev-stop__numero {
+  display: block;
+  color: var(--ev-texto);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.ev-stop__endereco {
+  color: var(--ev-texto-secundario);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.ev-stop__passageiros {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ev-texto-secundario);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.ev-stop__passageiros li {
+  padding-left: 16px;
+}
+
+.ev-eta {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border: 1px solid var(--ev-linha-forte);
+  border-radius: var(--ev-raio-pill);
+  background: var(--ev-superficie-suave);
+  color: var(--ev-texto-secundario);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.ev-trechos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ev-linha);
+}
+
+.ev-pendentes-section {
+  border: 1px solid var(--ev-linha);
+  border-radius: var(--ev-raio-controle);
+  background: var(--ev-superficie);
+}
+
+.ev-pendentes__head {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ev-linha);
+}
+
+.ev-pendentes__head h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.ev-pendente-grupo {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--ev-linha);
+}
+
+.ev-pendente-grupo:last-child {
+  border-bottom: 0;
+}
+
+.ev-pendente-grupo strong {
+  display: block;
+  color: var(--ev-texto);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.ev-pendentes-lista {
+  margin: 4px 0 0;
+  padding: 0 0 0 16px;
+  list-style: disc;
+  color: var(--ev-texto-secundario);
+  font-size: 0.75rem;
+}
+
+.ev-stop-vazio {
+  padding: 14px 20px;
+  color: var(--ev-texto-secundario);
+  font-size: 0.875rem;
+}
+
+/* --------------------------------------------------------------------------
    12. Dashboard
    -------------------------------------------------------------------------- */
 
@@ -2434,11 +2564,11 @@ button.ev-link-action {
 .ev-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 1px;
+  gap: 0;
   overflow: hidden;
   border: 1px solid var(--ev-linha);
   border-radius: var(--ev-raio);
-  background: var(--ev-linha);
+  background: var(--ev-superficie);
 }
 
 .ev-summary__item {
@@ -2448,6 +2578,7 @@ button.ev-link-action {
   min-width: 0;
   padding: 15px 18px 16px;
   background: var(--ev-superficie);
+  box-shadow: inset -1px -1px 0 var(--ev-linha);
 }
 
 .ev-summary__label {
@@ -2486,6 +2617,7 @@ button.ev-link-action {
   display: grid;
   gap: 16px;
   min-width: 0;
+  align-content: start;
 }
 
 .ev-alert-groups {
@@ -2781,7 +2913,7 @@ button.ev-link-action {
   flex: 1 1 48px;
   overflow: hidden;
   border-radius: var(--ev-raio-pill);
-  background: #eef2f4;
+  background: var(--ev-linha);
 }
 
 .ev-occupancy__fill {
@@ -2823,6 +2955,18 @@ button.ev-link-action {
 .ev-panel__link .ev-icon {
   width: 15px;
   height: 15px;
+}
+
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  .ev-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .ev-table-scroll > .ev-table {
+    min-width: 600px;
+  }
 }
 
 @media (max-width: 767.98px) {
@@ -2972,7 +3116,7 @@ button.ev-link-action {
 
 .ev-shortcuts {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 10px;
   margin: 0;
   padding: 8px 12px 14px;
@@ -2981,9 +3125,9 @@ button.ev-link-action {
 
 .ev-shortcut {
   display: flex;
-  min-height: 72px;
+  min-height: 58px;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   padding: 12px 14px;
   border: 1px solid var(--ev-linha);
   border-radius: var(--ev-raio-controle);
@@ -2991,6 +3135,7 @@ button.ev-link-action {
   color: inherit;
   font-size: 0.9375rem;
   font-weight: 550;
+  line-height: 1.35;
   text-decoration: none;
   transition: border-color 150ms ease, background-color 150ms ease;
 }

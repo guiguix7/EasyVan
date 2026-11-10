@@ -105,7 +105,7 @@
                                     @viagem.Data.ToString("dddd, dd 'de' MMMM", new System.Globalization.CultureInfo("pt-BR"))
                                     @if (hoje)
                                     {
-                                        <span class="ev-badge ev-badge--brand ms-2">Hoje</span>
+                                        <span class="ev-badge ev-badge--brand">Hoje</span>
                                     }
                                 </p>
                                 <div class="ev-detail-head__identity">
@@ -115,7 +115,7 @@
                                 
                                 <p class="ev-detail-head__meta">
                                     <partial name="_Icon" model='"clock"' />
-                                    @(viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Horário não informado")
+                                    @(viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Horário a definir")
                                     @if (viagem.HoraFim.HasValue)
                                     {
                                         <text>–@viagem.HoraFim.Value.ToString(@"hh\:mm")</text>
@@ -146,28 +146,31 @@
                                 </div>
                                 @if (!string.IsNullOrWhiteSpace(item.AvisoRoteirizacao))
                                 {
-                                    <div class="alert alert-warning m-3" role="status">@item.AvisoRoteirizacao</div>
+                                    <div class="ev-notice ev-notice--warning ev-notice--tiny" role="status">
+                                        <partial name="_Icon" model='"alert"' />
+                                        <div class="ev-notice__body"><p class="mb-0">@item.AvisoRoteirizacao</p></div>
+                                    </div>
                                 }
                                 @if (item.ParadasAgrupadas.Any())
                                 {
-                                    <ol class="list-group list-group-flush" aria-label="Paradas de embarque em ordem">
+                                    <ol class="ev-stop-list" aria-label="Paradas de embarque em ordem">
                                         @foreach (var parada in item.ParadasAgrupadas)
                                         {
-                                            <li class="list-group-item d-flex justify-content-between align-items-start gap-3">
-                                                <div class="flex-grow-1">
-                                                    <strong>Parada @parada.Ordem</strong>
-                                                    <div class="text-muted text-break">@parada.Endereco</div>
-                                                    <ul class="mb-0 mt-1 ps-3">
+                                            <li class="ev-stop-item">
+                                                <div class="ev-stop__info">
+                                                    <strong class="ev-stop__numero">Parada @parada.Ordem</strong>
+                                                    <div class="ev-stop__endereco">@parada.Endereco</div>
+                                                    <ul class="ev-stop__passageiros">
                                                         @foreach (var passageiro in parada.Passageiros) { <li>@passageiro</li> }
                                                     </ul>
                                                 </div>
-                                                <span class="badge text-bg-light flex-shrink-0">@parada.EtaPrevisto.ToOffset(TimeSpan.FromHours(-3)).ToString("HH:mm")</span>
+                                                <span class="ev-eta">@parada.EtaPrevisto.ToOffset(TimeSpan.FromHours(-3)).ToString("HH:mm")</span>
                                             </li>
                                         }
                                     </ol>
                                     @if (item.Trechos.Count > 0)
                                     {
-                                        <div class="d-flex flex-wrap gap-2 p-3">
+                                        <div class="ev-trechos">
                                             @foreach (var trecho in item.Trechos)
                                             {
                                                 <a class="btn btn-primary" href="@trecho.Url" target="_blank" rel="noopener noreferrer">
@@ -179,21 +182,25 @@
                                 }
                                 else
                                 {
-                                    <p class="p-3 mb-0">Ainda não há paradas confirmadas com ponto de embarque operacional localizado.</p>
+                                    <p class="ev-stop-vazio mb-0">Ainda não há paradas confirmadas com ponto de embarque operacional localizado.</p>
                                 }
                             </section>
                         }
 
                         @if (semResposta.Count > 0)
                         {
-                            <section class="p-3 border-top" aria-labelledby="pendentes-@viagem.Id">
-                                <h3 id="pendentes-@viagem.Id" class="h6 mb-2">Sem resposta <span class="ev-count">@semResposta.Count</span></h3>
-                                <p class="ev-panel__hint">Estes alunos ainda não confirmaram; confira o ponto de embarque antes de sair.</p>
+                            <section class="ev-pendentes-section" aria-labelledby="pendentes-@viagem.Id">
+                                <div class="ev-pendentes__head">
+                                    <h3 id="pendentes-@viagem.Id">Sem resposta <span class="ev-count">@semResposta.Count</span></h3>
+                                    <p class="ev-panel__hint">Estes alunos ainda não confirmaram; confira o ponto de embarque antes de sair.</p>
+                                </div>
                                 @foreach (var grupo in semResposta.GroupBy(aluno => string.IsNullOrWhiteSpace(aluno.ParadaEndereco) ? "Ponto de embarque não cadastrado" : aluno.ParadaEndereco!))
                                 {
-                                    <div class="mb-2">
+                                    <div class="ev-pendente-grupo">
                                         <strong>@grupo.Key</strong>
-                                        <ul class="mb-0 ps-3">@foreach (var aluno in grupo) { <li>@aluno.Nome</li> }</ul>
+                                        <ul class="ev-pendentes-lista">
+                                            @foreach (var aluno in grupo) { <li>@aluno.Nome</li> }
+                                        </ul>
                                     </div>
                                 }
                             </section>

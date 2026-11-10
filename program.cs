@@ -15,18 +15,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
 
 var isProduction = builder.Environment.IsProduction();
-var railwayVolumePath = builder.Configuration["RAILWAY_VOLUME_MOUNT_PATH"];
-if (isProduction && !string.IsNullOrWhiteSpace(builder.Configuration["RAILWAY_PROJECT_ID"]))
-{
-    if (!string.Equals(railwayVolumePath, "/data", StringComparison.Ordinal))
-        throw new InvalidOperationException("Anexe um Railway Volume ao serviço com Mount Path /data para persistir as chaves de proteção dos cookies.");
-}
+var isRailway = !string.IsNullOrWhiteSpace(builder.Configuration["RAILWAY_PROJECT_ID"]);
 
 if (isProduction)
 {
-    Directory.CreateDirectory("/data/keys");
     builder.Services.AddDataProtection()
-        .PersistKeysToFileSystem(new DirectoryInfo("/data/keys"));
+        .PersistKeysToFileSystem(new DirectoryInfo(ResolveDataProtectionDirectory(builder.Configuration, isRailway)));
 }
 
 builder.Services.AddControllersWithViews();
@@ -229,6 +223,43 @@ static void AtualizarClaim(ClaimsIdentity identity, string tipo, string valor, C
     if (claimAtual != null) identity.RemoveClaim(claimAtual);
     identity.AddClaim(new Claim(tipo, valor));
     context.ShouldRenew = true;
+}
+
+static string ResolveDataProtectionDirectory(IConfiguration configuration, bool isRailway)
+{
+    var candidates = new List<string>();
+    var volume = configuration["RAILWAY_VOLUME_MOUNT_PATH"];
+    if (!string.IsNullOrWhiteSpace(volume))
+        candidates.Add(Path.Combine(volume, "keys"));
+    candidates.Add("/data/keys");
+    candidates.Add(Path.Combine(AppContext.BaseDirectory, "keys"));
+    candidates.Add(Path.Combine(Path.GetTempPath(), "easyvan-keys"));
+
+    foreach (var candidate in candidates)
+    {
+        try
+        {
+            Directory.CreateDirectory(candidate);
+            var probe = Path.Combine(candidate, ".write-test");
+            File.WriteAllText(probe, "ok");
+            File.Delete(probe);
+
+            if (isRailway && !candidate.StartsWith("/data", StringComparison.Ordinal))
+            {
+                Console.Error.WriteLine(
+                    $"[EasyVan] Volume /data indisponível; as chaves de Data Protection serão gravadas em {candidate}. " +
+                    "Anexe um Volume com mount path /data para manter as sessões entre deploys.");
+            }
+
+            return candidate;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            Console.Error.WriteLine($"[EasyVan] Não foi possível usar {candidate} para Data Protection: {ex.Message}");
+        }
+    }
+
+    throw new InvalidOperationException("Nenhum diretório gravável foi encontrado para as chaves de Data Protection.");
 }
 
 static string NormalizePostgresConnectionString(string value)

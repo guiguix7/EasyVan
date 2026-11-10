@@ -23,22 +23,22 @@ Nunca coloque essa string em `appsettings.json`, no GitHub, em commits ou em log
 
 ## Primeira inicialização
 
-O projeto EasyVan já possuía três migrations SQLite, mas elas não representam um banco PostgreSQL vazio: as tabelas `Usuarios` e `Vans` foram criadas originalmente fora do histórico de migrations. Por isso, no primeiro boot PostgreSQL, `PostgresDatabaseBootstrapper`:
+O projeto já teve tabelas criadas fora do histórico de migrations (as primeiras tabelas `Usuarios` e `Vans` nasceram de um `EnsureCreated`). Por isso, no primeiro boot PostgreSQL, `PostgresDatabaseBootstrapper`:
 
 1. confirma que o schema `public` está vazio; se encontrar tabelas, interrompe sem tentar sobrescrever dados;
 2. cria o schema completo a partir do modelo EF Core atual;
-3. registra as três migrations existentes como baseline no `__EFMigrationsHistory`;
+3. registra todas as migrations existentes como baseline no `__EFMigrationsHistory`;
 4. aplica migrations futuras normalmente com `Database.Migrate()`.
 
-Isso evita executar migrations antigas com tipos e anotações específicos do SQLite contra o PostgreSQL.
+Isso evita executar migrations antigas com tipos e anotações específicos do SQLite contra o PostgreSQL. O banco em uso já está migrado (16 migrations registradas).
 
 ## Segurança
 
-- As tabelas operacionais têm RLS habilitado.
+- As tabelas operacionais têm RLS habilitado, inclusive `__EFMigrationsHistory`, criada pelo EF Core.
 - Os privilégios de `anon` e `authenticated` são revogados; o EasyVan acessa o banco pelo backend com a credencial privada.
 - O login da aplicação continua usando cookies ASP.NET e hashes PBKDF2 existentes. O Supabase Auth não substitui o login atual.
-- A Railway continua precisando de um Volume em `/data` somente para persistir as chaves de Data Protection dos cookies; os cadastros e demais dados ficam no PostgreSQL.
-- Se o banco estiver vazio em produção, configure `EASYVAN_ADMIN_EMAIL` e `EASYVAN_ADMIN_PASSWORD` como variáveis privadas na Railway. A senha deve ter de 12 a 128 caracteres. Ela será armazenada como hash pelo serviço atual, nunca em texto puro.
+- A Railway usa um Volume em `/data` apenas para persistir as chaves de Data Protection dos cookies; os cadastros e demais dados ficam no PostgreSQL. Sem volume, a aplicação escolhe um diretório gravável alternativo e registra um aviso no log, sem interromper a inicialização.
+- Se o banco estiver vazio em produção, configure `EASYVAN_ADMIN_EMAIL` e `EASYVAN_ADMIN_PASSWORD` como variáveis privadas na Railway. A senha deve ter de 6 a 20 caracteres. Ela será armazenada como hash PBKDF2 pelo serviço atual, nunca em texto puro.
 
 ## Observação de rede
 

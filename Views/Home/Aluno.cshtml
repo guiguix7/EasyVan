@@ -115,7 +115,7 @@
 
                                     @if (viagem.Rota != null)
                                     {
-                                        <div class="ev-route-leg mt-1">
+                                        <div class="ev-route-leg">
                                             <span class="ev-route-leg__stop">@viagem.Rota.Origem</span>
                                             <partial name="_Icon" model='"arrow-right"' />
                                             <span class="ev-route-leg__stop ev-route-leg__stop--end">@viagem.Rota.Destino</span>
@@ -124,7 +124,7 @@
 
                                     <p class="ev-person__sub mb-0">
                                         <partial name="_Icon" model='"clock"' />
-                                        @(viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Horário não informado")
+                                        @(viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Horário a definir")
                                         @if (viagem.HoraFim.HasValue)
                                         {
                                             <text>–@viagem.HoraFim.Value.ToString(@"hh\:mm")</text>
@@ -154,7 +154,7 @@
 
                                     @if (!encerrada && prazo?.PodeAlterar == true)
                                     {
-                                        <p class="ev-record__meta mb-2">Você pode responder até @prazo.LimiteLocal?.ToString("dd/MM/yyyy 'às' HH:mm").</p>
+                                        <p class="ev-record__meta">Você pode responder até @prazo.LimiteLocal?.ToString("dd/MM/yyyy 'às' HH:mm").</p>
                                         <div class="ev-confirm-actions">
                                             <form asp-controller="Home" asp-action="ConfirmarPresenca" method="post">
                                                 <input type="hidden" name="viagemId" value="@viagem.Id" />
@@ -174,7 +174,7 @@
                                     }
                                     else if (!encerrada && prazo != null)
                                     {
-                                        <p class="ev-form-validation mb-0">@prazo.Mensagem @(prazo.LimiteLocal.HasValue ? $"Limite: {prazo.LimiteLocal:dd/MM/yyyy 'às' HH:mm}." : string.Empty)</p>
+                                        <p class="ev-form-validation">@prazo.Mensagem @(prazo.LimiteLocal.HasValue ? $"Limite: {prazo.LimiteLocal:dd/MM/yyyy 'às' HH:mm}." : string.Empty)</p>
                                     }
                                 </div>
                             </li>

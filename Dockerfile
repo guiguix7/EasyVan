@@ -19,4 +19,5 @@ ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "Gerenciamento de Van.dll"]
+# Railway injeta PORT; o fallback 8080 mantém o comportamento local/Docker.
+ENTRYPOINT ["sh", "-c", "exec dotnet \"Gerenciamento de Van.dll\" --urls \"http://0.0.0.0:${PORT:-8080}\""]

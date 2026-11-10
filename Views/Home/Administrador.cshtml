@@ -199,58 +199,58 @@
                     }
                 </dl>
             </section>
-
-            <section class="ev-panel ev-panel--flush" aria-labelledby="acoes-prioritarias">
-                <div class="ev-panel__head">
-                    <div>
-                        <h2 id="acoes-prioritarias">Atalhos</h2>
-                        <p class="ev-panel__hint">Acessos frequentes da rotina administrativa.</p>
-                    </div>
-                </div>
-
-                <ul class="ev-shortcuts">
-                    @if (Model.VansEmManutencao.Any())
-                    {
-                        <li>
-                            <a asp-action="Index" asp-controller="Vans" class="ev-shortcut">
-                                <partial name="_Icon" model='"wrench"' />
-                                <span>Vans em manutenção</span>
-                                <span class="ev-shortcut__count">@Model.VansEmManutencao.Count</span>
-                            </a>
-                        </li>
-                    }
-                    @if (Model.ViagensEmAndamento > 0)
-                    {
-                        <li>
-                            <a asp-action="Index" asp-controller="Viagens" class="ev-shortcut">
-                                <partial name="_Icon" model='"trip"' />
-                                <span>Viagens em andamento</span>
-                                <span class="ev-shortcut__count">@Model.ViagensEmAndamento</span>
-                            </a>
-                        </li>
-                    }
-                    <li>
-                        <a asp-action="Index" asp-controller="Motoristas" class="ev-shortcut">
-                            <partial name="_Icon" model='"driver"' />
-                            <span>Motoristas</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-action="Index" asp-controller="Alunos" class="ev-shortcut">
-                            <partial name="_Icon" model='"students"' />
-                            <span>Alunos</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-action="Index" asp-controller="Linhas" class="ev-shortcut">
-                            <partial name="_Icon" model='"route"' />
-                            <span>Linhas</span>
-                        </a>
-                    </li>
-                </ul>
-            </section>
         </div>
     </div>
+
+    <section class="ev-panel ev-panel--flush" aria-labelledby="acoes-prioritarias">
+        <div class="ev-panel__head">
+            <div>
+                <h2 id="acoes-prioritarias">Atalhos</h2>
+                <p class="ev-panel__hint">Acessos frequentes da rotina administrativa.</p>
+            </div>
+        </div>
+
+        <ul class="ev-shortcuts">
+            @if (Model.VansEmManutencao.Any())
+            {
+                <li>
+                    <a asp-action="Index" asp-controller="Vans" class="ev-shortcut">
+                        <partial name="_Icon" model='"wrench"' />
+                        <span>Vans em manutenção</span>
+                        <span class="ev-shortcut__count">@Model.VansEmManutencao.Count</span>
+                    </a>
+                </li>
+            }
+            @if (Model.ViagensEmAndamento > 0)
+            {
+                <li>
+                    <a asp-action="Index" asp-controller="Viagens" class="ev-shortcut">
+                        <partial name="_Icon" model='"trip"' />
+                        <span>Viagens em andamento</span>
+                        <span class="ev-shortcut__count">@Model.ViagensEmAndamento</span>
+                    </a>
+                </li>
+            }
+            <li>
+                <a asp-action="Index" asp-controller="Motoristas" class="ev-shortcut">
+                    <partial name="_Icon" model='"driver"' />
+                    <span>Motoristas</span>
+                </a>
+            </li>
+            <li>
+                <a asp-action="Index" asp-controller="Alunos" class="ev-shortcut">
+                    <partial name="_Icon" model='"students"' />
+                    <span>Alunos</span>
+                </a>
+            </li>
+            <li>
+                <a asp-action="Index" asp-controller="Linhas" class="ev-shortcut">
+                    <partial name="_Icon" model='"route"' />
+                    <span>Linhas</span>
+                </a>
+            </li>
+        </ul>
+    </section>
 
     <section class="ev-panel ev-panel--flush" aria-labelledby="ocupacao-viagens">
         <div class="ev-panel__head">
@@ -296,7 +296,7 @@
                                 </td>
                                 <td>
                                     <span class="ev-table__primary">@item.Viagem.Data.ToString("dd/MM")</span>
-                                    <span class="ev-table__secondary">@(item.Viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Horário não informado")</span>
+                                    <span class="ev-table__secondary">@(item.Viagem.HoraInicio?.ToString(@"hh\:mm") ?? "Horário a definir")</span>
                                 </td>
                                 <td>
                                     <span class="ev-occupancy">
