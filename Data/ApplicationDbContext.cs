@@ -168,6 +168,17 @@ namespace EasyVan.Data
                 .HasForeignKey(v => v.RotaId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            modelBuilder.Entity<Viagem>(entity =>
+            {
+                // Viagem.Data and DataChegada represent local calendar dates, not UTC instants.
+                // PostgreSQL must store them without a time zone so DateTimeKind.Unspecified is valid.
+                if (Database.IsNpgsql())
+                {
+                    entity.Property(v => v.Data).HasColumnType("timestamp without time zone");
+                    entity.Property(v => v.DataChegada).HasColumnType("timestamp without time zone");
+                }
+            });
+
             modelBuilder.Entity<Viagem>()
                 .HasOne(v => v.Van)
                 .WithMany()
