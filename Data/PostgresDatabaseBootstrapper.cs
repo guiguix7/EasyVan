@@ -88,6 +88,7 @@ public static class PostgresDatabaseBootstrapper
         NormalizeLegacyBooleanColumns(db);
         NormalizeLegacyGeneratedIntegerKeys(db);
         NormalizeLegacyCalendarDateColumns(db);
+        NormalizeLegacyTimeSpanColumns(db);
 
         // The EasyVan app authenticates users with ASP.NET cookies, not Supabase Auth.
         // Public Supabase API roles must not query operational application tables.
@@ -221,6 +222,149 @@ public static class PostgresDatabaseBootstrapper
                     setDefaultCommand.ExecuteNonQuery();
                 }
             }
+        }
+        finally
+        {
+            if (closeAfterCheck)
+                connection.Close();
+        }
+    }
+
+    private static void NormalizeLegacyTimeSpanColumns(ApplicationDbContext db)
+    {
+        // SQLite stores TimeSpan values as TEXT. PostgreSQL/Npgsql expects INTERVAL;
+        // repair only legacy text columns that correspond to TimeSpan properties.
+        var timeSpanColumns = db.Model.GetEntityTypes()
+            .SelectMany(entityType =>
+            {
+                var tableName = entityType.GetTableName();
+                if (tableName is null)
+                    return Enumerable.Empty<(string Schema, string Table, string Column)>();
+
+                var schema = entityType.GetSchema() ?? "public";
+                var storeObject = StoreObjectIdentifier.Table(tableName, entityType.GetSchema());
+
+                return entityType.GetProperties()
+                    .Where(property =>
+                        (Nullable.GetUnderlyingType(property.ClrType) ?? property.ClrType) == typeof(TimeSpan))
+                    .Select(property => property.GetColumnName(storeObject))
+                    .Where(column => !string.IsNullOrWhiteSpace(column))
+                    .Select(column => (Schema: schema, Table: tableName, Column: column!));
+            })
+            .Distinct()
+            .ToArray();
+
+        if (timeSpanColumns.Length == 0)
+            return;
+
+        var connection = db.Database.GetDbConnection();
+        var closeAfterCheck = connection.State != ConnectionState.Open;
+        if (closeAfterCheck)
+            connection.Open();
+
+        try
+        {
+            var sqlHelper = db.GetService<ISqlGenerationHelper>();
+            var columnsToConvert = new List<(string TableIdentifier, string ColumnIdentifier, string? DefaultExpression)>();
+
+            // Validate every candidate before changing any column. A malformed legacy
+            // value stops startup with a clear error instead of partially converting data.
+            foreach (var column in timeSpanColumns)
+            {
+                using var typeCommand = connection.CreateCommand();
+                typeCommand.CommandText = """
+                    SELECT data_type, column_default
+                    FROM information_schema.columns
+                    WHERE table_schema = @schema
+                      AND table_name = @table
+                      AND column_name = @column;
+                    """;
+
+                foreach (var (name, value) in new[]
+                {
+                    ("@schema", column.Schema),
+                    ("@table", column.Table),
+                    ("@column", column.Column)
+                })
+                {
+                    var parameter = typeCommand.CreateParameter();
+                    parameter.ParameterName = name;
+                    parameter.Value = value;
+                    typeCommand.Parameters.Add(parameter);
+                }
+
+                string? dataType;
+                string? defaultExpression;
+                using (var reader = typeCommand.ExecuteReader())
+                {
+                    if (!reader.Read())
+                        continue;
+
+                    dataType = reader.IsDBNull(0) ? null : reader.GetString(0);
+                    defaultExpression = reader.IsDBNull(1) ? null : reader.GetString(1);
+                }
+
+                if (dataType is not ("text" or "character varying" or "character"))
+                    continue;
+
+                var tableIdentifier = sqlHelper.DelimitIdentifier(column.Table, column.Schema);
+                var columnIdentifier = sqlHelper.DelimitIdentifier(column.Column);
+
+                using var invalidCommand = connection.CreateCommand();
+                invalidCommand.CommandText = $"""
+                    SELECT COUNT(*)
+                    FROM {tableIdentifier}
+                    WHERE {columnIdentifier} IS NOT NULL
+                      AND NOT pg_input_is_valid({columnIdentifier}::text, 'interval');
+                    """;
+                var invalidCount = Convert.ToInt64(invalidCommand.ExecuteScalar());
+                if (invalidCount > 0)
+                    throw new InvalidOperationException(
+                        $"A coluna {column.Schema}.{column.Table}.{column.Column} contém {invalidCount} valor(es) que não podem ser convertidos para PostgreSQL INTERVAL. Nenhum campo TimeSpan foi alterado.");
+
+                columnsToConvert.Add((tableIdentifier, columnIdentifier, defaultExpression));
+            }
+
+            if (columnsToConvert.Count == 0)
+                return;
+
+            using var transaction = db.Database.BeginTransaction();
+            foreach (var column in columnsToConvert)
+            {
+                using (var dropDefaultCommand = connection.CreateCommand())
+                {
+                    dropDefaultCommand.Transaction = transaction.GetDbTransaction();
+                    dropDefaultCommand.CommandText = $"""
+                        ALTER TABLE {column.TableIdentifier}
+                        ALTER COLUMN {column.ColumnIdentifier} DROP DEFAULT;
+                        """;
+                    dropDefaultCommand.ExecuteNonQuery();
+                }
+
+                using (var alterCommand = connection.CreateCommand())
+                {
+                    alterCommand.Transaction = transaction.GetDbTransaction();
+                    alterCommand.CommandText = $"""
+                        ALTER TABLE {column.TableIdentifier}
+                        ALTER COLUMN {column.ColumnIdentifier} TYPE interval
+                        USING ({column.ColumnIdentifier}::interval);
+                        """;
+                    alterCommand.ExecuteNonQuery();
+                }
+
+                if (!string.IsNullOrWhiteSpace(column.DefaultExpression))
+                {
+                    using var setDefaultCommand = connection.CreateCommand();
+                    setDefaultCommand.Transaction = transaction.GetDbTransaction();
+                    setDefaultCommand.CommandText = $"""
+                        ALTER TABLE {column.TableIdentifier}
+                        ALTER COLUMN {column.ColumnIdentifier} SET DEFAULT ({column.DefaultExpression})::interval;
+                        """;
+                    setDefaultCommand.ExecuteNonQuery();
+                }
+            }
+
+            transaction.Commit();
         }
         finally
         {
