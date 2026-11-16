@@ -62,7 +62,7 @@ namespace EasyVan.Controllers
                 : null;
 
             if (papel == "Motorista" && !ValidacaoBrasil.CnhValida(model.Cnh))
-                ModelState.AddModelError(nameof(model.Cnh), "Informe uma CNH válida com 11 dígitos para o motorista.");
+                ModelState.AddModelError(nameof(model.Cnh), "Informe o número de registro da CNH com 11 dígitos válidos para o motorista.");
 
             if (!ModelState.IsValid)
             {
@@ -189,7 +189,7 @@ namespace EasyVan.Controllers
                 && (motoristaExistente == null || !string.Equals(motoristaExistente.CNH, model.Cnh, StringComparison.Ordinal))
                 && !ValidacaoBrasil.CnhValida(model.Cnh))
             {
-                ModelState.AddModelError(nameof(model.Cnh), "Informe uma CNH válida com 11 dígitos para o motorista.");
+                ModelState.AddModelError(nameof(model.Cnh), "Informe o número de registro da CNH com 11 dígitos válidos para o motorista.");
             }
 
             if (papelAtual == "Administrador" && novoPapel != "Administrador")
