@@ -348,7 +348,8 @@ Consulte [SECURITY.md](SECURITY.md) para conhecer os controles de segurança, as
 - Victor Hugo Volpi Pereira
 - Caio Candiani Regio
 - Pedro Ailton dos Santos Cavalieri
-- Enzo Miguel Bertoluci Ovido
+- Enzo Miguel Bertoluci Ovidio
+- Davi Geraldo da Silva
 
 ## Licença
 
