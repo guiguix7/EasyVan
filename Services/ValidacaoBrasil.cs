@@ -109,26 +109,24 @@ namespace EasyVan.Services
             }
 
             var baseCnh = digitos[..9];
-            var primeiro = CalcularDigitoCnh(baseCnh, 9);
-            var segundo = CalcularDigitoCnh(baseCnh, 1);
+
+            // Registro CNH: 9 dígitos-base + 2 verificadores.
+            // Se o primeiro resto for 10, o primeiro dígito vira 0
+            // e o segundo cálculo recebe desconto de 2.
+            var somaPrimeiro = baseCnh.Select((digito, indice) => (digito - '0') * (9 - indice)).Sum();
+            var restoPrimeiro = somaPrimeiro % 11;
+            var descontoSegundo = restoPrimeiro >= 10 ? 2 : 0;
+            var primeiro = restoPrimeiro >= 10 ? 0 : restoPrimeiro;
+
+            var somaSegundo = baseCnh.Select((digito, indice) => (digito - '0') * (indice + 1)).Sum();
+            var restoSegundo = somaSegundo % 11;
+            var segundoCalculado = restoSegundo >= 10 ? 0 : restoSegundo - descontoSegundo;
+
+            // Bases cujo segundo dígito ficaria negativo não correspondem a um registro válido.
+            if (segundoCalculado < 0) return false;
 
             return digitos[9] == (char)('0' + primeiro)
-                && digitos[10] == (char)('0' + segundo);
-        }
-
-        private static int CalcularDigitoCnh(string baseCnh, int pesoInicial)
-        {
-            var soma = 0;
-            var peso = pesoInicial;
-            foreach (var caractere in baseCnh)
-            {
-                soma += (caractere - '0') * peso;
-                peso--;
-            }
-
-            var resto = soma % 11;
-            var digito = resto == 0 ? 0 : 11 - resto;
-            return digito >= 10 ? 0 : digito;
+                && digitos[10] == (char)('0' + segundoCalculado);
         }
 
         public static string NormalizarCnh(string? cnh) => SomenteDigitos(cnh);
