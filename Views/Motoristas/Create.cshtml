@@ -51,9 +51,9 @@
 
                     <div class="ev-field">
                         <label asp-for="CNH" class="form-label">CNH</label>
-                        <input asp-for="CNH" class="form-control" placeholder="11 dígitos" autocomplete="off"
+                        <input asp-for="CNH" class="form-control" placeholder="Número de registro (11 dígitos)" autocomplete="off"
                                inputmode="numeric" data-cnh-brasil maxlength="11" />
-                        <p class="ev-hint">Somente números. O dígito verificador é conferido no servidor.</p>
+                        <p class="ev-hint">Digite o número de registro no campo “Nº Registro” da CNH. Não use RENACH, número do espelho ou código de segurança.</p>
                         <span asp-validation-for="CNH" class="ev-form-validation"></span>
                     </div>
                 </div>
