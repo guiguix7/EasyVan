@@ -69,8 +69,11 @@ namespace EasyVan.Controllers
             if (!string.IsNullOrWhiteSpace(model.Endereco) && _geocodificador != null)
             {
                 try { enderecoGeo = await _geocodificador.GeocodificarAsync(model.Endereco); }
-                catch (InvalidOperationException ex) { ModelState.AddModelError(nameof(model.Endereco), ex.Message); }
-                if (!ModelState.IsValid) return View(model);
+                catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or System.Text.Json.JsonException)
+                {
+                    // Geocodificação é opcional: mantém o endereço digitado e permite salvar sem coordenadas.
+                    enderecoGeo = null;
+                }
             }
 
             await using var transacao = await _db.Database.BeginTransactionAsync();
@@ -186,8 +189,11 @@ namespace EasyVan.Controllers
             if (enderecoMudou && !string.IsNullOrWhiteSpace(model.Endereco) && _geocodificador != null)
             {
                 try { enderecoGeo = await _geocodificador.GeocodificarAsync(model.Endereco); }
-                catch (InvalidOperationException ex) { ModelState.AddModelError(nameof(model.Endereco), ex.Message); }
-                if (!ModelState.IsValid) return View(model);
+                catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException or System.Text.Json.JsonException)
+                {
+                    // Geocodificação é opcional: mantém o endereço digitado e permite salvar sem coordenadas.
+                    enderecoGeo = null;
+                }
             }
 
             await using var transacao = await _db.Database.BeginTransactionAsync();
@@ -215,9 +221,13 @@ namespace EasyVan.Controllers
                 conta.Email = email;
                 conta.Ativo = model.Ativo;
                 if (enderecoGeo.HasValue) AtualizarEndereco(conta, enderecoGeo.Value);
-                else if (string.IsNullOrWhiteSpace(model.Endereco))
+                else if (enderecoMudou || string.IsNullOrWhiteSpace(model.Endereco))
                 {
-                    conta.Endereco = null; conta.Lat = null; conta.Lng = null; conta.GeocodificadoEm = null;
+                    // Não reutiliza coordenadas antigas para um endereço novo.
+                    conta.Endereco = model.Endereco;
+                    conta.Lat = null;
+                    conta.Lng = null;
+                    conta.GeocodificadoEm = null;
                 }
                 if (!string.IsNullOrWhiteSpace(model.Senha))
                     conta.PasswordHasher = _senha.Hash(model.Senha);
