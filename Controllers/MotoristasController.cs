@@ -40,7 +40,7 @@ namespace EasyVan.Controllers
         {
             Normalizar(model);
             if (!ValidacaoBrasil.CnhValida(model.CNH))
-                ModelState.AddModelError(nameof(model.CNH), "Informe uma CNH válida com 11 dígitos.");
+                ModelState.AddModelError(nameof(model.CNH), "Informe o número de registro da CNH com 11 dígitos válidos.");
 
             if (!ModelState.IsValid) return View(model);
 
@@ -137,7 +137,7 @@ namespace EasyVan.Controllers
 
             // CNHs legadas podem estar inválidas; só exigimos o algoritmo quando o valor muda.
             if (!string.Equals(existente.CNH, model.CNH, StringComparison.Ordinal) && !ValidacaoBrasil.CnhValida(model.CNH))
-                ModelState.AddModelError(nameof(model.CNH), "Informe uma CNH válida com 11 dígitos.");
+                ModelState.AddModelError(nameof(model.CNH), "Informe o número de registro da CNH com 11 dígitos válidos.");
 
             var email = Usuarios.NormalizeEmail(model.Email);
             var conta = existente.Usuario;
